@@ -33,8 +33,9 @@ const createMyNavigator = createNavigatorFactory(TabNavigator);
 const My = createMyNavigator();
 
 export default function App() {
-  const defaultApiURL_hotspot = '10.42.0.1:8000';
-  const defaultApiURL_wifi =  '192.168.1.108:8000';
+  console.log('skljhskjhskj',process.env.EXPO_PUBLIC_SUNSCAN_API_URL)
+  const defaultApiURL_hotspot = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '10.42.0.1:8000';
+
   const [sunscanIsConnected, setSunscanIsConnected] = useState(false);
   const [cameraIsConnected, setCameraIsConnected] = useState(false);
   const [hotSpotModeVal, setHotSpotMode] = useState(true);
@@ -44,21 +45,8 @@ export default function App() {
   const [tooltipVal, setTooltip] = useState(false);
   const [camera, setCamera] = useState("");
   const [observerVal, setObserver] = useState("");
-  const [apiURLVal, setApiURL] = useState("");
+  const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
-
-  const toggleHotSpotMode = () => {
-    setHotSpotMode(!hotSpotModeVal);
-    if(!hotSpotModeVal) {
-      console.log(defaultApiURL_hotspot)
-      setApiURL(defaultApiURL_hotspot)
-    }
-    else {
-      if (defaultApiURL_hotspot == apiURLVal) {
-        setApiURL(defaultApiURL_wifi)
-      }
-    }
-  };
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -97,12 +85,6 @@ export default function App() {
         setObserver(observer);
       }
     });
-    AsyncStorage.getItem('SUNSCAN_APP::HOTSPOT').then((hotSpotMode) => {
-      console.log(hotSpotMode)
-      if(hotSpotMode)  {
-        setHotSpotMode(hotSpotMode == '1');
-      }
-    });
     AsyncStorage.getItem('SUNSCAN_APP::DEMO').then((d) => {
       if(d)  {
         setDemo(d == '1');
@@ -123,14 +105,6 @@ export default function App() {
         setShowWatermark(watermark == '1');
       }
     });
-    AsyncStorage.getItem('SUNSCAN_APP::IP').then((apiURL) => {
-      if (apiURL) {
-        setApiURL(apiURL);
-      }
-    });
-    if (!apiURLVal) {
-      setApiURL(defaultApiURL_hotspot);
-    }
   }, []);
 
   useEffect(() => {
@@ -138,15 +112,9 @@ export default function App() {
       AsyncStorage.setItem('SUNSCAN_APP::OBSERVER', `${observerVal}`);
     }
 
-    AsyncStorage.setItem('SUNSCAN_APP::HOTSPOT', `${hotSpotModeVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::DEMO', `${demoVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::TOOLTIP', `${tooltipVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
-    
-    if (apiURLVal !== defaultApiURL_hotspot) {
-      AsyncStorage.setItem('SUNSCAN_APP::IP', `${apiURLVal}`);
-    }
-
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     
   }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal]);
@@ -158,7 +126,6 @@ export default function App() {
     setCameraIsConnected,
     camera, 
     setCamera,
-    apiURL:apiURLVal,
     demo:demoVal,
     debug:debugVal,
     tooltip:tooltipVal,
@@ -168,12 +135,11 @@ export default function App() {
     backendApiVersion,
     setBackendApiVersion,
     setObserver,
-    toggleHotSpotMode,
     toggleShowWaterMark,
     toggleDebug,
     toggleDemo,
-    toggleTooltip,
-    setApiURL
+    toggleTooltip, 
+    apiURL:apiURLVal,
   };
 
   const styles = StyleSheet.create({

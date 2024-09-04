@@ -44,7 +44,7 @@ export default function Infos({isFocused}) {
   }
 
 
-  return (location && sunTimes && <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-col align-center space-y-4 items-center justify-between" >
+  return (location && sunTimes?.sunset != undefined && <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-col align-center space-y-4 items-center justify-between" >
    
       <DateTimeLocation city={geoCode} />
       <View className="flex flex-row items-center space-x-4 w-full">

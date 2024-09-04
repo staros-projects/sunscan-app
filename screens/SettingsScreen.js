@@ -133,7 +133,6 @@ export default function SettingsScreen({navigation}) {
            
             </View>
 
-        
              <View className="flex flex-row  space-x-4 items-start mt-2  ">
              <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:debugMode')}</Text>
@@ -144,25 +143,6 @@ export default function SettingsScreen({navigation}) {
                   onValueChange={myContext.toggleDebug}
                 />
              </View>
-             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-             <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:hotspotMode')}</Text>
-                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:hotspotDescription')}</Text>
-              </View>
-                <Switch
-                  value={myContext.hotSpotMode}
-                  onValueChange={myContext.toggleHotSpotMode}
-                />
-             </View>
-             
-             {!myContext.hotSpotMode && <View className="flex flex-row  space-x-4 items-center mt-2 border-l-zinc-600 pl-4 border-l">
-             <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:sunscanIP')}</Text>
-                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:sunscanIPDescription')}</Text>
-              </View>
-                <TextInput className="border border-zinc-500 w-40 text-white rounded-md bg-zinc-70 mr-2" style={{padding:10}}  value={apiInput} onChangeText={(text)=>{setAPIInput(text)}} />
-                {myContext.apiURL != apiInput.trim() && <Button title='ok' className="mx-2" onPress={(e)=>{myContext.setApiURL(apiInput.trim())}}/>}
-             </View>}
 
              <View className="flex flex-row  space-x-4 items-start mt-2 ">
              <View className="w-1/2">

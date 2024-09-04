@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sunscan",
     "slug": "sunscan",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -28,7 +28,12 @@
         "RECEIVE_BOOT_COMPLETED",
         "ACCESS_NETWORK_STATE"
       ],
-      "package": "com.staros.sunscan"
+      "package": "com.staros.sunscan",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#000"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
