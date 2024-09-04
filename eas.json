@@ -1,0 +1,15 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "ANDROID_HOME": "/Users/guillaumebertrand/Library/Android/sdk"
+    }
+    },
+    "production": {}
+  }
+}

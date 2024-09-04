@@ -1,0 +1,107 @@
+
+#sunscan_logo_animate {
+    max-height: 100vh;
+    max-width: 50%;
+    transform: rotateZ(-90deg);
+  
+  
+  }
+  
+  .sun__lines > path {
+    transform: scaleX(0);
+    animation: scaleXIn 0.4s .3s ease-in-out forwards;
+    transform-origin: center center;
+    transform-box: fill-box;
+  }
+  
+  .sun__lines > path:nth-child(2) {
+    animation-delay: .4s;
+  }
+  
+  .sun__lines > path:nth-child(3) {
+    animation-delay: .5s;
+  }
+  
+  .sun__lines > path:nth-child(4) {
+    animation-delay: .6s;
+  }
+  
+  .sun__lines > path:nth-child(5) {
+    animation-delay: .7s;
+  }
+  
+  .sun__lines > path:nth-child(6) {
+    animation-delay: .8s;
+  }
+  
+  .sun__lines > path:nth-child(7) {
+    animation-delay: .9s;
+  }
+  
+  .sun__lines > path:nth-child(8) {
+    animation-delay: 1.0s;
+  }
+  
+  .sun__lines > path:nth-child(9) {
+    animation-delay: 1.1s;
+  }
+  
+  .sun__lines > path:nth-child(10) {
+    animation-delay: 1.2s;
+  }
+  
+  .sun__lines > path:nth-child(11) {
+    animation-delay: 1.3s;
+  }
+  
+  .sun__lines > path:nth-child(12) {
+    animation-delay: 1.4s;
+  }
+  
+  .sun__lines > path:nth-child(13) {
+    animation-delay: 1.5s;
+  }
+  
+  .sun__lines > path:nth-child(14) {
+    animation-delay: 1.6s;
+  }
+  
+  .sun__lines > path:nth-child(15) {
+    animation-delay: 1.7s;
+  }
+  
+  .sun__lines > path:nth-child(16) {
+    animation-delay: 1.8s;
+  }
+  
+  .sun__lines > path:nth-child(17) {
+    animation-delay: 1.9s;
+  }
+  
+  
+  @keyframes rotateIn {
+    from {
+      transform: rotateZ(180deg);
+    } to {
+      transform: rotateZ(0);
+    }
+  }
+  
+  @keyframes fromTop {
+      from {
+      transform: translateY(100%);
+    } to {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scaleXIn {
+    from {
+      transform: scaleX(0);
+    }
+    
+    to {
+          transform: scaleX(1);
+    }
+  }
+  
