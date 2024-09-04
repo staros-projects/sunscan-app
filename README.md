@@ -1,6 +1,6 @@
 # Sunscan App
 
-![Sunscan App Logo](./assets/prez_android.png) <!-- Optional: Add a logo for your project -->
+![Sunscan App Logo](./assets/prez_android.png)
 
 A work-in-progress open-source mobile application built using [Expo](https://expo.dev/). This application is designed to control the [Sunscan](https://www.sunscan.net/) astronomical instrument. 
 This project was created by the STAROS team (Guillaume Bertrand, Christian Buil, Valérie Desnoux, Olivier Garde, Matthieu Le Lain).
@@ -36,7 +36,7 @@ These instructions will help you set up the project on your local machine for de
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/sunscan-app.git
+    git clone https://github.com/staros-projects/sunscan-app.git
     ```
 
 2. **Navigate into the project directory**:
