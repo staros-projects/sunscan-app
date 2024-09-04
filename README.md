@@ -3,7 +3,7 @@
 ![Sunscan App Logo](./assets/prez_android.png) <!-- Optional: Add a logo for your project -->
 
 A work-in-progress open-source mobile application built using [Expo](https://expo.dev/). This application is designed to control the [Sunscan](https://www.sunscan.net/) astronomical instrument. 
-This project was created by the STAROS team (Guillaume Bertrand, Christian Buil, Valérie Desnoux, Matthieu Le Lain).
+This project was created by the STAROS team (Guillaume Bertrand, Christian Buil, Valérie Desnoux, Olivier Garde, Matthieu Le Lain).
 
 ## Table of Contents
 
