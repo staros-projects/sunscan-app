@@ -20,17 +20,23 @@ export default function Infos({isFocused}) {
   const [sunTimes, setSunTimes] = useState({});
   const [sunPositions, setSunPositions] = useState({});
  
+  // Effect hook that runs when the component gains focus
+  // Fetches location data, performs reverse geocoding, and calculates sun times and positions
   useFocusEffect(
     useCallback(() => {
     async function fetchData()  {
+      // Request location permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
+        // Get current position
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
         
+        // Perform reverse geocoding to get city name
         let geocode = await Location.reverseGeocodeAsync({longitude:location.coords.longitude, latitude:location.coords.latitude});
         setGeoCode(geocode ? geocode[0].city:'');
 
+        // Calculate sun times and positions using SunCalc library
         setSunTimes(SunCalc.getTimes(new Date(), location?.coords.latitude, location?.coords.longitude));
         setSunPositions(SunCalc.getPosition(new Date(), location?.coords.latitude, location?.coords.longitude));
       }
@@ -39,11 +45,13 @@ export default function Infos({isFocused}) {
   }, [location, geoCode]));
  
 
+  // Utility function to convert decimal degrees to degrees, minutes, seconds format
   const convertDDToDMS = (D) =>{
     return D ? ['0'|D, '°', 0|(D=(D<0?-D:D)+1e-4)%1*60, "'", 0|D*60%1*60, '"'].join(''):'';
   }
 
 
+  // Render component
   return (location && sunTimes?.sunset != undefined && <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-col align-center space-y-4 items-center justify-between" >
    
       <DateTimeLocation city={geoCode} />
