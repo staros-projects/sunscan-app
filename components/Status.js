@@ -7,6 +7,7 @@ import Fontisto from '@expo/vector-icons/Fontisto'
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
+// Utility function to fetch with a timeout
 export async function fetchWithTimeout(url, options, timeout = 2000) {
   return Promise.race([
       fetch(url, options),
@@ -15,15 +16,16 @@ export async function fetchWithTimeout(url, options, timeout = 2000) {
 }
 
 export default function Status({isFocused})  {
-
+  // Initialize translation hook
   const { t, i18n } = useTranslation();
 
-
+  // State variables
   const [isLoading, setIsLoading] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [stats, setStats] = useState(null);
   const myContext = useContext(AppContext);
   
+  // Function to update camera status
   async function updateCamera(type) {
     setIsLoading(true);
     url = 'http://'+myContext.apiURL+"/camera/"+type
@@ -38,16 +40,18 @@ export default function Status({isFocused})  {
     });
   }
 
+  // Function to connect the camera
   async function connectCamera() {
     updateCamera(myContext.camera+"/connect")
     setSunScanTime()
   }
 
+  // Function to disconnect the camera
   async function disconnectCamera() {
     updateCamera("disconnect")
   }
 
-
+  // Function to fetch and update stats
   async function getStats() {
     fetchWithTimeout('http://'+myContext.apiURL+"/sunscan/stats", {timeout: 2}).then(response => {
         return response.json()
@@ -68,6 +72,7 @@ export default function Status({isFocused})  {
 
   }
 
+  // Function to set SunScan time
   async function setSunScanTime() {
     const current_ts = Math.floor(Date.now() / 1000);
     fetch('http://'+myContext.apiURL+"/sunscan/set-time/",  {
@@ -85,6 +90,7 @@ export default function Status({isFocused})  {
     });
   }
 
+  // Function to get camera status
   async function getCameraStatus() {
     fetch('http://'+myContext.apiURL+"/camera/status").then(response => response.json())
     .then(json => {
@@ -96,6 +102,7 @@ export default function Status({isFocused})  {
     });
   }
 
+  // Effect to fetch stats when the component gains focus
   useFocusEffect(
     useCallback(() => {
     setTimeout(()=>{
@@ -103,19 +110,22 @@ export default function Status({isFocused})  {
     }, 5000)
   }, [myContext.apiURL]));
 
+  // Render the component
   return (
     <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-row space-x-4 items-center align-center"  >
-          <View className="">
-            <View className="flex flex-row space-x-1 items-center mb-1">
-                <Pressable onPress={getStats}><Text className="text-white font-bold ">SUNSCAN</Text></Pressable>
-                <Pressable onPress={getStats}>{refresh ? <Ionicons name="ellipsis-horizontal" size={14} color="white" />:<Ionicons name="refresh-sharp" size={14} color="white" />}</Pressable> 
-                {stats && myContext.sunscanIsConnected && <View className="mx-2 flex flex-row space-x-1 items-center">
-                  {stats?.battery_power_plugged && <Ionicons name="battery-charging" size={18} color="white" />}
-                  {!stats?.battery_power_plugged && stats?.battery < 10 && <Fontisto name="battery-empty" size={18} color="white"  />}
-                  {!stats?.battery_power_plugged && stats?.battery >= 10 && stats?.battery <45 && <Fontisto name="battery-quarter" size={18} color="white"  />}
-                  {!stats?.battery_power_plugged && stats?.battery >= 45 &&  stats?.battery <75 && <Fontisto name="battery-half" size={18} color="white"  />}
-                  {!stats?.battery_power_plugged && stats?.battery >= 75 &&  stats?.battery <85 && <Fontisto name="battery-three-quarters" size={18} color="white"  />}
-                  {!stats?.battery_power_plugged && stats?.battery >=85 && <Fontisto name="battery-full" size={18} color="white"  />}
+      {/* Status information */}
+      <View className="">
+        {/* SunScan status and refresh button */}
+        <View className="flex flex-row space-x-1 items-center mb-1">
+            <Pressable onPress={getStats}><Text className="text-white font-bold ">SUNSCAN</Text></Pressable>
+            <Pressable onPress={getStats}>{refresh ? <Ionicons name="ellipsis-horizontal" size={14} color="white" />:<Ionicons name="refresh-sharp" size={14} color="white" />}</Pressable> 
+            {stats && myContext.sunscanIsConnected && <View className="mx-2 flex flex-row space-x-1 items-center">
+              {stats?.battery_power_plugged && <Ionicons name="battery-charging" size={18} color="white" />}
+              {!stats?.battery_power_plugged && stats?.battery < 10 && <Fontisto name="battery-empty" size={18} color="white"  />}
+              {!stats?.battery_power_plugged && stats?.battery >= 10 && stats?.battery <45 && <Fontisto name="battery-quarter" size={18} color="white"  />}
+              {!stats?.battery_power_plugged && stats?.battery >= 45 &&  stats?.battery <75 && <Fontisto name="battery-half" size={18} color="white"  />}
+              {!stats?.battery_power_plugged && stats?.battery >= 75 &&  stats?.battery <85 && <Fontisto name="battery-three-quarters" size={18} color="white"  />}
+              {!stats?.battery_power_plugged && stats?.battery >=85 && <Fontisto name="battery-full" size={18} color="white"  />}
               <Text className="text-white text-xs">{stats?.battery.toFixed(0)}%</Text>
              
               </View>}
@@ -128,6 +138,8 @@ export default function Status({isFocused})  {
             {myContext.debug && <Text className="text-slate-400 text-xs mt-1">{t('common:ipAddress')} : {myContext?.apiURL}</Text>}
             {myContext.debug && <Text className="text-slate-400 text-xs">{t('common:backendApiVersion')} : v{stats?.backend_api_version}</Text>}
           </View>
+
+          {/* Camera connection button */}
           {(isLoading || !myContext.camera)  && <View className="bg-zinc-600 p-2 rounded-md h-12 text-white text-center flex justify-center items-center" ><Loader type="white" /></View>}
           {myContext.camera && !isLoading ? (!myContext.cameraIsConnected ? 
           (<Pressable className="bg-zinc-600 p-2 rounded-md h-12 text-white text-center flex flex-row items-center space-x-2" disabled={isLoading} onPress={connectCamera} ><Ionicons name="power" size={14} color="white"  /><Text className="mx-auto text-white text-xs ">{t('common:connectCamera')}</Text></Pressable>) :
