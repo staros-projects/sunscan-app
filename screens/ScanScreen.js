@@ -1,39 +1,48 @@
 
+// Import necessary React and React Native components
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
 import { SafeAreaView } from 'react-native';
 
+// Import icons from Expo vector icons
 import Ionicons from '@expo/vector-icons/Ionicons'
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+
+// Import NativeWind for styling
 import { NativeWindStyleSheet } from "nativewind";
 
+// Import Image component from Expo
 import { Image } from 'expo-image';
 
+// Configure NativeWind to output styles for native platforms
 NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
-
+// Import ImageZoom for image zooming functionality
 import ImageZoom from 'react-native-image-pan-zoom';
 
-
-
+// Import custom components
 import Loader from '../components/Loader';
 import WebSocketContext  from '../utils/WSContext';
-
 import AppContext from '../components/AppContext';
-
-import Slider from '@react-native-community/slider';
 import TooltipPopin from '../components/TooltipPopin';
 import Spectrum from '../components/Spectrum';
+
+// Import Slider component
+import Slider from '@react-native-community/slider';
+
+// Import translation hook
 import { useTranslation } from 'react-i18next';
 
+// Main ScanScreen component
 export default function ScanScreen({navigation}) {
 
+    // Initialize translation hook
     const { t, i18n } = useTranslation();
 
-
+    // State variables for managing the component
     const [frame, setFrame] = useState(null);
     const [fc, setFC] = useState(0);
     const fcRef = React.useRef(fc);
@@ -44,6 +53,7 @@ export default function ScanScreen({navigation}) {
     const [spectrumData, setSpectrumData] = useState([]);
     const [intensityData, setIntensityData] = useState([]);
 
+    // Styles for the component
     const styles = StyleSheet.create({
       container: {
         flex: 1,
@@ -62,9 +72,11 @@ export default function ScanScreen({navigation}) {
     const isFocused = navigation.isFocused();
     const [subscribe, unsubscribe] = useContext(WebSocketContext)
 
+    // Effect hook for managing subscriptions and fetching camera status
     useEffect(() => {
         getCameraStatus();
         
+        // Subscribe to 'camera' events
         subscribe('camera', (message) => {
             fcRef.current += 1
             setFC(fcRef.current)
@@ -77,11 +89,13 @@ export default function ScanScreen({navigation}) {
         
         })
 
+        // Subscribe to 'adu' events
         subscribe('adu', (message) => {  
           if(fcRef.current%5==0)
             setPixelStats({r:parseInt(message[1]), g:parseInt(message[2]), b:parseInt(message[3])});
       })
 
+      // Subscribe to 'spectrum' events
       subscribe('spectrum', (message) => {
         if (displaySpectrumType == "vertical" && displaySpectrum) {
           console.log("spectrum")
@@ -93,6 +107,7 @@ export default function ScanScreen({navigation}) {
         }
     })
 
+      // Subscribe to 'intensity' events
       subscribe('intensity', (message) => {
         
         if (displaySpectrumType == "horizontal" && displaySpectrum) {
@@ -108,6 +123,7 @@ export default function ScanScreen({navigation}) {
 
        
 
+        // Cleanup function to unsubscribe from all events
         return () => {
           unsubscribe('camera');
           unsubscribe('adu');
@@ -118,6 +134,7 @@ export default function ScanScreen({navigation}) {
     }, [subscribe, unsubscribe, displaySpectrum, displaySpectrumType]);
       
     
+    // Function to fetch camera status and update state
     async function getCameraStatus() {
       fetch('http://'+myContext.apiURL+"/camera/status").then(response => response.json())
       .then(json => {
@@ -142,10 +159,12 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // State variables for timer functionality
     const [time, setTime] = React.useState(0);
     const timerRef = React.useRef(time);
     const [timerId, setTimerId] = React.useState(null);
 
+    // State variables for various camera settings
     const [rec, setRec] = React.useState(false);
     const [extendExp, setExtendExp] = React.useState(false);
     const [crop, setCrop] = React.useState(false);
@@ -163,6 +182,7 @@ export default function ScanScreen({navigation}) {
     const [settings, setSettings] = useState("exp");
     const [monoBinMode, setMonoBinMode] = useState(false);
 
+    // Function to update camera controls
     async function updateControls() {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/controls/",{
@@ -181,6 +201,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // Function to take a snapshot
     async function takeSnapShot() {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/take-snapshot/").then(response => response.json())
@@ -195,6 +216,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // Function to toggle crop mode
     async function toggleCrop() {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/toggle-crop/").then(response => response.json())
@@ -209,6 +231,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // Function to toggle spectrum display
     async function toggleSpectrum(type) {
       
         if(type == displaySpectrumType && displaySpectrum){
@@ -223,6 +246,7 @@ export default function ScanScreen({navigation}) {
      
     }
 
+    // Function to toggle color mode
     async function toggleColorMode() {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/toggle-color-mode/").then(response => response.json())
@@ -236,6 +260,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // Function to toggle normalization
     async function toggleNorm() {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/toggle-normalize/").then(response => response.json())
@@ -250,6 +275,7 @@ export default function ScanScreen({navigation}) {
     }
 
 
+    // Function to update recording status
     async function updateRec(type) {
       
       setIsLoading(true);
@@ -264,6 +290,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // Function to update Y-axis crop position
     async function updatePosYCrop(type) {
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/crop/"+type+"/").then(response => response.json())
@@ -276,6 +303,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    // State and function for tooltip popin
     const [popinVisible, setPopinVisible] = useState(false);
 
   const togglePopin = () => {
@@ -283,6 +311,7 @@ export default function ScanScreen({navigation}) {
   };
 
 
+  // Function to toggle mono/bin mode
   async function toggleMonoBinMode() {
     setIsLoading(true);
     fetch('http://'+myContext.apiURL+"/camera/toggle-monobin-mode/").then(response => response.json())
@@ -298,14 +327,17 @@ export default function ScanScreen({navigation}) {
 
   
 
+  // Function to toggle options display
   const toggleOptions = () => {
       setDisplayOptions(!displayOptions);
   };
 
+  // Function to toggle grid display
   const toggleGrid = () => {
       setDisplayGrid(!displayGrid);
   };
 
+  // Styles for right toolbar (platform-specific)
   const stylesRighttoolBar = StyleSheet.create({
     right: Platform.OS === 'ios' ? -8 : 16,
   });
@@ -317,14 +349,17 @@ export default function ScanScreen({navigation}) {
   
             
   
+            {/* Main container for displaying the camera feed or spectrum */}
             <View className="absolute z-1 flex flex-col justify-center" style={{ right:0, left:0, top:0, width:"100%", height:"100%"}}>
             {!displaySpectrum && (frame && myContext.cameraIsConnected ? 
             <ImageZoom cropWidth={Dimensions.get('window').width-18}
                        cropHeight={Dimensions.get('window').height}
                        imageWidth={500}
                        imageHeight={crop ? 29:200}>
+                        {/* Grid overlay for alignment */}
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 "><View className="mx-auto z-40 h-full" style={{width:1, backgroundColor:"lime"}}></View></View>} 
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 flex flex-row items-center "><View className="z-40 w-full" style={{height:1, backgroundColor:"lime"}}></View></View>}
+                {/* Camera feed image */}
                 <Image
                 style={styles.image}
                 source={{ uri: frame }} 
@@ -333,33 +368,40 @@ export default function ScanScreen({navigation}) {
                 />
                 </ImageZoom>:<View className="mx-auto"><Loader type="white" /></View>)}
 
+                {/* Spectrum display */}
                 {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} title="Spectre" subtitle="Profil vertical / Mise au point caméra" />}
                 {displaySpectrum && displaySpectrumType === "horizontal"  && <Spectrum data={intensityData} title="Continuum" subtitle="Profil horizontal / Mise au point lunette" />}
                
             </View>
 
+            {/* Tooltip popup */}
             {popinVisible && <TooltipPopin className="z-10" onClose={togglePopin}/>}
       
+            {/* Recording timer display */}
             <View className="absolute bottom-0 w-full h-14 " style={{ left:0, top:10}}>
                 {rec && myContext.cameraIsConnected && <Text className="mx-auto text-white text-3xl font-bold text-center">  {time} s  </Text>}
                 </View>
+                {/* Snapshot filename display */}
                 <View className="absolute bottom-0 w-full h-14 " style={{ left:0, top:10}}>
                 {snapShotFilename && myContext.cameraIsConnected && <Text className="mx-auto text-white text-xs">./{snapShotFilename}</Text>}
                 </View>
 
                 
 
+           {/* Bottom toolbar */}
            {!rec && !displaySpectrum && (myContext.cameraIsConnected || myContext.demo)  &&
            <View className="absolute bottom-0 w-full h-14 z-10 " style={{ right:0, bottom:10}}>
 
      
             <View style={{ left:0, top:0}} className=" flex flex-row mx-auto justify-center items-center rounded-lg px-2 py-1 bg-zinc-600/70 ">
+                          {/* Snapshot button */}
                           <TouchableHighlight underlayColor="rgb(113 113 122)"  onPress={()=>takeSnapShot() } className="flex flex-col justify-center items-center p-1 mr-3 ">
                               <View className="flex flex-col items-center space-y-1">
                               <Ionicons name="camera" size={18} color="white"  />
                               <Text style={{fontSize:10,color:"#fff"}}>{t('common:snapShot')}</Text>
                             </View>
                           </TouchableHighlight>
+                          {/* Color mode toggle */}
                           <TouchableHighlight underlayColor="rgb(113 113 122)"   onPress={()=>toggleColorMode() } className="flex flex-col justify-center items-center p-1 mr-3">
                             <View className="flex flex-col items-center space-y-1">
                               <Ionicons name="color-palette-outline" size={18} color={colorMode ? "lime":"white"}   />
@@ -367,6 +409,7 @@ export default function ScanScreen({navigation}) {
                             </View>
                           </TouchableHighlight>
                          
+                            {/* Normalize toggle */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={toggleNorm} className="flex flex-col justify-center items-center p-1 mr-3 ">
                               <View className="flex flex-col items-center space-y-1">
 
@@ -376,6 +419,7 @@ export default function ScanScreen({navigation}) {
                              
                             </TouchableHighlight>
 
+                            {/* Options toggle */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={toggleOptions} className="flex flex-col justify-center items-center p-1 mr-3">
                               <View className="flex flex-col items-center space-y-1">
 
@@ -384,6 +428,7 @@ export default function ScanScreen({navigation}) {
                               </View>
                              
                             </TouchableHighlight>
+                            {/* Grid toggle */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={toggleGrid} className="flex flex-col justify-center items-center p-1 mr-3">
                               <View className="flex flex-col items-center space-y-1">
 
@@ -399,6 +444,7 @@ export default function ScanScreen({navigation}) {
            
            </View>}
 
+           {/* Spectrum toggle buttons */}
            {(!rec && myContext.cameraIsConnected && crop)   &&
            <View className="absolute bottom-0 z-10 h-14" style={{ left:0, bottom:10}}>
             <View style={{ left:0, top:0}} className="  flex flex-row self-start ml-4 justify-center items-end rounded-lg px-2 py-1 bg-zinc-600/70 ">
@@ -415,6 +461,7 @@ export default function ScanScreen({navigation}) {
               </View>
            </View>}
     
+            {/* Right toolbar */}
             {(myContext.cameraIsConnected || myContext.demo) && !colorMode && <View className="absolute flex flex-col h-full items-center justify-center" style={stylesRighttoolBar}>
                 <View  className=" bg-zinc-600/50 rounded-lg space-y-2 py-2 flex flex-col justify-evenly align-center items-center px-1" >
                     
@@ -429,6 +476,7 @@ export default function ScanScreen({navigation}) {
                         <Ionicons name="chevron-down" size={32} color={!crop ? "rgb(113 113 122)":"white"}   />
                         </TouchableHighlight>
                         
+                        {/* Record button */}
                         <TouchableHighlight underlayColor={crop ? "rgb(113 113 122)":"tranparent"}   disabled={!crop || displaySpectrum} onPress={() => {
           
 
@@ -461,6 +509,7 @@ export default function ScanScreen({navigation}) {
             </View>}
 
  
+            {/* Options panel */}
             {!rec && !colorMode && !displaySpectrum && displayOptions && (myContext.cameraIsConnected || myContext.demo)   && (
             <View className="absolute mb-4 w-full flex flex-row justify-center align-items " style={{ right:0, top:10}}>
                 <View className="flex flex-row justify-start item-center align-center space-x-4 w-full">
@@ -469,6 +518,7 @@ export default function ScanScreen({navigation}) {
 
                         <View className="flex flex-row justify-evenly align-center items-center w-1/5"  >
 
+                            {/* Exposure time control */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onLongPress={()=>setExtendExp(!extendExp)} onPress={()=>setSettings('exp')} className={settings == 'exp' ? "flex flex-col justify-between items-center w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center w-10 pb-1 border-b border-transparent"}>
 
                                   <>
@@ -477,6 +527,7 @@ export default function ScanScreen({navigation}) {
                                     <Text style={{fontSize:9}} className={settings == 'exp' ? "color-white":"color-zinc-400"}>{(expTime).toFixed(0)} ms</Text></>
                       
                             </TouchableHighlight>
+                            {/* Gain control */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={()=>setSettings('gain')} className={settings == 'gain' ? "flex flex-col justify-between items-center  w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center  w-10 pb-1 border-b border-transparent"}>
                               <>
                               <Text style={{fontSize:13}} className={settings == 'gain' ? "color-white font-bold":"color-zinc-400"}>GAIN</Text>
@@ -485,6 +536,7 @@ export default function ScanScreen({navigation}) {
                                     
                             </TouchableHighlight>
                          </View>
+                        {/* Exposure time slider */}
                         {isFocused&& (settings == 'exp' ? <Slider
                           style={{flexGrow:10, height: 30}}
                           className=""
@@ -498,6 +550,7 @@ export default function ScanScreen({navigation}) {
                           onSlidingComplete={(e)=>{updateControls()}}
                           onValueChange={(e)=>setExptime(e)}
                         />:
+                         // Gain slider
                          <Slider
                           style={{flexGrow:10, height: 30}}
                           className=""
@@ -511,6 +564,7 @@ export default function ScanScreen({navigation}) {
                           onValueChange={(e)=>setGain(e)}
                         />)}
                        
+                          {/* Mono/Bin mode toggle and pixel stats display */}
                           <Pressable onPress={toggleMonoBinMode} className="flex flex-row justify-center items-center space-x-2">
                           <View className=" h-9 flex flex-col justify-center w-24">
                           <View className="flex flex-row justify-center items-center space-x-2">
@@ -554,41 +608,13 @@ export default function ScanScreen({navigation}) {
                               </View>}
                                 </View>
                           
-                          </Pressable>
-                         
-                
-            
-                  
-               
-                  
-                  
+                          </Pressable>                
                   </View>
-           
-
- 
                 </View>
-             
-                
-               
-
-      
             </View>)}
-            
-     
-          
-        
         </View>
-    
         </SafeAreaView>
- 
-     
-      
-
-
-
   );
-
-  
 }
 
 const styles = StyleSheet.create({

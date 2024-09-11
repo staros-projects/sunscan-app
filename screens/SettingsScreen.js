@@ -18,41 +18,37 @@ NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
-
+// Define available languages
 const languages = [ // Language List
   { code: 'en', label: 'English' },
   { code: 'fr', label: 'Français' },
- ];
-
+];
 
 export default function SettingsScreen({navigation}) {
   // Get the global variables & functions via context
   const myContext = useContext(AppContext);
   const [apiInput, setAPIInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Load the firmware update ZIP file from assets
   const [assetZipPath, error] = useAssets([require('../assets/sunscan_backend_source.zip')]);
 
+  // Initialize translation hook
   const { t, i18n } = useTranslation();
   const [lang, changeLang] = useState('en');
   const selectedLanguageCode = i18n.language;
 
-
-
+  // Function to update firmware
   const updateFirmware = async () => {
     try {
-          // Chemin vers le fichier ZIP dans les assets
-         
-     
-       
-          // Créer un FormData
-          const formData = new FormData();
-          formData.append('file', {
-            uri: assetZipPath[0].localUri,
-            name: 'sunscan_backend_source.zip',
-            type: 'application/zip',
-          });
+      // Create FormData and append the ZIP file
+      const formData = new FormData();
+      formData.append('file', {
+        uri: assetZipPath[0].localUri,
+        name: 'sunscan_backend_source.zip',
+        type: 'application/zip',
+      });
       
-      // Envoyer le fichier ZIP au serveur FastAPI
+      // Send the ZIP file to the FastAPI server
       const response = await fetch('http://'+myContext.apiURL+"/update", {
         method: 'POST',
         body: formData,
@@ -61,6 +57,7 @@ export default function SettingsScreen({navigation}) {
         },
       });
 
+      // Handle the response
       if (response.ok) {
         const jsonResponse = await response.json();
         Alert.alert(`Success: ${jsonResponse.message}`);
@@ -73,12 +70,13 @@ export default function SettingsScreen({navigation}) {
     }
   }
 
+  // Update apiInput when myContext.apiURL changes
   useEffect(()=>{
     setAPIInput(myContext.apiURL);
-
     console.log(languages)
   }, [myContext.apiURL])
 
+  // Function to save language preference to AsyncStorage
   const saveData = async (code) => {
     try {
       await AsyncStorage.setItem('SUNSCAN_APP::LANGUAGE', code);
@@ -87,110 +85,97 @@ export default function SettingsScreen({navigation}) {
       console.log('err in saving data');
     }
   };
+
   return (
-
     <View className="flex flex-col bg-zinc-800">
-
-        <View className="h-screen">
+      <View className="h-screen">
         <SafeAreaProvider  className="flex flex-col space-y-4 px-8 pt-4">
-        <ScrollView >
-        <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
-        
-              <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>
-              
-
-              <View className="flex flex-row  space-x-4 items-center mb-4">
-                <Text className="text-white w-1/2" >{t('common:language')}</Text>
-                {languages.map((currentLang, i) => {
+          <ScrollView >
+            {/* Settings header */}
+            <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
+            <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>
+            
+            {/* Language selection */}
+            <View className="flex flex-row  space-x-4 items-center mb-4">
+              <Text className="text-white w-1/2" >{t('common:language')}</Text>
+              {languages.map((currentLang, i) => {
                 const selectedLanguage = currentLang.code === selectedLanguageCode;
                 return (
-                <Text
-                  key={i}
-                  onPress={() => {
-                  changeLang(currentLang.code);
-                  i18n.changeLanguage(currentLang.code); // it will change the language through out the app.
-                  saveData(currentLang.code);
-                  }}
-                  style={{
-                  color:  selectedLanguage ?'#fff':'gray',
-                  padding: 10,
-                  fontWeight: selectedLanguage ? 'bold' : 'normal',
-                  }}>
-                  {currentLang.label}
-                </Text>
+                  <Text
+                    key={i}
+                    onPress={() => {
+                      changeLang(currentLang.code);
+                      i18n.changeLanguage(currentLang.code);
+                      saveData(currentLang.code);
+                    }}
+                    style={{
+                      color:  selectedLanguage ?'#fff':'gray',
+                      padding: 10,
+                      fontWeight: selectedLanguage ? 'bold' : 'normal',
+                    }}>
+                    {currentLang.label}
+                  </Text>
                 );
               })}
-             </View>
-
-             <View className="flex flex-row  space-x-4 items-center">
-                <Text className="text-white w-1/2" >{t('common:observer')}</Text>
-                <TextInput className="bg-zinc-700 border border-zinc-500 w-40 text-white rounded-md" style={{padding:10}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
-             </View>
-
-   
-  
-             <View className="flex flex-row  space-x-4 items-center">
-           
             </View>
 
-             <View className="flex flex-row  space-x-4 items-start mt-2  ">
-             <View className="w-1/2">
+            {/* Observer input */}
+            <View className="flex flex-row  space-x-4 items-center">
+              <Text className="text-white w-1/2" >{t('common:observer')}</Text>
+              <TextInput className="bg-zinc-700 border border-zinc-500 w-40 text-white rounded-md" style={{padding:10}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
+            </View>
+
+            {/* Debug mode toggle */}
+            <View className="flex flex-row  space-x-4 items-start mt-2  ">
+              <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:debugMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:debugDescription')}</Text>
               </View>
-                <Switch
-                  value={myContext.debug}
-                  onValueChange={myContext.toggleDebug}
-                />
-             </View>
+              <Switch
+                value={myContext.debug}
+                onValueChange={myContext.toggleDebug}
+              />
+            </View>
 
-             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-             <View className="w-1/2">
+            {/* Offline mode toggle */}
+            <View className="flex flex-row  space-x-4 items-start mt-2 ">
+              <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:offlineMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:offlineDescription')}</Text>
               </View>
-                <Switch
-                 value={myContext.demo}
-                 onValueChange={myContext.toggleDemo}
-               />
-             </View>
-  
-             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-             <View className="w-1/2">
+              <Switch
+                value={myContext.demo}
+                onValueChange={myContext.toggleDemo}
+              />
+            </View>
+
+            {/* Firmware update section */}
+            <View className="flex flex-row  space-x-4 items-start mt-2 ">
+              <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{Application.nativeApplicationVersion}]</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
               </View>
-                <Button title={t('common:update')} className="mx-2" />
-             </View>
+              <Button title={t('common:update')} className="mx-2" />
+            </View>
 
-             <View className="flex flex-row  space-x-4 items-start mt-2">
+            {/* Security settings */}
+            <View className="flex flex-row  space-x-4 items-start mt-2">
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:security')}</Text> 
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:securityDescription')}</Text>
               </View>
-               
-                <Switch
-                  value={myContext.showWatermark}
-                  onValueChange={myContext.toggleShowWaterMark}
-                />
-             </View>
-            
+              <Switch
+                value={myContext.showWatermark}
+                onValueChange={myContext.toggleShowWaterMark}
+              />
+            </View>
 
-             <View className="mt-8"></View>
-             
-           
-              </ScrollView>
-          </SafeAreaProvider>
-
-
-        </View>
-    
+            <View className="mt-8"></View>
+          </ScrollView>
+        </SafeAreaProvider>
       </View>
-
-
+    </View>
   );
-
-  
 }
 
 
