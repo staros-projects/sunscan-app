@@ -1,39 +1,31 @@
 import React, { useCallback, useContext, useState } from 'react';
-
 import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
-
 import md5 from 'md5';
 
+// Set up NativeWind for styling
 NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
-
 import { Image } from 'expo-image';
 import AppContext from '../components/AppContext';
 import ImageZoom from 'react-native-image-pan-zoom';
-
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-
 import * as MediaLibrary from 'expo-media-library';
-
 import { useFocusEffect } from '@react-navigation/native';
 import ScanInfo from '../components/ScanInfo';
 import ProcessScan from '../components/ProcessScan';
 import { useTranslation } from 'react-i18next';
 
-
-
 export default function PictureScreen({ route, navigation }) {
 
+  // Initialize translation hook
   const { t, i18n } = useTranslation();
-
-
+  // State variables for managing the component
   const [currentImage, setcurrentImage] = React.useState("");
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [openSettings, setOpenSettings] = React.useState(false);
@@ -41,11 +33,11 @@ export default function PictureScreen({ route, navigation }) {
   const [displayInfo, setDisplayInfo] = React.useState(false);
   const [displayProcessScan, setDisplayProcessScan] = React.useState(false);
   const [images, setImages] = React.useState([]);
-
-
   const myContext = useContext(AppContext);
   const scan = route.params?.scan
   const forceImageDownload = route.params?.forceImageDownload
+
+  // Format the scan date
   let options = {
     weekday: "long",
     year: "numeric",
@@ -59,6 +51,7 @@ export default function PictureScreen({ route, navigation }) {
   scanDate = scanDate.charAt(0).toUpperCase() + scanDate.slice(1);
 
 
+  // Function to download the current image
   const download = async () => {
     setMessage(t('common:downloading')+'...');
     if (permissionResponse.status !== 'granted') {
@@ -96,6 +89,7 @@ export default function PictureScreen({ route, navigation }) {
 
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
 
+  // Function to get images from the scan
   const getImages = () => {
     results = Object.entries(scan.images).map(([k, data]) => {
       if (data[1] || forceImageDownload) {
@@ -106,6 +100,7 @@ export default function PictureScreen({ route, navigation }) {
     return results.filter(element => element !== null)
   }
 
+  // Function to process the scan
   async function processScan() {
 
     fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
@@ -139,6 +134,7 @@ export default function PictureScreen({ route, navigation }) {
   }
 
 
+  // Effect to run when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       setIsStarted(false);
@@ -153,6 +149,7 @@ export default function PictureScreen({ route, navigation }) {
 
     }, [scan]));
 
+  // Function to open the share dialog
   const openShareDialogAsync = async () => {
 
     const fileDetails = {
@@ -180,6 +177,7 @@ export default function PictureScreen({ route, navigation }) {
     await Sharing.shareAsync(localUrl, fileDetails.shareOptions);
   };
 
+  // Styles for the component
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -193,6 +191,7 @@ export default function PictureScreen({ route, navigation }) {
     },
   });
 
+  // Alert for confirming scan deletion
   const deleteButtonAlert = () =>
     Alert.alert(t('common:warning'), t('common:deleteConfirm'), [
       {
@@ -202,6 +201,7 @@ export default function PictureScreen({ route, navigation }) {
       { text: 'OK', onPress: () => deleteScan() },
     ]);
 
+  // Function to delete the scan
   async function deleteScan() {
     fetch('http://' + myContext.apiURL + "/sunscan/scan/delete/", {
       method: "POST",
@@ -219,6 +219,7 @@ export default function PictureScreen({ route, navigation }) {
       });
   }
 
+  // Function to get logs for the scan
   async function getLogs() {
     fetch('http://' + myContext.apiURL + "/" + scan.path + '/_scan_log.txt', {
       method: "GET",
@@ -236,13 +237,16 @@ export default function PictureScreen({ route, navigation }) {
 
 
 
+  // Render the component
   return (
     scan &&
     <View className="flex flex-col bg-black">
+        {/* Back button */}
         <View className="absolute left-0 z-50 p-4">
           <Pressable className="" onPress={() => navigation.navigate('List')}><Ionicons name="chevron-back" size={28} color="white" /></Pressable>
         </View>
 
+      {/* Message display */}
       {message &&
         <View className="absolute z-40 bottom-0 w-full " style={{ right: 0, top: 10 }}>
 
@@ -260,8 +264,10 @@ export default function PictureScreen({ route, navigation }) {
 
        
             <View className="flex flex-row" >
+              {/* Main image display */}
               <View className="w-5/6  " >
 
+              {/* Action buttons */}
               <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
              
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
@@ -273,6 +279,7 @@ export default function PictureScreen({ route, navigation }) {
   
             </View>
 
+                    {/* Image zoom component */}
                     <ImageZoom cropWidth={Dimensions.get('window').width-120}
                   cropHeight={Dimensions.get('window').height}
                   imageWidth={400}
@@ -283,8 +290,10 @@ export default function PictureScreen({ route, navigation }) {
                     contentFit='contain'
                   />
                 </ImageZoom>
+                 {/* Image name display */}
                  <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text> 
               </View>
+              {/* Thumbnail scrollview */}
               <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >
               <ScrollView >
                 {images && images.map((i) => {
@@ -316,6 +325,7 @@ export default function PictureScreen({ route, navigation }) {
 
      
 
+            {/* Process scan and scan info components */}
             <ProcessScan processMethod={processScan} isStarted={isStarted} setIsStarted={setIsStarted}  isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
             <ScanInfo scan={scan} onClose={()=>setDisplayInfo(false)} logs={logs} currentImage={currentImage[0]} isVisible={displayInfo} />
 
