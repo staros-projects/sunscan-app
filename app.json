@@ -16,7 +16,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "requireFullScreen": true
+      "requireFullScreen": true,
+      "bundleIdentifier": "com.staros.sunscan-app"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,12 +29,7 @@
         "RECEIVE_BOOT_COMPLETED",
         "ACCESS_NETWORK_STATE"
       ],
-      "package": "com.staros.sunscan",
-      "splash": {
-        "image": "./assets/splash.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#000"
-      }
+      "package": "com.staros.sunscan"
     },
     "web": {
       "favicon": "./assets/favicon.png",

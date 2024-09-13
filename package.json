@@ -10,6 +10,9 @@
     "build-prod": "eas build --platform android --profile production --local",
     "build-dev": "eas build --platform android --profile development --local",
     "build-prev": "eas build --platform android --profile preview --local",
+    "build-prod-android": "eas build --platform android",
+    "build-prod-ios": "eas build --platform ios",
+    "submit-prod-ios": "eas submit --platform ios",
     "build-prev-ios": "eas build --platform ios --profile preview --local"
   },
   "dependencies": {
