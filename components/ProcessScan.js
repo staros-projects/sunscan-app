@@ -1,14 +1,12 @@
 import { Modal, View, Text, Pressable, StyleSheet, Switch } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useContext, useState } from 'react';
-import AppContext from './AppContext';
+
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Loader from '../components/Loader';
 
 // Component for processing scans
 export default function ProcessScan({ processMethod, isStarted, setIsStarted, isVisible, onClose }) {
-    const myContext = useContext(AppContext);
- 
+
     // Styles for the component
     const styles = StyleSheet.create({
         centeredView: {
@@ -41,7 +39,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
     
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible}>
+    <Modal animationType="slide" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
         <View style={styles.centeredView}>
             <View style={styles.modalView} className="flex flex-col justify-center items-center">
                 {/* Close button */}

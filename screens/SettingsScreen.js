@@ -88,7 +88,7 @@ export default function SettingsScreen({navigation}) {
 
   return (
     <View className="flex flex-col bg-zinc-800">
-      <View className="h-screen">
+      <View className="h-full">
         <SafeAreaProvider  className="flex flex-col space-y-4 px-8 pt-4">
           <ScrollView >
             {/* Settings header */}

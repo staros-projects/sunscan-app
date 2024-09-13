@@ -16,9 +16,9 @@ import Status from '../components/Status';
 export default function HomeScreen({navigation}) {
   return (
     // Main container with dark background
-    <View className="flex flex-col bg-zinc-900 h-screen ">
+    <View className="flex flex-col bg-zinc-900 h-full">
       {/* Background image container */}
-      <ImageBackground className="flex flex-col h-screen items-center" source={require("../assets/bg.png")}>
+      <ImageBackground className="flex flex-col h-full items-center" source={require("../assets/bg.png")}>
         {/* Content wrapper */}
         <View  className="flex flex-col justify-between items-center">
           {/* Inner content container */}

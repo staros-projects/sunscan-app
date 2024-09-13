@@ -245,39 +245,25 @@ export default function PictureScreen({ route, navigation }) {
         <View className="absolute left-0 z-50 p-4">
           <Pressable className="" onPress={() => navigation.navigate('List')}><Ionicons name="chevron-back" size={28} color="white" /></Pressable>
         </View>
-
       {/* Message display */}
       {message &&
         <View className="absolute z-40 bottom-0 w-full " style={{ right: 0, top: 10 }}>
-
           <Text className="mx-auto text-white text-xs text-center">{message}</Text>
         </View>}
-    
-
-      <View className="h-screen ">
-
-
-
+      <View className="h-full ">
         <SafeAreaProvider className="flex flex-col justify-between">
-
-
-
-       
             <View className="flex flex-row" >
               {/* Main image display */}
               <View className="w-5/6  " >
 
               {/* Action buttons */}
               <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
-             
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => openShareDialogAsync()}><Ionicons name="share-social" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
-         
-  
-            </View>
+              </View>
 
                     {/* Image zoom component */}
                     <ImageZoom cropWidth={Dimensions.get('window').width-120}

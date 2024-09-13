@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 // Component for displaying detailed scan information in a modal
 export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const myContext = useContext(AppContext);
   const [hideScrollToEnd, setHideScrollToEnd] = useState(false);
   const [hideScrollToTop, setHideScrollToTop] = useState(true);
@@ -69,7 +69,7 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
   }
 
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible}>
+    <Modal animationType="slide" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
       <View style={styles.centeredView}>
         <View style={styles.modalView} className="flex flex-col justify-center items-center">
           {/* Close button */}
