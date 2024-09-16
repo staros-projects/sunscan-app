@@ -45,6 +45,9 @@ export default {
     "norm": "Norm",
     "adjust": "Exp",
     "grid": "Grille",
+    "advancedProcessing":"Calcul des images Continuum + Doppler",
+    "startProcessing": "Lancer le traitement",
+    "pleaseWait": "Le traitement peut prendre plusieurs minutes...",
     // scan info
     "typeImage": "Type d'image : ",
     "acquisitionTime": "Heure d'acquisition : ",

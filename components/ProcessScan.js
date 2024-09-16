@@ -3,6 +3,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Loader from '../components/Loader';
+import { t } from 'i18next';
 
 // Component for processing scans
 export default function ProcessScan({ processMethod, isStarted, setIsStarted, isVisible, onClose }) {
@@ -50,7 +51,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 </View>
                 
                 {/* Title */}
-                <Text className="mt-4 text-white font-bold">Calcul des images Continuum + Doppler</Text>
+                <Text className="mt-4 text-white font-bold">{t('common:advancedProcessing')}</Text>
                 
                 {/* Start processing button or loading indicator */}
                 {!isStarted ? (
@@ -59,7 +60,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                         onPress={() => {processMethod(); setIsStarted(true);}}
                     >
                         <Ionicons name="caret-forward-outline" size={18} color="white" />
-                        <Text className="text-white text-xs">Lancer le traitement</Text>
+                        <Text className="text-white text-xs">{t('common:startProcessing')}</Text>
                     </Pressable>
                 ) : (
                     <View className="mt-4 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex justify-center items-center">
@@ -68,7 +69,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 )}
                 
                 {/* Processing time information */}
-                <Text className="text-xs my-2 text-gray-200 italic">Le traitement peut prendre plusieurs minutes...</Text>
+                <Text className="text-xs my-2 text-gray-200 italic">{t('common:pleaseWait')}</Text>
             </View>
         </View>
     </Modal>

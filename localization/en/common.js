@@ -45,6 +45,9 @@ export default {
     "norm": "Norm",
     "adjust": "Adjust",
     "grid": "Grid",
+    "advancedProcessing":"Continuum + Doppler image processing",
+    "startProcessing": "Start processing",
+    "pleaseWait": "The processing may take several minutes...",
     // scan info
     "typeImage": "Type of image: ",
     "acquisitionTime": "Acquisition time: ",
