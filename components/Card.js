@@ -35,8 +35,8 @@ export default function Card({scan, callback}) {
     }).then(response => response.json())
     .then(json => {
       // Clear image cache and set processing state
-      Image.clearMemoryCache();
-      Image.clearDiskCache();
+      //Image.clearMemoryCache();
+      //Image.clearDiskCache();
       setIsStarted(true);
      
       // Subscribe to WebSocket for scan process updates
@@ -54,33 +54,6 @@ export default function Card({scan, callback}) {
       setIsStarted(false);
     });
   }
-
-  // Function to delete the scan
-  async function deleteScan() {
-    fetch('http://'+myContext.apiURL+"/sunscan/scan/delete/",  {
-      method: "POST", 
-      headers: {
-        'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({filename:scan.path, autocrop:true, dopcont:false, autocrop_size:1300}),
-    }).then(response => response.json())
-    .then(json => {
-      callback()
-    })
-    .catch(error => {
-      console.error(error);
-    });
-  }
-
-  // Alert dialog for delete confirmation
-  const deleteButtonAlert = () =>
-    Alert.alert('Attention', 'Etes vous certain de vouloir supprimer ce scan ?', [
-      {
-        text: 'Annuler',
-        style: 'cancel',
-      },
-      {text: 'OK', onPress: () => deleteScan()},
-  ]);
 
   // Date formatting options
   let options = {
@@ -105,7 +78,7 @@ export default function Card({scan, callback}) {
             <View style={{height:squareSize}}>
               { scanStatus == "completed" ? 
                 // Display completed scan image
-                <Pressable style={{width:squareSize}} className="mx-auto rounded-lg grow flex items-center justify-center flex-none z-10"  onPress={() =>navigation.navigate('Picture',{scan:scan, forceImageDownload:true})}  >
+                <Pressable style={{width:squareSize}} className="mx-auto rounded-lg grow flex items-center justify-center flex-none z-10"  onPress={() =>navigation.navigate('Picture',{scan:scan})}  >
                   <View  sytle={{height:squareSize}}>
                     <Image
                         style={{width:squareSize, height:squareSize}}
@@ -131,7 +104,7 @@ export default function Card({scan, callback}) {
             {/* Footer with date and options */}
             <View style={{height:50}} className="bg-zinc-900 w-full rounded-b-lg p-2 flex flex-row justify-between items-center">     
                 <Text className="text-white font-bold text-xs">{scanDate}</Text>
-                <Pressable  onPress={() =>navigation.navigate('Picture',{scan:scan, forceImageDownload:true})}  >
+                <Pressable  onPress={() =>navigation.navigate('Picture',{scan:scan})}  >
                   <Ionicons name="ellipsis-vertical" size={20} color="white" />
                 </Pressable>
               </View>

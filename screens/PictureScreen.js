@@ -35,7 +35,6 @@ export default function PictureScreen({ route, navigation }) {
   const [images, setImages] = React.useState([]);
   const myContext = useContext(AppContext);
   const scan = route.params?.scan
-  const forceImageDownload = route.params?.forceImageDownload
 
   // Format the scan date
   let options = {
@@ -90,10 +89,11 @@ export default function PictureScreen({ route, navigation }) {
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
 
   // Function to get images from the scan
-  const getImages = () => {
+  const getImages = (forceDownload) => {
     results = Object.entries(scan.images).map(([k, data]) => {
-      if (data[1] || forceImageDownload) {
-        return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?p=" + encodeURI(scan.path)]
+      if (data[1] || forceDownload) {
+        console.log('load '+"http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?ts=" + encodeURI(data[2]))
+        return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?ts=" + encodeURI(data[2])]
       }
       return null
     })
@@ -112,8 +112,8 @@ export default function PictureScreen({ route, navigation }) {
     }).then(response => response.json())
       .then(json => {
 
-        Image.clearMemoryCache();
-        Image.clearDiskCache();
+        //Image.clearMemoryCache();
+        //Image.clearDiskCache();
         setIsStarted(true);
 
 
@@ -125,7 +125,7 @@ export default function PictureScreen({ route, navigation }) {
           setScanStatus(message[1])
           unsubscribe('scan_process_' + key);
           setImages([]);
-          setImages(getImages());
+          setImages(getImages(true));
         });
       })
       .catch(error => {
@@ -139,8 +139,8 @@ export default function PictureScreen({ route, navigation }) {
     useCallback(() => {
       setIsStarted(false);
       if (scan) {
-        setImages(getImages())
-        setcurrentImage(getImages()[0])
+        setImages(getImages(false))
+        setcurrentImage(getImages(false)[0])
         getLogs();
       }
       else {
@@ -257,13 +257,13 @@ export default function PictureScreen({ route, navigation }) {
               <View className="w-5/6  " >
 
               {/* Action buttons */}
-              <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
+              {myContext.sunscanIsConnected &&<View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => openShareDialogAsync()}><Ionicons name="share-social" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>
                 <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
-              </View>
+              </View>}
 
                     {/* Image zoom component */}
                     <ImageZoom cropWidth={Dimensions.get('window').width-120}

@@ -159,6 +159,15 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    const toggleExpMode = async () => {
+  
+      const newExpMode = (expMode+1)%3;
+      setExpMode(newExpMode)
+      setExptime(newExpMode == 0 ? 130.0:newExpMode == 1 ? 15.0:200.0);
+
+      
+    }
+
     // State variables for timer functionality
     const [time, setTime] = React.useState(0);
     const timerRef = React.useRef(time);
@@ -166,7 +175,7 @@ export default function ScanScreen({navigation}) {
 
     // State variables for various camera settings
     const [rec, setRec] = React.useState(false);
-    const [extendExp, setExtendExp] = React.useState(false);
+    const [expMode, setExpMode] = React.useState(false);
     const [crop, setCrop] = React.useState(false);
     const [binMode, setBinMode] = React.useState(false);
     const [colorMode, setColorMode] = React.useState(false);
@@ -395,12 +404,12 @@ export default function ScanScreen({navigation}) {
      
             <View style={{ left:0, top:0}} className=" flex flex-row mx-auto justify-center items-center rounded-lg px-2 py-1 bg-zinc-600/70 ">
                           {/* Snapshot button */}
-                          <TouchableHighlight underlayColor="rgb(113 113 122)"  onPress={()=>takeSnapShot() } className="flex flex-col justify-center items-center p-1 mr-3 ">
+                          {myContext.debug && <TouchableHighlight underlayColor="rgb(113 113 122)"  onPress={()=>takeSnapShot() } className="flex flex-col justify-center items-center p-1 mr-3 ">
                               <View className="flex flex-col items-center space-y-1">
                               <Ionicons name="camera" size={18} color="white"  />
                               <Text style={{fontSize:10,color:"#fff"}}>{t('common:snapShot')}</Text>
                             </View>
-                          </TouchableHighlight>
+                          </TouchableHighlight>}
                           {/* Color mode toggle */}
                           <TouchableHighlight underlayColor="rgb(113 113 122)"   onPress={()=>toggleColorMode() } className="flex flex-col justify-center items-center p-1 mr-3">
                             <View className="flex flex-col items-center space-y-1">
@@ -519,13 +528,13 @@ export default function ScanScreen({navigation}) {
                         <View className="flex flex-row justify-evenly align-center items-center w-1/5"  >
 
                             {/* Exposure time control */}
-                            <TouchableHighlight underlayColor="rgb(113 113 122)" onLongPress={()=>setExtendExp(!extendExp)} onPress={()=>setSettings('exp')} className={settings == 'exp' ? "flex flex-col justify-between items-center w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center w-10 pb-1 border-b border-transparent"}>
+                            <TouchableHighlight underlayColor="rgb(113 113 122)" onLongPress={()=>toggleExpMode()} onPress={()=>setSettings('exp')} className={settings == 'exp' ? "flex flex-col justify-between items-center w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center w-10 pb-1 border-b border-transparent"}>
 
                                   <>
-                                 {extendExp && <View  className={settings == 'exp' ? "absolute self-start w-1 h-1 rounded-full bg-white":"absolute self-start w-1 h-1 rounded-full bg-zinc-400"} ></View>}
-                                  <Text style={{fontSize:13}} className={settings == 'exp' ? "color-white font-bold":"color-zinc-400"}>EXP</Text>
-                                    <Text style={{fontSize:9}} className={settings == 'exp' ? "color-white":"color-zinc-400"}>{(expTime).toFixed(0)} ms</Text></>
-                      
+                                 {expMode > 0  && <View style={{right:-8,top:-8}} className={settings == 'exp' ? "z-10 absolute self-start bg-red-600 rounded-full font-center flex flex-row h-4 w-4 justify-center items-center":"z-10 absolute self-start rounded-lg font-center flex flex-row h-4 w-4 justify-center items-center bg-zinc-500"} ><Text style={{fontSize:8}} className="text-white text-center ">{expMode == 1 ? 'SE':'LE'}</Text></View>}
+                                 <Text style={{fontSize:13}} className={settings == 'exp' ? "color-white font-bold":"color-zinc-400"}>EXP</Text>
+                                    <Text style={{fontSize:9}} className={settings == 'exp' ? "color-white":"color-zinc-400"}>{expMode == 0 ? (expTime).toFixed(0)+' m' : expMode == 1 ? (expTime).toFixed(1)+' m':(expTime/1000).toFixed(1)+' '}s</Text>
+                      </>
                             </TouchableHighlight>
                             {/* Gain control */}
                             <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={()=>setSettings('gain')} className={settings == 'gain' ? "flex flex-col justify-between items-center  w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center  w-10 pb-1 border-b border-transparent"}>
@@ -540,8 +549,8 @@ export default function ScanScreen({navigation}) {
                         {isFocused&& (settings == 'exp' ? <Slider
                           style={{flexGrow:10, height: 30}}
                           className=""
-                          minimumValue={extendExp ? 1000:10}
-                          maximumValue={extendExp ? 30000:200}
+                          minimumValue={expMode == 0 ? 20: expMode == 1 ? 0.1:200}
+                          maximumValue={expMode == 0? 160: expMode == 1 ? 20:30000}
                           value={expTime}
                           thumbTintColor="white"
                           minimumTrackTintColor="gray"
@@ -568,43 +577,43 @@ export default function ScanScreen({navigation}) {
                           <Pressable onPress={toggleMonoBinMode} className="flex flex-row justify-center items-center space-x-2">
                           <View className=" h-9 flex flex-col justify-center w-24">
                           <View className="flex flex-row justify-center items-center space-x-2">
-                          <Text className='text-center text-white font-bold' style={{fontSize:11}}>Max ADU</Text><Text className='text-center text-white ' style={{fontSize:9}}>(12-bit)</Text>
+                          <Text className='text-center text-white font-bold mb-1' style={{fontSize:11}}>Max ADU</Text><Text className='text-center text-white mb-1 ' style={{fontSize:9}}>(12-bit)</Text>
                             </View>
                 
                               {monoBinMode == 0 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <Text className='text-red-500 text-xs' style={{fontSize:11}}>{pixelStats.r}</Text>
-                              <Text className='text-green-500 text-xs' style={{fontSize:11}}>{pixelStats.g}</Text>
-                              <Text className='text-blue-500 text-xs' style={{fontSize:11}}>{pixelStats.b}</Text>
+                              <Text className='bg-red-500 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                              <Text className='bg-green-600 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                              <Text className='bg-blue-500 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                               </View>}
                               {monoBinMode == 1 && <View className="flex flex-row justify-center items-center space-x-2">
-                                <Text className='text-red-500 text-xs font-bold' style={{fontSize:11}}>{pixelStats.r}</Text>
-                              <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.g}</Text>
-                              <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.b}</Text>
+                                <Text className='bg-red-500 text-xs font-bold  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                              <Text className='bg-gray-500 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                              <Text className='bg-gray-500 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                               </View>}
                               {monoBinMode == 2 && <View className="flex flex-row justify-center items-center space-x-2">
-                                <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.r}</Text>
-                              <Text className='text-green-500 text-xs font-bold' style={{fontSize:11}}>{pixelStats.g}</Text>
-                              <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.b}</Text>
+                                <Text className='bg-gray-600 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                              <Text className='bg-green-600 text-xs font-bold  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                              <Text className='bg-gray-500 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                               </View>}
                               {monoBinMode == 3 && <View className="flex flex-row justify-center items-center space-x-2">
-                                <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.r}</Text>
-                              <Text className='text-gray-500 text-xs' style={{fontSize:11}}>{pixelStats.g}</Text>
-                              <Text className='text-blue-500 text-xs font-bold' style={{fontSize:11}}>{pixelStats.b}</Text>
+                                <Text className='bg-gray-500 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                              <Text className='bg-gray-500 text-xs  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                              <Text className='bg-blue-500 text-xs font-bold  rounded text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                               </View>}
 
                               </View>
                               <View>
                               { monoBinMode == 0 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.r <4095 && pixelStats.g <4095 && pixelStats.b <4095 ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.r <4095 && pixelStats.g <4095 && pixelStats.b <4095 && (pixelStats.r >3000 || pixelStats.g >3000 || pixelStats.b >3000) ? "face-smile":"face-frown-open"} size={20} color="white"   />
                               </View>}
                               { monoBinMode == 1 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.r <4095  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.r <4095 && pixelStats.r >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                               { monoBinMode == 2 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.g <4095  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.g <4095 && pixelStats.g >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                               { monoBinMode == 3 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.b <4095  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.b <4095 && pixelStats.b >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                                 </View>
                           

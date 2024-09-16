@@ -120,10 +120,10 @@ export default function SettingsScreen({navigation}) {
             </View>
 
             {/* Observer input */}
-            <View className="flex flex-row  space-x-4 items-center">
+            {/* <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
               <TextInput className="bg-zinc-700 border border-zinc-500 w-40 text-white rounded-md" style={{padding:10}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
-            </View>
+            </View> */}
 
             {/* Debug mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2  ">
@@ -156,18 +156,6 @@ export default function SettingsScreen({navigation}) {
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
               </View>
               <Button title={t('common:update')} className="mx-2" />
-            </View>
-
-            {/* Security settings */}
-            <View className="flex flex-row  space-x-4 items-start mt-2">
-              <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:security')}</Text> 
-                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:securityDescription')}</Text>
-              </View>
-              <Switch
-                value={myContext.showWatermark}
-                onValueChange={myContext.toggleShowWaterMark}
-              />
             </View>
 
             <View className="mt-8"></View>
