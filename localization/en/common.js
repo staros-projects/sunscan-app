@@ -32,6 +32,8 @@ export default {
     "sunscanIP": "SUNSCAN IP",
     "sunscanIPDescription": "Hotspot mode disabled, please enter the IP of your SUNSCAN here.",
     "update": "Update",
+    "clearImageCache": "Clear image cache",
+    "clearCacheDescription": "Clears the image cache to free up space.",
     // picture screen
     "downloaded": "Downloaded",
     "downloading": "Downloading",

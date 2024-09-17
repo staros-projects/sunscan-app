@@ -1,5 +1,5 @@
 
-import React, { useContext, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
 import {  Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -13,6 +13,8 @@ import { useAssets } from 'expo-asset';
 import { useTranslation } from 'react-i18next';
 import { t } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
+import { useFocusEffect } from '@react-navigation/native';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -29,6 +31,7 @@ export default function SettingsScreen({navigation}) {
   const myContext = useContext(AppContext);
   const [apiInput, setAPIInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [cacheIsCleared, setCacheIsCleared] = useState(false);
   // Load the firmware update ZIP file from assets
   const [assetZipPath, error] = useAssets([require('../assets/sunscan_backend_source.zip')]);
 
@@ -74,7 +77,13 @@ export default function SettingsScreen({navigation}) {
   useEffect(()=>{
     setAPIInput(myContext.apiURL);
     console.log(languages)
-  }, [myContext.apiURL])
+  }, [myContext.apiURL]);
+
+  // Effect to fetch stats when the component gains focus
+  useFocusEffect(
+    useCallback(() => {
+    setCacheIsCleared(false);
+  }, []));
 
   // Function to save language preference to AsyncStorage
   const saveData = async (code) => {
@@ -84,6 +93,13 @@ export default function SettingsScreen({navigation}) {
     } catch {
       console.log('err in saving data');
     }
+  };
+
+  const clearImageCache = async () => {
+      Image.clearMemoryCache();
+      Image.clearDiskCache();
+      setCacheIsCleared(true);
+
   };
 
   return (
@@ -153,9 +169,17 @@ export default function SettingsScreen({navigation}) {
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{Application.nativeApplicationVersion}]</Text>
-                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
+                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
               </View>
               <Button title={t('common:update')} className="mx-2" />
+            </View>
+
+            <View className="flex flex-row  space-x-4 items-start mt-2 ">
+              <View className="w-1/2">
+                <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
+                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
+              </View>
+              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
             </View>
 
             <View className="mt-8"></View>

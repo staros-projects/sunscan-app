@@ -34,9 +34,6 @@ export default function Card({scan, callback}) {
       body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1000}),
     }).then(response => response.json())
     .then(json => {
-      // Clear image cache and set processing state
-      //Image.clearMemoryCache();
-      //Image.clearDiskCache();
       setIsStarted(true);
      
       // Subscribe to WebSocket for scan process updates
