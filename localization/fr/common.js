@@ -34,6 +34,8 @@ export default {
     "update": "Mise à jour",
     "clearImageCache": "Vider le cache d'images",
     "clearCacheDescription": "Vide le cache d'images pour libérer de l'espace",
+    "updateFirmwareconfirm": "Etes vous certain de vouloir mettre à jour le firmware ?",
+    "upToDate": "Vous avez la dernière version",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",

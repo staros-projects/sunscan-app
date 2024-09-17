@@ -42,35 +42,44 @@ export default function SettingsScreen({navigation}) {
 
   // Function to update firmware
   const updateFirmware = async () => {
-    try {
-      // Create FormData and append the ZIP file
-      const formData = new FormData();
-      formData.append('file', {
-        uri: assetZipPath[0].localUri,
-        name: 'sunscan_backend_source.zip',
-        type: 'application/zip',
-      });
-      
-      // Send the ZIP file to the FastAPI server
-      const response = await fetch('http://'+myContext.apiURL+"/update", {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
 
-      // Handle the response
-      if (response.ok) {
-        const jsonResponse = await response.json();
-        Alert.alert(`Success: ${jsonResponse.message}`);
-      } else {
-        const jsonResponse = await response.json();
-        Alert.alert(`Failed: ${jsonResponse.detail}`);
-      }
-    } catch (error) {
-      Alert.alert(`Error: ${error.message}`);
-    }
+    Alert.alert(t('common:warning'), t('common:updateFirmwareconfirm'), [
+      {
+        text: 'Annuler',
+        style: 'cancel',
+      },
+      { text: 'OK', onPress: async () => {
+
+              try {
+                // Create FormData and append the ZIP file
+                const formData = new FormData();
+                formData.append('file', {
+                  uri: assetZipPath[0].localUri,
+                  name: 'sunscan_backend_source.zip',
+                  type: 'application/zip',
+                });
+                
+                // Send the ZIP file to the FastAPI server
+                const response = await fetch('http://'+myContext.apiURL+"/update", {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                  },
+                });
+
+                // Handle the response
+                if (response.ok) {
+                  const jsonResponse = await response.json();
+                  Alert.alert(`Success: ${jsonResponse.message}`);
+                } else {
+                  const jsonResponse = await response.json();
+                  Alert.alert(`Failed: ${jsonResponse.detail}`);
+                }
+              } catch (error) {
+                Alert.alert(`Error: ${error.message}`);
+              }
+            }}]);
   }
 
   // Update apiInput when myContext.apiURL changes
@@ -171,7 +180,9 @@ export default function SettingsScreen({navigation}) {
                 <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{Application.nativeApplicationVersion}]</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
               </View>
-              <Button title={t('common:update')} className="mx-2" />
+              {parseInt(myContext.backendApiVersion.replaceAll('.','')) < parseInt(Application.nativeApplicationVersion.replaceAll('.','')) || myContext.debug ?
+              <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
+              <Text className="text-white">{t('common:upToDate')}</Text>}
             </View>
 
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
