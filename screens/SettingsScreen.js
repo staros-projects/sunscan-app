@@ -104,10 +104,23 @@ export default function SettingsScreen({navigation}) {
     }
   };
 
+
+
   const clearImageCache = async () => {
-      Image.clearMemoryCache();
-      Image.clearDiskCache();
-      setCacheIsCleared(true);
+  
+      Alert.alert(t('common:warning'), t('common:clearCacheConfirm'), [
+        {
+          text: t('common:cancel'),
+          style: 'cancel',
+        },
+        { text: 'OK', onPress: async () => {
+  
+          Image.clearMemoryCache();
+          Image.clearDiskCache();
+          setCacheIsCleared(true);
+              }}]);
+
+      
 
   };
 

@@ -1,6 +1,7 @@
 export default {
     "language": "Langue",
     "locale": "fr-FR",
+    "cancel": "Annuler",
     // home
     "connectCamera" : "Connecter la caméra",
     "disconnectCamera" : "Déconnecter la caméra",
@@ -36,6 +37,7 @@ export default {
     "clearCacheDescription": "Vide le cache d'images pour libérer de l'espace",
     "updateFirmwareconfirm": "Etes vous certain de vouloir mettre à jour le firmware ?",
     "upToDate": "Vous avez la dernière version",
+    "clearCacheConfirm": "Voulez-vous vraiment vider le cache d'images ?",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",

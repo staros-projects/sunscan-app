@@ -31,7 +31,7 @@ export default function Card({scan, callback}) {
       headers: {
         'Content-Type': 'application/json'
     },
-      body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1200}),
+      body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1100}),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);

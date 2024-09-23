@@ -83,17 +83,49 @@ export default function PictureScreen({ route, navigation }) {
   const [dopcont, setDopCont] = useState(true);
   const [autocrop, setAutoCrop] = useState(true);
   const [scanStatus, setScanStatus] = useState(scan?.status);
+  const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState("");
 
 
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
 
+
+  // Function to fetch scans from the API
+  async function getScanDetails(scan) {
+    
+    setIsLoading(true);
+    fetch('http://'+myContext.apiURL+"/sunscan/scan", {
+      method: "POST", 
+      headers: {
+        'Content-Type': 'application/json'
+    },
+      body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1100}),
+    }).then(response => response.json())
+    .then(json => {
+      setImages([]);
+      setcurrentImage([]);
+      console.log(json)
+      const img = getImages(json.images, false);
+      if (img.length) {
+        setImages(img)
+        setcurrentImage(img[0])
+        getLogs();
+      }
+
+      setIsLoading(false);
+    })
+    .catch(error => {
+      console.error(error);
+      setIsLoading(false);
+    });
+  }
+
   // Function to get images from the scan
-  const getImages = (forceDownload) => {
-    results = Object.entries(scan.images).map(([k, data]) => {
+  const getImages = (images, forceDownload) => {
+    results = Object.entries(images).map(([k, data]) => {
       if (data[1] || forceDownload) {
-        console.log('load '+"http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg"); 
-        return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg"]
+        console.log('load '+"http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]); 
+        return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]]
       }
       return null
     })
@@ -103,12 +135,14 @@ export default function PictureScreen({ route, navigation }) {
   // Function to process the scan
   async function processScan() {
 
+
+
     fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.ser, autocrop: autocrop, autocrop_size: 1200, dopcont: dopcont }),
+      body: JSON.stringify({ filename: scan.ser, autocrop: autocrop, autocrop_size: 1100, dopcont: dopcont }),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);
@@ -121,8 +155,7 @@ export default function PictureScreen({ route, navigation }) {
           setDisplayProcessScan(false);
           setScanStatus(message[1])
           unsubscribe('scan_process_' + key);
-          setImages([]);
-          setImages(getImages(true));
+          getScanDetails(scan);
         });
       })
       .catch(error => {
@@ -136,14 +169,9 @@ export default function PictureScreen({ route, navigation }) {
     useCallback(() => {
       setIsStarted(false);
       setImages([]);
-      setcurrentImage([])
+      setcurrentImage([]);
       if (scan) {
-        const img = getImages(false);
-        if (img.length) {
-          setImages(img)
-          setcurrentImage(img[0])
-          getLogs();
-        }
+       getScanDetails(scan);
       }
 
     }, [scan]));
@@ -207,7 +235,7 @@ export default function PictureScreen({ route, navigation }) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.path, autocrop: true, dopcont: false, autocrop_size: 1200 }),
+      body: JSON.stringify({ filename: scan.path, autocrop: true, dopcont: false, autocrop_size: 1100 }),
     }).then(response => response.json())
       .then(json => {
         navigation.navigate('List');
@@ -244,6 +272,7 @@ export default function PictureScreen({ route, navigation }) {
         <View className="absolute left-0 z-50 p-4">
           <Pressable className="" onPress={() => navigation.navigate('List')}><Ionicons name="chevron-back" size={28} color="white" /></Pressable>
         </View>
+      
       {/* Message display */}
       {message &&
         <View className="absolute z-40 bottom-0 w-full " style={{ right: 0, top: 10 }}>
