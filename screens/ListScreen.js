@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Text, FlatList, SafeAreaView } from 'react-native';
+import { View, ScrollView, Text, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 
@@ -17,13 +17,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Component to render individual scan items
 const Item = (props) => {
-  return (<View className="w-1/2 p-2"><Card scan={props.scan} callback={props.callback} /></View>);
+  return (<View className="w-1/2 p-2"><Card scan={props.scan}  /></View>);
 }
 
 export default function ListScreen({navigation}) {
   // State variables
   const [isLoading, setIsLoading] = useState(false);
-  const [scans, setScans] = useState(null);
+  const [scans, setScans] = useState([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const size = 20; // Nombre d'éléments par page
   const [selectedItems, setSelectedItems] = useState([]);
 
   const myContext = useContext(AppContext);
@@ -32,11 +35,12 @@ export default function ListScreen({navigation}) {
   // Function to fetch scans from the API
   async function getScans() {
     setIsLoading(true);
-    fetch('http://'+myContext.apiURL+"/sunscan/scans").then(response => response.json())
+    fetch('http://'+myContext.apiURL+`/sunscan/scans?page=${page}&size=${size}`).then(response => response.json())
     .then(json => {
       setIsLoading(false);
-      setScans(json);
-      AsyncStorage.setItem('SUNSCAN_APP::SCANS', JSON.stringify(json));
+      setScans(prevFiles => [...prevFiles, ...json.scans]);
+      setTotal(json.total);
+      AsyncStorage.setItem('SUNSCAN_APP::SCANS', JSON.stringify(json.scans));
     })
     .catch(error => {
       console.error(error);
@@ -44,19 +48,33 @@ export default function ListScreen({navigation}) {
     });
   }
 
+  const loadMoreFiles = () => {
+    if (scans.length < total) {
+      setPage(prevPage => prevPage + 1);
+    }
+  };
+
   // Effect to load scans when the screen is focused
   useFocusEffect(
     React.useCallback(() => { 
       // Load scans from AsyncStorage if available
-      AsyncStorage.getItem('SUNSCAN_APP::SCANS').then((d) => {
-        if(d)  {
-          setScans(JSON.parse(d));
-        }
-      });  
-      // Fetch fresh scans from the API
-      getScans(); 
+      if (!myContext.sunscanIsConnected) {
+        AsyncStorage.getItem('SUNSCAN_APP::SCANS').then((d) => {
+          if(d)  {
+            setScans(JSON.parse(d));
+          }
+        });  
+      }
+      else {
+        setScans([]);
+        setPage(1);
+      }
     },[isFocused])
   );
+
+  useEffect(() => {
+    getScans();
+  }, [page]);
 
   // Function to handle long press on items (for selection)
   const handleLongPress = (id) => {
@@ -76,13 +94,17 @@ export default function ListScreen({navigation}) {
           {scans && <FlatList
             data={scans}
             numColumns={2}
-            renderItem={({item}) => <Item scan={item} callback={getScans} />}
+            renderItem={({item}) => <Item scan={item} />}
             contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
-            keyExtractor={scan => scan.ser}
+            keyExtractor={(item, index) => index.toString()}
             columnWrapperStyle={{ flex: 1, justifyContent: "center" }}
             ListHeaderComponent={<View className="mt-4"></View>}
-            onRefresh={getScans}
             refreshing={isLoading}
+            onRefresh={()=>{setScans([]); setPage(1); }}
+            onEndReached={loadMoreFiles}
+            initialNumToRender={1}
+            onEndReachedThreshold={2}
+            ListFooterComponent={() => isLoading && <ActivityIndicator size="large" />}
           />}
         </View>
       </View>

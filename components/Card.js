@@ -11,7 +11,7 @@ import md5 from 'md5';
 import { useTranslation } from 'react-i18next';
 
 // Main Card component for displaying scan information
-export default function Card({scan, callback}) {
+export default function Card({scan}) {
   const { t, i18n } = useTranslation();
   const myContext = useContext(AppContext);
 
