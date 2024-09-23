@@ -581,7 +581,7 @@ export default function ScanScreen({navigation}) {
                             </View>
                 
                               {monoBinMode == 0 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <Text className='bg-red-500 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                              <Text className='bg-red-600 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
                               <Text className='bg-green-600 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
                               <Text className='bg-blue-500 text-xs rounded text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                               </View>}

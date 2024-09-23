@@ -108,7 +108,7 @@ export default function PictureScreen({ route, navigation }) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.ser, autocrop: autocrop, autocrop_size: 1000, dopcont: dopcont }),
+      body: JSON.stringify({ filename: scan.ser, autocrop: autocrop, autocrop_size: 1200, dopcont: dopcont }),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);
@@ -207,7 +207,7 @@ export default function PictureScreen({ route, navigation }) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.path, autocrop: true, dopcont: false, autocrop_size: 1300 }),
+      body: JSON.stringify({ filename: scan.path, autocrop: true, dopcont: false, autocrop_size: 1200 }),
     }).then(response => response.json())
       .then(json => {
         navigation.navigate('List');
