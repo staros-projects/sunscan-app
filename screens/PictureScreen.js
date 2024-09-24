@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -267,6 +267,7 @@ export default function PictureScreen({ route, navigation }) {
   // Render the component
   return (
     scan &&
+    <SafeAreaView className="bg-black"  style={{flex:1}}>
     <View className="flex flex-col bg-black">
         {/* Back button */}
         <View className="absolute left-0 z-50 p-4">
@@ -356,7 +357,7 @@ export default function PictureScreen({ route, navigation }) {
       </View>
 
     </View>
-
+</SafeAreaView>
 
 
   );

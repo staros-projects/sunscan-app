@@ -54,6 +54,12 @@ export default function ListScreen({navigation}) {
     }
   };
 
+
+
+  useEffect(() => {
+    getScans();
+  }, [page]);
+
   // Effect to load scans when the screen is focused
   useFocusEffect(
     React.useCallback(() => { 
@@ -72,9 +78,6 @@ export default function ListScreen({navigation}) {
     },[isFocused])
   );
 
-  useEffect(() => {
-    getScans();
-  }, [page]);
 
   // Function to handle long press on items (for selection)
   const handleLongPress = (id) => {
