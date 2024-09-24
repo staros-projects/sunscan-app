@@ -1,6 +1,5 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Text, FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, {  useContext,  useState } from 'react';
+import { View,FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
 
 // Configure NativeWind to use native output
@@ -11,8 +10,6 @@ NativeWindStyleSheet.setOutput({
 import Card from '../components/Card';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import AppContext from '../components/AppContext';
-import Loader from '../components/Loader';
-import WebSocketContext from '../utils/WSContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Component to render individual scan items
@@ -24,7 +21,7 @@ export default function ListScreen({navigation}) {
   // State variables
   const [isLoading, setIsLoading] = useState(false);
   const [scans, setScans] = useState([]);
-  const [page, setPage] = useState(1);
+  const [curentPage, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const size = 20; // Nombre d'éléments par page
   const [selectedItems, setSelectedItems] = useState([]);
@@ -33,8 +30,14 @@ export default function ListScreen({navigation}) {
   const isFocused = navigation.isFocused();
 
   // Function to fetch scans from the API
-  async function getScans() {
+  async function getScans(page) {
     setIsLoading(true);
+    setPage(page);
+    if (page == 1) {
+      setScans([]);
+      setTotal(0);
+    }
+    console.log('http://'+myContext.apiURL+`/sunscan/scans?page=${page}&size=${size}`)
     fetch('http://'+myContext.apiURL+`/sunscan/scans?page=${page}&size=${size}`).then(response => response.json())
     .then(json => {
       setIsLoading(false);
@@ -49,16 +52,15 @@ export default function ListScreen({navigation}) {
   }
 
   const loadMoreFiles = () => {
+    console.log(scans.length, total)
     if (scans.length < total) {
-      setPage(prevPage => prevPage + 1);
+      getScans(curentPage+1)
     }
   };
 
 
 
-  useEffect(() => {
-    getScans();
-  }, [page]);
+
 
   // Effect to load scans when the screen is focused
   useFocusEffect(
@@ -72,8 +74,8 @@ export default function ListScreen({navigation}) {
         });  
       }
       else {
-        setScans([]);
-        setPage(1);
+        getScans(1)
+       
       }
     },[isFocused])
   );
@@ -103,7 +105,7 @@ export default function ListScreen({navigation}) {
             columnWrapperStyle={{ flex: 1, justifyContent: "center" }}
             ListHeaderComponent={<View className="mt-4"></View>}
             refreshing={isLoading}
-            onRefresh={()=>{setScans([]); setPage(1); }}
+            onRefresh={()=>{ getScans(1) }}
             onEndReached={loadMoreFiles}
             initialNumToRender={1}
             onEndReachedThreshold={2}

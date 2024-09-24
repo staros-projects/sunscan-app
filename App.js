@@ -33,7 +33,6 @@ const createMyNavigator = createNavigatorFactory(TabNavigator);
 const My = createMyNavigator();
 
 export default function App() {
-  console.log('skljhskjhskj',process.env.EXPO_PUBLIC_SUNSCAN_API_URL)
   const defaultApiURL_hotspot = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '10.42.0.1:8000';
 
   const [sunscanIsConnected, setSunscanIsConnected] = useState(false);
