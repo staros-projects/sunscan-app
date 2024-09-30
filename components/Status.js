@@ -107,8 +107,8 @@ export default function Status({isFocused})  {
     useCallback(() => {
     setTimeout(()=>{
         getStats();
-    }, 5000)
-  }, [myContext.apiURL]));
+    }, 2000)
+  }, []));
 
   // Render the component
   return (

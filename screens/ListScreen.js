@@ -43,7 +43,10 @@ export default function ListScreen({navigation}) {
       setIsLoading(false);
       setScans(prevFiles => [...prevFiles, ...json.scans]);
       setTotal(json.total);
-      AsyncStorage.setItem('SUNSCAN_APP::SCANS', JSON.stringify(json.scans));
+      if(scans.length) {
+        AsyncStorage.setItem('SUNSCAN_APP::SCANS', JSON.stringify(scans));
+      }
+      
     })
     .catch(error => {
       console.error(error);
@@ -52,15 +55,10 @@ export default function ListScreen({navigation}) {
   }
 
   const loadMoreFiles = () => {
-    console.log(scans.length, total)
     if (scans.length < total) {
       getScans(curentPage+1)
     }
   };
-
-
-
-
 
   // Effect to load scans when the screen is focused
   useFocusEffect(
@@ -74,8 +72,7 @@ export default function ListScreen({navigation}) {
         });  
       }
       else {
-        getScans(1)
-       
+        getScans(1);
       }
     },[isFocused])
   );
