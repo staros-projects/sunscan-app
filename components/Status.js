@@ -7,15 +7,43 @@ import Fontisto from '@expo/vector-icons/Fontisto'
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
-// Utility function to fetch with a timeout
-export async function fetchWithTimeout(url, options, timeout = 2000) {
-  return Promise.race([
-      fetch(url, options),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout : '+url)), timeout))
-  ]);
-}
+
 
 export default function Status({isFocused})  {
+
+
+  // Utility function to fetch with a timeout
+  const fetchDataWithTimeout = async (url) => {
+    try {
+      // Timeout promise after 2 seconds
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 2000)
+      );
+
+      // Fetch request promise
+      const fetchPromise = fetch(url);
+    
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+      // Check if fetch was successful and got response
+      if (!response.ok) {
+        myContext.setCamera("")
+        myContext.setSunscanIsConnected(false);
+        myContext.setCameraIsConnected(false); 
+
+        throw new Error('Failed to fetch');
+      }
+
+      return await response.json();
+    } catch (err) {
+      myContext.setCamera("")
+      myContext.setSunscanIsConnected(false);
+      myContext.setCameraIsConnected(false); 
+    } 
+  };
+
+
   // Initialize translation hook
   const { t, i18n } = useTranslation();
 
@@ -53,22 +81,17 @@ export default function Status({isFocused})  {
 
   // Function to fetch and update stats
   async function getStats() {
-    fetchWithTimeout('http://'+myContext.apiURL+"/sunscan/stats", {timeout: 2}).then(response => {
-        return response.json()
-      })
+    fetchDataWithTimeout('http://'+myContext.apiURL+"/sunscan/stats")
       .then(json => {
-        console.log(json)
-        setStats(json)
-        myContext.setCamera(json.camera)
-        myContext.setSunscanIsConnected(true);
-        myContext.setBackendApiVersion(json.backend_api_version);
-        getCameraStatus();
+        if(json) {
+          console.log(json)
+          setStats(json)
+          myContext.setCamera(json.camera)
+          myContext.setSunscanIsConnected(true);
+          myContext.setBackendApiVersion(json.backend_api_version);
+          getCameraStatus();
+        }
       })
-      .catch(error => {
-        myContext.setCamera(None)
-        myContext.setSunscanIsConnected(false);
-        myContext.setCameraIsConnected(false);
-      });
 
   }
 
@@ -105,10 +128,8 @@ export default function Status({isFocused})  {
   // Effect to fetch stats when the component gains focus
   useFocusEffect(
     useCallback(() => {
-    setTimeout(()=>{
         getStats();
-    }, 2000)
-  }, []));
+  }, [isFocused]));
 
   // Render the component
   return (
