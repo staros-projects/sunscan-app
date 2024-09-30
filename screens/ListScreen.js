@@ -62,18 +62,19 @@ export default function ListScreen({navigation}) {
 
   // Effect to load scans when the screen is focused
   useFocusEffect(
-    React.useCallback(() => { 
-      // Load scans from AsyncStorage if available
-      if (!myContext.sunscanIsConnected) {
-        AsyncStorage.getItem('SUNSCAN_APP::SCANS').then((d) => {
-          if(d)  {
-            setScans(JSON.parse(d));
-          }
-        });  
-      }
-      else {
-        getScans(1);
-      }
+    useCallback(() => { 
+      getScans(1);
+      // // Load scans from AsyncStorage if available
+      // if (!myContext.sunscanIsConnected) {
+      //   AsyncStorage.getItem('SUNSCAN_APP::SCANS').then((d) => {
+      //     if(d)  {
+      //       setScans(JSON.parse(d));
+      //     }
+      //   });  
+      // }
+      // else {
+      //   getScans(1);
+      // }
     },[isFocused])
   );
 

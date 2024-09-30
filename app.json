@@ -15,7 +15,7 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber":"8",
+      "buildNumber":"9",
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.staros.sunscan-app"

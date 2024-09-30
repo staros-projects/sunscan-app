@@ -348,7 +348,7 @@ export default function ScanScreen({navigation}) {
 
   // Styles for right toolbar (platform-specific)
   const stylesRighttoolBar = StyleSheet.create({
-    right: Platform.OS === 'ios' ? 0 : 16,
+    right: 16,
   });
 
     return (
