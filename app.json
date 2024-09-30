@@ -15,7 +15,7 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber":"9",
+      "buildNumber":"10",
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.staros.sunscan-app"
@@ -79,8 +79,7 @@
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
           "isAccessMediaLocationEnabled": true
         }
-      ],
-      "expo-font"
+      ]
     ]
   }
 }

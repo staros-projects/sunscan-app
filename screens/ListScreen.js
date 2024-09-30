@@ -1,4 +1,4 @@
-import React, {  useContext,  useState } from 'react';
+import  {  useContext,  useState, useCallback } from 'react';
 import { View,FlatList, SafeAreaView, ActivityIndicator } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
 
@@ -11,6 +11,7 @@ import Card from '../components/Card';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import AppContext from '../components/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Button } from 'react-native';
 
 // Component to render individual scan items
 const Item = (props) => {
@@ -94,7 +95,7 @@ export default function ListScreen({navigation}) {
     <SafeAreaView className="bg-zinc-800 h-screen" style={{flex:1}}>
       <View className="flex flex-col" style={{flex:1}}>
         <View className="px-10">
-          {scans && <FlatList
+          {scans.length ? <FlatList
             data={scans}
             numColumns={2}
             renderItem={({item}) => <Item scan={item} />}
@@ -107,8 +108,7 @@ export default function ListScreen({navigation}) {
             onEndReached={loadMoreFiles}
             initialNumToRender={1}
             onEndReachedThreshold={2}
-            ListFooterComponent={() => isLoading && <ActivityIndicator size="large" />}
-          />}
+          />:<Button title="Refresh" onPress={()=>{ getScans(1) }} className="mx-auto" />}
         </View>
       </View>
     </SafeAreaView>

@@ -1,5 +1,5 @@
 import { View, Pressable, Text, Alert } from 'react-native';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import Loader from './Loader';
 import AppContext from './AppContext';
 import Ionicons from '@expo/vector-icons/Ionicons'
