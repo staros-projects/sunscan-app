@@ -15,6 +15,9 @@ import { t } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
+import Constants from 'expo-constants';
+
+const backend_current_version = Constants.version_backend_api;
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -192,8 +195,8 @@ export default function SettingsScreen({navigation}) {
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{Application.nativeApplicationVersion}]</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
-              </View>
-              {parseInt(myContext.backendApiVersion.replaceAll('.','')) < parseInt(Application.nativeApplicationVersion.replaceAll('.','')) || myContext.debug ?
+              </View>0.0
+              {parseInt(myContext.backendApiVersion.replaceAll('.','')) < parseInt(backend_current_version) || myContext.debug ?
               <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
               <Text className="text-white">{t('common:upToDate')}</Text>}
             </View>

@@ -3,6 +3,7 @@
     "name": "Sunscan",
     "slug": "sunscan",
     "version": "1.1.5",
+    "version_backend_api": "1.1.5",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -15,13 +16,13 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber":"10",
+      "buildNumber":"11",
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.staros.sunscan-app"
     },
     "android": {
-      "versionCode":6,
+      "versionCode":7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#fff"
