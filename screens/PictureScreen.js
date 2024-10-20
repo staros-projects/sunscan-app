@@ -58,9 +58,9 @@ export default function PictureScreen({ route, navigation }) {
     }
 
     try {
-      const downloadPath = `${FileSystem.cacheDirectory}sunscan.png`;
+      const downloadPath = `${FileSystem.cacheDirectory}sunscan.jpg`;
       const { uri: localUrl } = await FileSystem.downloadAsync(
-        currentImage[1].replace('.jpg', '.png'),
+        currentImage[1],
         downloadPath
       );
 
@@ -180,15 +180,15 @@ export default function PictureScreen({ route, navigation }) {
   const openShareDialogAsync = async () => {
 
     const fileDetails = {
-      extension: '.png',
+      extension: '.jpg',
       shareOptions: {
-        mimeType: 'image/png',
+        mimeType: 'image/jpg',
         dialosTitle: 'Check out this sunscan image!',
-        UTI: 'image/png',
+        UTI: 'image/jpg',
       },
     };
 
-    const downloadPath = `${FileSystem.cacheDirectory}sunscan.png`;
+    const downloadPath = `${FileSystem.cacheDirectory}sunscan.jpg`;
     const { uri: localUrl } = await FileSystem.downloadAsync(
       currentImage,
       downloadPath

@@ -91,8 +91,8 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
             
             {/* Display file paths */}
             <View className="mt-4  flex flex-row items-center space-x-2"><Ionicons name="file-tray-full-outline" size={18} color="white" /><Text className="text-white font-bold">{t('common:filePath')} : </Text></View>
-            <Text className="text-white text-xs"> {'http://'+myContext.apiURL+'/data/scans'}</Text>
-            <Text className="text-white text-xs"> {'http://'+myContext.apiURL+'/'+scan.ser}</Text>
+            <Text className="text-white text-xs">Go to  {'http://sunscan.local/'} to download the scan (.ser)</Text>
+            <Text className="text-white text-xs">{scan.path}</Text>
 
             {/* Display acquisition parameters */}
             <Text className="mt-4 text-white font-bold">Paramètre d'acquisition :</Text>

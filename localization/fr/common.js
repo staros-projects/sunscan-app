@@ -55,14 +55,14 @@ export default {
     "startProcessing": "Lancer le traitement",
     "pleaseWait": "Le traitement peut prendre plusieurs minutes...",
     // scan info
-    "typeImage": "Type d'image : ",
-    "acquisitionTime": "Heure d'acquisition : ",
-    "filePath": "Chemin fichier source : ",
-    "scanPath": "Chemin fichier scan : ",
-    "acquisitionSettings": "Paramètre d'acquisition : ",
-    "camera": "Caméra : ",
-    "exposure": "Exposition : ",
-    "gain": "Gain : ",
-    "processingLog": "Log de traitement : ",
+    "typeImage": "Type d'image",
+    "acquisitionTime": "Heure d'acquisition",
+    "filePath": "Chemin fichier source",
+    "scanPath": "Chemin fichier scan",
+    "acquisitionSettings": "Paramètre d'acquisition",
+    "camera": "Caméra",
+    "exposure": "Exposition",
+    "gain": "Gain",
+    "processingLog": "Log de traitement",
 
 }

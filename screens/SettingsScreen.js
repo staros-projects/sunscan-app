@@ -17,7 +17,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 
-const backend_current_version = Constants.version_backend_api;
+const backend_current_version = Constants.manifest2.extra.expoClient.version_backend_api;
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -30,6 +30,7 @@ const languages = [ // Language List
 ];
 
 export default function SettingsScreen({navigation}) {
+
   // Get the global variables & functions via context
   const myContext = useContext(AppContext);
   const [apiInput, setAPIInput] = useState("");
@@ -193,9 +194,9 @@ export default function SettingsScreen({navigation}) {
             {/* Firmware update section */}
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{Application.nativeApplicationVersion}]</Text>
+                <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{backend_current_version}]</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
-              </View>0.0
+              </View>
               {parseInt(myContext.backendApiVersion.replaceAll('.','')) < parseInt(backend_current_version) || myContext.debug ?
               <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
               <Text className="text-white">{t('common:upToDate')}</Text>}
@@ -208,7 +209,10 @@ export default function SettingsScreen({navigation}) {
               </View>
               {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
             </View>
-
+            <View className="mt-8"></View>
+            <View>
+              <Text className="text-white text-xs italic">Behind the SUNSCAN is a passionate and dedicated team: STAROS Projects. Five members each bring their unique expertise to bear on making the SUNSCAN a success : Guillaume BERTRAND, Christian BUIL, Valérie DESNOUX, Olivier GARDE et Matthieu LE LAIN</Text>
+            </View>
             <View className="mt-8"></View>
           </ScrollView>
         </SafeAreaProvider>
