@@ -15,9 +15,8 @@ import { t } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
-import Constants from 'expo-constants';
 
-const backend_current_version = Constants.manifest2.extra.expoClient.version_backend_api;
+const backend_current_version = '1.1.5';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
