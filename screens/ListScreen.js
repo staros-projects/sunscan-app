@@ -108,7 +108,7 @@ export default function ListScreen({navigation}) {
             onEndReached={loadMoreFiles}
             initialNumToRender={1}
             onEndReachedThreshold={2}
-          />:<Button title="Refresh" onPress={()=>{ getScans(1) }} className="mx-auto" />}
+          />:<></>}
         </View>
       </View>
     </SafeAreaView>

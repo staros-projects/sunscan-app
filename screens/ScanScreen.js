@@ -80,19 +80,18 @@ export default function ScanScreen({navigation}) {
         subscribe('camera', (message) => {
             fcRef.current += 1
             setFC(fcRef.current)
-            if(fcRef.current%10==0)
-              setPixelStats({min:parseInt(message[1]), max:parseInt(message[2])});
-
+           
             if (!displaySpectrum) {
               setFrame(message[3]);
             }
-        
         })
 
         // Subscribe to 'adu' events
         subscribe('adu', (message) => {  
-          if(fcRef.current%5==0)
+          if(fcRef.current%5==0) {
+            console.log(message)
             setPixelStats({r:parseInt(message[1]), g:parseInt(message[2]), b:parseInt(message[3])});
+          }
       })
 
       // Subscribe to 'spectrum' events
@@ -145,7 +144,7 @@ export default function ScanScreen({navigation}) {
             setCrop(json.crop);
             setGain(json.gain);
             setExptime(json.exposure_time/1e3);
-            setNormalize(json.normalize);
+            setNormMode(json.normalize);
             setColorMode(!json.monobin);
             setBinMode(json.bin);
             setMonoBinMode(parseInt(json.monobin_mode));
@@ -168,6 +167,20 @@ export default function ScanScreen({navigation}) {
       
     }
 
+    const toggleNormMode = async () => {
+      const newNormMode = (normMode+1)%3;
+      setIsLoading(true);
+      fetch('http://'+myContext.apiURL+"/camera/toggle-normalize/"+newNormMode.toString()).then(response => response.json())
+      .then(json => {
+        setNormMode(json.normalize);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsLoading(false);
+      });
+    }
+     
     // State variables for timer functionality
     const [time, setTime] = React.useState(0);
     const timerRef = React.useRef(time);
@@ -179,9 +192,6 @@ export default function ScanScreen({navigation}) {
     const [crop, setCrop] = React.useState(false);
     const [binMode, setBinMode] = React.useState(false);
     const [colorMode, setColorMode] = React.useState(false);
-    const [normalize, setNormalize] = React.useState(false);
-
-
     const [expTime, setExptime] = React.useState(130);
     const [gain, setGain] = React.useState(3.0);
     const [isLoading, setIsLoading] = useState(false);
@@ -190,6 +200,7 @@ export default function ScanScreen({navigation}) {
     const [snapShotFilename, setSnapShotFilename] = useState("");
     const [settings, setSettings] = useState("exp");
     const [monoBinMode, setMonoBinMode] = useState(false);
+    const [normMode, setNormMode] = useState(false);
 
     // Function to update camera controls
     async function updateControls() {
@@ -261,20 +272,6 @@ export default function ScanScreen({navigation}) {
       fetch('http://'+myContext.apiURL+"/camera/toggle-color-mode/").then(response => response.json())
       .then(json => {
         setColorMode(!colorMode)
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error(error);
-        setIsLoading(false);
-      });
-    }
-
-    // Function to toggle normalization
-    async function toggleNorm() {
-      setIsLoading(true);
-      fetch('http://'+myContext.apiURL+"/camera/toggle-normalize/").then(response => response.json())
-      .then(json => {
-        setNormalize(!normalize)
         setIsLoading(false);
       })
       .catch(error => {
@@ -419,11 +416,14 @@ export default function ScanScreen({navigation}) {
                           </TouchableHighlight>
                          
                             {/* Normalize toggle */}
-                            <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={toggleNorm} className="flex flex-col justify-center items-center p-1 mr-3 ">
+                            <TouchableHighlight underlayColor="rgb(113 113 122)" onPress={()=>toggleNormMode()} className="flex flex-col justify-center items-center p-1 mr-3 ">
                               <View className="flex flex-col items-center space-y-1">
 
-                              <Ionicons name="flash" size={18} color={normalize? "lime":"white"}  />
-                              <Text style={{fontSize:10,color:normalize ? "#32CD32":"#fff"}}>{t('common:norm')}</Text>
+                              <Ionicons name="flash" size={18} color={normMode > 0 ? "lime":"white"}  />
+                            
+                              {normMode > 0  && <View style={{left:0,bottom:-6}} className="z-10 w-8 absolute" ><Text style={{fontSize:7,color:normMode > 0 ? "#32CD32":"#fff"}} >{normMode == 1 ? 'min/max':'n-th per'}</Text></View>}  
+                              <Text style={{fontSize:10,color:normMode > 0 ? "#32CD32":"#fff"}}>{t('common:norm')}</Text>
+                              
                               </View>
                              
                             </TouchableHighlight>
