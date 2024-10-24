@@ -89,7 +89,6 @@ export default function ScanScreen({navigation}) {
         // Subscribe to 'adu' events
         subscribe('adu', (message) => {  
           if(fcRef.current%5==0) {
-            console.log(message)
             setPixelStats({r:parseInt(message[1]), g:parseInt(message[2]), b:parseInt(message[3])});
           }
       })
