@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 
-const backend_current_version = '1.1.5';
+const backend_current_version = '1.1.7';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
