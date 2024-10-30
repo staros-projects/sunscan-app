@@ -518,7 +518,7 @@ export default function ScanScreen({navigation}) {
 
  
             {/* Options panel */}
-            {!rec && !colorMode && !displaySpectrum && displayOptions && (myContext.cameraIsConnected || myContext.demo)   && (
+            {!rec  && !displaySpectrum && displayOptions && (myContext.cameraIsConnected || myContext.demo)   && (
             <View className="absolute mb-4 w-full flex flex-row justify-center align-items " style={{ right:0, top:10}}>
                 <View className="flex flex-row justify-start item-center align-center space-x-4 w-full">
                  

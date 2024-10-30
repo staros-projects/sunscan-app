@@ -31,7 +31,16 @@ export default function Card({scan}) {
       headers: {
         'Content-Type': 'application/json'
     },
-      body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1100}),
+      body: JSON.stringify({filename:scan.ser, 
+        autocrop:true,
+        autocrop_size:1100,
+        dopcont:false,
+         noisereduction:false,
+          doppler_shift:5, 
+          continuum_shift:15, 
+          cont_sharpen_level:2, 
+          surface_sharpen_level:2, 
+          pro_sharpen_level:1}),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);

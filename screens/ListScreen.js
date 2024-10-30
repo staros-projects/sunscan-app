@@ -33,15 +33,19 @@ export default function ListScreen({navigation}) {
   // Function to fetch scans from the API
   async function getScans(page) {
     setIsLoading(true);
-    setPage(page);
-    if (page == 1) {
-      setScans([]);
-      setTotal(0);
-    }
+    
     console.log('http://'+myContext.apiURL+`/sunscan/scans?page=${page}&size=${size}`)
     fetch('http://'+myContext.apiURL+`/sunscan/scans?page=${page}&size=${size}`).then(response => response.json())
     .then(json => {
+
+      setPage(page);
+      if (page == 1) {
+        setScans([]);
+        setTotal(0);
+      }
+
       setIsLoading(false);
+      console.log(json.scans, page)
       setScans(prevFiles => [...prevFiles, ...json.scans]);
       setTotal(json.total);
       if(scans.length) {

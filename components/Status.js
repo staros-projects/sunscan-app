@@ -129,7 +129,7 @@ export default function Status({isFocused})  {
   useFocusEffect(
     useCallback(() => {
         getStats();
-  }, [isFocused]));
+  }, [isFocused, myContext.sunscanIsConnected]));
 
   // Render the component
   return (

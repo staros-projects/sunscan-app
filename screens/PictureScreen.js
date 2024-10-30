@@ -85,7 +85,7 @@ export default function PictureScreen({ route, navigation }) {
   const [scanStatus, setScanStatus] = useState(scan?.status);
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState("");
-
+  const [fullScreenMode, setFullScreenMode] = useState(false);
 
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
 
@@ -99,7 +99,7 @@ export default function PictureScreen({ route, navigation }) {
       headers: {
         'Content-Type': 'application/json'
     },
-      body: JSON.stringify({filename:scan.ser, autocrop:true, dopcont:false, autocrop_size:1100}),
+      body: JSON.stringify({filename:scan.ser}),
     }).then(response => response.json())
     .then(json => {
       setImages([]);
@@ -133,16 +133,23 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan() {
-
-
+  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel) {
 
     fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.ser, autocrop: autocrop, autocrop_size: 1100, dopcont: dopcont }),
+      body: JSON.stringify({ filename: scan.ser, 
+        dopcont:true,
+        autocrop:true,
+        autocrop_size:1100,
+        noisereduction:noiseReduction, 
+        doppler_shift:dopplerShift,
+        continuum_shift:continuumShift, 
+        cont_sharpen_level:continuumSharpenLevel, 
+        surface_sharpen_level:surfaceSharpenLevel,
+        pro_sharpen_level:protusSharpenLevel}),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);
@@ -211,9 +218,11 @@ export default function PictureScreen({ route, navigation }) {
       backgroundColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
+
     },
     image: {
       flex: 1,
+     
       backgroundColor: 'transparent',
     },
   });
@@ -235,7 +244,7 @@ export default function PictureScreen({ route, navigation }) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ filename: scan.path, autocrop: true, dopcont: false, autocrop_size: 1100 }),
+      body: JSON.stringify({ filename: scan.path }),
     }).then(response => response.json())
       .then(json => {
         navigation.navigate('List');
@@ -288,14 +297,15 @@ export default function PictureScreen({ route, navigation }) {
               {/* Action buttons */}
               {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
-                {images.length > 1 && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
+                {(images.length > 1 || myContext.debug) && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
                 {images.length > 1 && <Pressable className="" onPress={() => openShareDialogAsync()}><Ionicons name="share-social" size={28} color="white" /></Pressable>}
                 {images.length > 1 && <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>}  
                 <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
               </View>}
 
                     {/* Image zoom component */}
-                    <ImageZoom cropWidth={Dimensions.get('window').width-120}
+                    <ImageZoom
+                    cropWidth={Dimensions.get('window').width-120}
                   cropHeight={Dimensions.get('window').height}
                   imageWidth={400}
                   imageHeight={400}>
@@ -306,7 +316,7 @@ export default function PictureScreen({ route, navigation }) {
                   />
                 </ImageZoom>
                  {/* Image name display */}
-                 <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text> 
+                 {/* <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text>  */}
               </View>
               {/* Thumbnail scrollview */}
               <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >
