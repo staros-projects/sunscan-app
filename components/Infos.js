@@ -29,7 +29,7 @@ export default function Infos({isFocused}) {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         // Get current position
-        let location = await Location.getCurrentPositionAsync({});
+        let location = await Location.getCurrentPositionAsync({accuracy:Location.Accuracy.BestForNavigation});
         setLocation(location);
         
         // Perform reverse geocoding to get city name
