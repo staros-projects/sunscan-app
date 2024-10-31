@@ -53,6 +53,9 @@ export default function ScanScreen({navigation}) {
     const [spectrumData, setSpectrumData] = useState([]);
     const [intensityData, setIntensityData] = useState([]);
 
+    const lowerExpLimit = 2000;
+    const upperMaxLimit = 4095;
+
     // Styles for the component
     const styles = StyleSheet.create({
       container: {
@@ -603,16 +606,16 @@ export default function ScanScreen({navigation}) {
                               </View>
                               <View>
                               { monoBinMode == 0 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.r <4095 && pixelStats.g <4095 && pixelStats.b <4095 && (pixelStats.r >3000 || pixelStats.g >3000 || pixelStats.b >3000) ? "face-smile":"face-frown-open"} size={20} color="white"   />
+                              <FontAwesome6 name={pixelStats.r <upperMaxLimit && pixelStats.g <upperMaxLimit && pixelStats.b <upperMaxLimit && (pixelStats.r >lowerExpLimit || pixelStats.g >lowerExpLimit || pixelStats.b >lowerExpLimit) ? "face-smile":"face-frown-open"} size={20} color="white"   />
                               </View>}
                               { monoBinMode == 1 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.r <4095 && pixelStats.r >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.r <upperMaxLimit && pixelStats.r >lowerExpLimit  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                               { monoBinMode == 2 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.g <4095 && pixelStats.g >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.g <upperMaxLimit && pixelStats.g >lowerExpLimit  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                               { monoBinMode == 3 && <View className="flex flex-row justify-center items-center space-x-2">
-                              <FontAwesome6 name={pixelStats.b <4095 && pixelStats.b >3000  ? "face-smile":"face-frown-open"} size={18} color="white"   />
+                              <FontAwesome6 name={pixelStats.b <upperMaxLimit && pixelStats.b >lowerExpLimit  ? "face-smile":"face-frown-open"} size={18} color="white"   />
                               </View>}
                                 </View>
                           
