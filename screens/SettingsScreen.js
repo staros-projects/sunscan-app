@@ -15,8 +15,8 @@ import { t } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
-
-const backend_current_version = '1.1.8';
+import firmareIsUpToDate from '../utils/Helpers';
+import { backend_current_version } from '../utils/Helpers';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -74,7 +74,7 @@ export default function SettingsScreen({navigation}) {
                 // Handle the response
                 if (response.ok) {
                   const jsonResponse = await response.json();
-                  Alert.alert(`Success: ${jsonResponse.message}`);
+                  Alert.alert(t('common:success'), t('common:firmwarePostUpdateMessage'));
                 } else {
                   const jsonResponse = await response.json();
                   Alert.alert(`Failed: ${jsonResponse.detail}`);
@@ -196,7 +196,7 @@ export default function SettingsScreen({navigation}) {
                 <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{backend_current_version}]</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
               </View>
-              {parseInt(myContext.backendApiVersion.replaceAll('.','')) < parseInt(backend_current_version) || myContext.debug ?
+              {!firmareIsUpToDate(myContext) || myContext.debug ?
               <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
               <Text className="text-white">{t('common:upToDate')}</Text>}
             </View>

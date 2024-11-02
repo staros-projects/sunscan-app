@@ -2,7 +2,7 @@
   "expo": {
     "name": "SUNSCAN",
     "slug": "sunscan",
-    "version": "1.1.8",
+    "version": "1.1.9",
     "orientation": "landscape",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -15,13 +15,13 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber":"14",
+      "buildNumber":"15",
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.staros.sunscan-app"
     },
     "android": {
-      "versionCode":10,
+      "versionCode":11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#fff"

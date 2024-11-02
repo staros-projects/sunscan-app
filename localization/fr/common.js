@@ -36,6 +36,8 @@ export default {
     "clearImageCache": "Vider le cache d'images",
     "clearCacheDescription": "Vide le cache d'images pour libérer de l'espace",
     "updateFirmwareconfirm": "Etes vous certain de vouloir mettre à jour le firmware ?",
+    "firmwareIsOutdated": "Votre firmware est obsolète, veuillez mettre à jour le firmware dans la partie réglage de l'application",
+    "firmwarePostUpdateMessage": "Le firmware a été mis à jour, veuillez redémarrer l'application et votre SUNSCAN pour appliquer les changements",
     "upToDate": "Vous avez la dernière version",
     "clearCacheConfirm": "Voulez-vous vraiment vider le cache d'images ?",
     // picture screen

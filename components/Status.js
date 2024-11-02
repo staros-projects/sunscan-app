@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import firmareIsUpToDate from '../utils/Helpers';
 
 
 
@@ -90,6 +91,7 @@ export default function Status({isFocused})  {
           myContext.setSunscanIsConnected(true);
           myContext.setBackendApiVersion(json.backend_api_version);
           getCameraStatus();
+          checkFirmware();
         }
       })
 
@@ -125,11 +127,18 @@ export default function Status({isFocused})  {
     });
   }
 
+  const checkFirmware = () => {
+    if(!firmareIsUpToDate(myContext)) {
+      Alert.alert(t('common:warning'), t('common:firmwareIsOutdated'), [
+        { text: 'OK', onPress: async () => {}}]);
+    }
+  }
+
   // Effect to fetch stats when the component gains focus
   useFocusEffect(
     useCallback(() => {
         getStats();
-  }, [isFocused, myContext.sunscanIsConnected]));
+  }, [isFocused, myContext.backendApiVersion, myContext.sunscanIsConnected]));
 
   // Render the component
   return (

@@ -36,7 +36,9 @@ export default {
     "clearImageCache": "Clear image cache",
     "clearCacheDescription": "Clears the image cache to free up space.",
     "updateFirmwareconfirm": "Are you sure you want to update the firmware?",
+    "firmwareIsOutdated": "Your firmware is outdated, please update the firmware in the application settings",
     "upToDate": "You have the latest version",
+    "firmwarePostUpdateMessage": "The firmware has been updated, please restart the application and your SUNSCAN to apply the changes",
     "clearCacheConfirm": "Are you sure you want to clear the image cache?",
     // picture screen
     "downloaded": "Downloaded",
