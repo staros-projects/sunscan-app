@@ -64,6 +64,7 @@
     "react-native-svg": "14.1.0",
     "react-native-video": "^5.2.1",
     "react-native-web": "~0.19.6",
+    "rn-vertical-slider": "^4.4.0",
     "suncalc": "^1.9.0",
     "victory-native": "36.3.1"
   },

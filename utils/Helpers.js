@@ -1,4 +1,4 @@
-export const backend_current_version = '1.1.9';
+export const backend_current_version = '1.2.0';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date

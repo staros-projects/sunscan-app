@@ -53,6 +53,7 @@ export default {
     "norm": "Norm",
     "adjust": "Adjust",
     "grid": "Grid",
+    "auto": "Auto",
     "advancedProcessing":"Scan processing",
     "advancedProcessingOptions":"Advanced mode",
     "noiseReduction":"Noise reduction",
