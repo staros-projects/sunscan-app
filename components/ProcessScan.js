@@ -20,6 +20,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
     const [displayOptions, setDisplayOptions] = react.useState(false);
     const [dopplerShift, setDopplerShift] = react.useState(5);
     const [continuumShift, setContinuumShift] = react.useState(16);
+    const [offset, setOffset] = react.useState(0);
 
     const toggleNoiseReduction = () => {
       setNoiseReduction(!noiseReduction);
@@ -34,7 +35,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
           },
           modalView: {
             margin: 20,
-            width:"50%",
+            width:"60%",
             backgroundColor: 'rgba(80,80,80,0.9)',
             borderRadius: 20,
             padding: 10,
@@ -104,23 +105,32 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 {!isStarted ? (
                   <>
            
-                   <View className="flex flex-row items-center ">
+                   <View className="flex flex-row items-center mb-2">
                     <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
                     <Switch
                             value={displayOptions}
+
                             onValueChange={()=>setDisplayOptions(!displayOptions)}
                           />
                     </View>
                     {displayOptions && <View className="flex flex-col space-y-1 rounded-xl p-3 bg-zinc-800 mb-2">
-                        
-                        <View className="flex flex-row items-center space-x-2">
-                          <Text className="text-white text-xs w-32">{t('common:dopplerShift')}</Text>
-                          <CustomNumericInput minValue={0}  maxValue={40}  value={dopplerShift} onChange={setDopplerShift} />
+                        <View className="flex flex-row items-start space-x-2 ">
+                          <View className="flex flex-col items-center space-y-2">
+                            <View className="flex flex-row items-center space-x-2">
+                              <Text className="text-white text-xs w-32">{t('common:dopplerShift')}</Text>
+                              <CustomNumericInput minValue={0}  maxValue={40}  value={dopplerShift} onChange={setDopplerShift} />
+                            </View>
+                            <View className="flex flex-row items-center space-x-2">
+                              <Text className="text-white text-xs w-32">{t('common:continuumShift')}</Text>
+                              <CustomNumericInput minValue={-40}  maxValue={40}  value={continuumShift} onChange={setContinuumShift} />
+                            </View>
+                          </View>
+                          <View className="flex flex-row items-center space-x-2">
+                              <Text className="text-white text-xs mr-4">{t('common:offset')}</Text>
+                              <CustomNumericInput minValue={-80}  maxValue={80}  value={offset} onChange={setOffset} />
+                            </View>
                         </View>
-                        <View className="flex flex-row items-center space-x-2">
-                          <Text className="text-white text-xs w-32">{t('common:continuumShift')}</Text>
-                          <CustomNumericInput minValue={-40}  maxValue={40}  value={continuumShift} onChange={setContinuumShift} />
-                        </View>
+                       
                       
                         {/* <View className="flex flex-row items-center space-x-2">
                           <Text className="text-white text-xs w-28">Noise reduction</Text>
@@ -175,7 +185,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
                     <Pressable 
                         className=" w-40 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex flex-row align-center justify-center items-center space-x-2"
-                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel); setIsStarted(true);}}
+                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset); setIsStarted(true);}}
                     >
                         <Ionicons name="caret-forward-outline" size={18} color="white" />
                         <Text className="text-white text-xs">{t('common:startProcessing')}</Text>

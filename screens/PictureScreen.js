@@ -133,7 +133,7 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel) {
+  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset) {
 
     fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
       method: "POST",
@@ -149,7 +149,8 @@ export default function PictureScreen({ route, navigation }) {
         continuum_shift:continuumShift, 
         cont_sharpen_level:continuumSharpenLevel, 
         surface_sharpen_level:surfaceSharpenLevel,
-        pro_sharpen_level:protusSharpenLevel}),
+        pro_sharpen_level:protusSharpenLevel,
+        offset}),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);

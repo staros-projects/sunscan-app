@@ -485,14 +485,14 @@ export default function ScanScreen({navigation}) {
                 <View  className=" bg-zinc-600/50 rounded-lg space-y-2 py-2 flex flex-col justify-evenly align-center items-center px-1" >
                     
                 <TouchableHighlight underlayColor={crop ? "rgb(113 113 122)":"tranparent"}  onPress={()=>updatePosYCrop("down") } className="flex flex-col justify-center items-center w-12">
-                        <Ionicons name="chevron-up" size={32} color={!crop && !rec ? "rgb(113 113 122)":"white"}   />
+                        <Ionicons name="chevron-up" size={32} color={!crop || rec ? "rgb(113 113 122)":"white"}   />
                         </TouchableHighlight>
                         <TouchableHighlight underlayColor="rgb(113 113 122)" disabled={displaySpectrum}  onPress={toggleCrop} className="flex flex-col justify-center items-center w-12">
                 
                         <Ionicons name="crop-outline" size={30} color={crop  ? "lime":"white"}   />
                         </TouchableHighlight>
                         <TouchableHighlight underlayColor={crop ? "rgb(113 113 122)":"tranparent"}   onPress={()=>updatePosYCrop("up") } className="flex flex-col justify-center items-center w-12 mb-4">
-                        <Ionicons name="chevron-down" size={32} color={!crop && !rec  ? "rgb(113 113 122)":"white"}   />
+                        <Ionicons name="chevron-down" size={32} color={!crop || rec  ? "rgb(113 113 122)":"white"}   />
                         </TouchableHighlight>
                         
                         {/* Record button */}
