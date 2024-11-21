@@ -1,8 +1,8 @@
 
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
-import {  Alert, Button, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
+import Ionicons from '@expo/vector-icons/Ionicons'
 
 import { NativeWindStyleSheet } from "nativewind";
 
@@ -11,7 +11,7 @@ import AppContext from '../components/AppContext';
 
 import { useAssets } from 'expo-asset';
 import { useTranslation } from 'react-i18next';
-import { t } from 'i18next';
+import { t, use } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,13 +28,15 @@ const languages = [ // Language List
   { code: 'fr', label: 'Français' },
 ];
 
-export default function SettingsScreen({navigation}) {
+export default function SettingsScreen({navigation, isFocused}) {
 
   // Get the global variables & functions via context
   const myContext = useContext(AppContext);
   const [apiInput, setAPIInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cacheIsCleared, setCacheIsCleared] = useState(false);
+  const [sunscanIsShutdown, setSunscanIsShutdown] = useState(false);
+
   // Load the firmware update ZIP file from assets
   const [assetZipPath, error] = useAssets([require('../assets/sunscan_backend_source.zip')]);
 
@@ -127,6 +129,33 @@ export default function SettingsScreen({navigation}) {
 
   };
 
+  
+  const shutdown = async () => {
+    Alert.alert(t('common:warning'), t('common:shutdownConfirm'),[
+      {
+        text: t('common:cancel'),
+        style: 'cancel',
+      },
+      { text: 'OK', onPress: async () => {
+        const url = 'http://'+myContext.apiURL+"/sunscan/shutdown/"
+        fetch(url).then(response => response.json())
+        .then(json => {
+          setSunscanIsShutdown(true);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+     }}]);
+  };
+
+
+  useFocusEffect(
+    useCallback(() => {
+      if (myContext.sunscanIsConnected) {
+        setSunscanIsShutdown(false);
+      }
+  }, [isFocused, myContext.sunscanIsConnected]));
+
   return (
     <View className="flex flex-col bg-zinc-800">
       <View className="h-full">
@@ -206,7 +235,11 @@ export default function SettingsScreen({navigation}) {
                 <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
               </View>
-              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
+              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button color='gray' title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
+            </View>
+
+            <View style={{right:0}}  className="absolute flex flex-row  space-x-4 items-start mt-8 ">
+              {sunscanIsShutdown ? <Text className="text-red-600 text-xs">{t('common:shutdownOk')}</Text>:<Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable>} 
             </View>
             <View className="mt-8"></View>
             <View>

@@ -40,6 +40,9 @@ export default {
     "upToDate": "You have the latest version",
     "firmwarePostUpdateMessage": "The firmware has been updated, please restart the application and your SUNSCAN to apply the changes",
     "clearCacheConfirm": "Are you sure you want to clear the image cache?",
+    "shutdown": "Shutdown SUNSCAN",
+    "shutdownConfirm": "Are you sure you want to shutdown your SUNSCAN?",
+    "shutdownOk": "Your SUNSCAN will shutdown in a few seconds...",
     // picture screen
     "downloaded": "Downloaded",
     "downloading": "Downloading",
