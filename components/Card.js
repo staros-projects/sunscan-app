@@ -40,7 +40,8 @@ export default function Card({scan}) {
           continuum_shift:15, 
           cont_sharpen_level:2, 
           surface_sharpen_level:2, 
-          pro_sharpen_level:1}),
+          pro_sharpen_level:1,
+          offset:0}),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);
