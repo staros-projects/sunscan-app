@@ -9,7 +9,7 @@ export default {
     "ipAddress" : "Adresse IP",
     "backendApiVersion" : "Version du firmware",
     "storage" : "Stockage",
-    "usedStorage" : "utilisé", 
+    "freeStorage" : "libre", 
     "totalStorage" : "total",
     "longitude" : "Longitude",
     "latitude" : "Latitude",
@@ -18,6 +18,7 @@ export default {
     "sunset" : "Coucher",
     "transit" : "Transit",
     "sun" : "Soleil",
+    "lowStorageWarning" : "Espace de stockage faible, veuillez libérer de l'espace avant de lancer un nouveau scan",
     // settings
     "configuration": "Configuration",
     "debugMode": "Mode debug",
@@ -43,6 +44,9 @@ export default {
     "shutdown": "Eteindre SUNSCAN",
     "shutdownConfirm": "Etes vous certain de vouloir éteindre votre SUNSCAN ?",
     "shutdownOk": "Votre SUNSCAN va s'éteindre dans quelques secondes...",
+    "reboot": "Redémarrer SUNSCAN",
+    "rebootConfirm": "Etes vous certain de vouloir redémarrer votre SUNSCAN ?",
+    "rebootOk": "Votre SUNSCAN va redémarrer dans quelques secondes...",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",

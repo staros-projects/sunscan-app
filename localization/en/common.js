@@ -8,7 +8,7 @@ export default {
     "observer" : "Observer",
     "ipAddress" : "IP Address",
     "storage" : "Storage",
-    "usedStorage" : "used", 
+    "freeStorage" : "free",
     "totalStorage" : "Total",
     "backendApiVersion" : "Backend API Version",
     "longitude" : "Longitude",
@@ -18,6 +18,7 @@ export default {
     "sunset" : "Set",
     "transit" : "Transit",
     "sun" : "Sun",
+    "lowStorageWarning" : "Low storage space, please free up some space before starting a new scan",
     // settings
     "configuration": "Settings",
     "debugMode": "Debug mode",
@@ -43,6 +44,9 @@ export default {
     "shutdown": "Shutdown SUNSCAN",
     "shutdownConfirm": "Are you sure you want to shutdown your SUNSCAN?",
     "shutdownOk": "Your SUNSCAN will shutdown in a few seconds...",
+    "reboot": "Reboot SUNSCAN",
+    "rebootConfirm": "Are you sure you want to reboot your SUNSCAN?",
+    "rebootOk": "Your SUNSCAN will reboot in a few seconds...",
     // picture screen
     "downloaded": "Downloaded",
     "downloading": "Downloading",

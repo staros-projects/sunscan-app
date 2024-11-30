@@ -1,7 +1,7 @@
 
 // Import necessary React and React Native components
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Dimensions, Platform, Pressable, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
+import { Alert, Dimensions, Platform, Pressable, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
 import { SafeAreaView } from 'react-native';
 
 // Import icons from Expo vector icons
@@ -290,7 +290,14 @@ export default function ScanScreen({navigation}) {
 
     // Function to update recording status
     async function updateRec(type) {
-      
+
+      // Check if there is enough storage space (1.2 Go minimum) before starting a new scan
+      if (parseFloat(myContext.freeStorage) < 1.2) {
+        console.log("low storage, free : ", parseFloat(myContext.freeStorage))
+        Alert.alert(t('common:warning'), t('common:lowStorageWarning'));
+        return;
+      }
+
       setIsLoading(true);
       fetch('http://'+myContext.apiURL+"/camera/record/"+type+"/").then(response => response.json())
       .then(json => {
@@ -633,7 +640,7 @@ export default function ScanScreen({navigation}) {
           </View>
       </View>
       {!rec && normMode == 0 && <View  className="absolute h-screen flex flex-col justify-center items-center p-4" style={{ left:0, top:0}}>
-          <Text className="text-xs text-white mb-2 text-center" style={{width:35}}>{maxThreshold*16*4}</Text>
+          <Text className="text-xs text-white mb-2 text-center" style={{width:35}}>{maxThreshold*16*(colorMode ? 1 : 4)}</Text>
             <VerticalSlider     
               value={maxThreshold}
               onChange={(v) => {setMaxThreshold(v)}}

@@ -36,6 +36,8 @@ export default function SettingsScreen({navigation, isFocused}) {
   const [isLoading, setIsLoading] = useState(false);
   const [cacheIsCleared, setCacheIsCleared] = useState(false);
   const [sunscanIsShutdown, setSunscanIsShutdown] = useState(false);
+  const [sunscanIsReboot, setSunscanIsReboot] = useState(false);
+
 
   // Load the firmware update ZIP file from assets
   const [assetZipPath, error] = useAssets([require('../assets/sunscan_backend_source.zip')]);
@@ -148,11 +150,30 @@ export default function SettingsScreen({navigation, isFocused}) {
      }}]);
   };
 
+  const reboot = async () => {
+    Alert.alert(t('common:warning'), t('common:rebootConfirm'),[
+      {
+        text: t('common:cancel'),
+        style: 'cancel',
+      },
+      { text: 'OK', onPress: async () => {
+        const url = 'http://'+myContext.apiURL+"/sunscan/reboot/"
+        fetch(url).then(response => response.json())
+        .then(json => {
+          setSunscanIsReboot(true);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+     }}]);
+  };
+
 
   useFocusEffect(
     useCallback(() => {
       if (myContext.sunscanIsConnected) {
         setSunscanIsShutdown(false);
+        setSunscanIsReboot(false);
       }
   }, [isFocused, myContext.sunscanIsConnected]));
 
@@ -164,6 +185,17 @@ export default function SettingsScreen({navigation, isFocused}) {
             {/* Settings header */}
             <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
             <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>
+            <View  className="flex flex-col mb-4 ">
+            <View  className="flex flex-row  space-x-4 items-start  ">
+              {(myContext.sunscanIsConnected || myContext.debug) && <>
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable> 
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable></>}
+              </View>
+              {(sunscanIsShutdown || sunscanIsReboot) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
+                  <Text className="text-white mb-1 text-xs italic" >{t('common:rebootOk')}</Text>
+                </View>}
+                </View>
+            
             
             {/* Language selection */}
             <View className="flex flex-row  space-x-4 items-center mb-4">
@@ -238,12 +270,10 @@ export default function SettingsScreen({navigation, isFocused}) {
               {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button color='gray' title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
             </View>
 
-            <View style={{right:0}}  className="absolute flex flex-row  space-x-4 items-start mt-8 ">
-              {sunscanIsShutdown ? <Text className="text-red-600 text-xs">{t('common:shutdownOk')}</Text>:<Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable>} 
-            </View>
-            <View className="mt-8"></View>
+     
+            <View className="mt-14"></View>
             <View>
-              <Text className="text-white text-xs italic">Behind the SUNSCAN is a passionate and dedicated team: STAROS Projects. Five members each bring their unique expertise to bear on making the SUNSCAN a success : Guillaume BERTRAND, Christian BUIL, Valérie DESNOUX, Olivier GARDE et Matthieu LE LAIN</Text>
+              <Text className="text-zinc-500 text-xs italic">Behind the SUNSCAN is a passionate and dedicated team: STAROS Projects. Five members each bring their unique expertise to bear on making the SUNSCAN a success : Guillaume BERTRAND, Christian BUIL, Valérie DESNOUX, Olivier GARDE et Matthieu LE LAIN</Text>
             </View>
             <View className="mt-8"></View>
           </ScrollView>

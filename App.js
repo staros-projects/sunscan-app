@@ -46,6 +46,8 @@ export default function App() {
   const [observerVal, setObserver] = useState("");
   const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
+  const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
+  const [freeStorage, setFreeStorage] = useState(0);
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -139,6 +141,10 @@ export default function App() {
     toggleDemo,
     toggleTooltip, 
     apiURL:apiURLVal,
+    displayFullScreenImage,
+    setDisplayFullScreenImage,
+    freeStorage,
+    setFreeStorage
   };
 
   const styles = StyleSheet.create({

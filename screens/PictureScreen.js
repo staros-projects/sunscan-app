@@ -298,6 +298,7 @@ export default function PictureScreen({ route, navigation }) {
               {/* Action buttons */}
               {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
+                {images.length > 1 && <Pressable className="" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])}><Ionicons name="expand" size={28} color="white" /></Pressable>}  
                 {(images.length > 1 || myContext.debug) && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
                 {/* {images.length > 1 && <Pressable className="" onPress={() => openShareDialogAsync()}><Ionicons name="share-social" size={28} color="white" /></Pressable>} */}
                 {images.length > 1 && <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>}  

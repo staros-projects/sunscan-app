@@ -86,8 +86,9 @@ export default function Status({isFocused})  {
       .then(json => {
         if(json) {
           console.log(json)
-          setStats(json)
-          myContext.setCamera(json.camera)
+          setStats(json);
+          myContext.setFreeStorage(json.free);
+          myContext.setCamera(json.camera);
           myContext.setSunscanIsConnected(true);
           myContext.setBackendApiVersion(json.backend_api_version);
           getCameraStatus();
@@ -163,7 +164,7 @@ export default function Status({isFocused})  {
                 (<View className="flex flex-row items-center space-x-2"><View className="bg-red-600  rounded-full  h-3 w-3 text-xs text-white text-center"></View></View>)}
                
             </View>
-            <Text className="text-slate-400 text-xs">{t('common:storage')} : {stats?.used}/{stats?.total} {t('common:usedStorage')}</Text>
+            {stats && <Text className="text-slate-400 text-xs">{t('common:storage')} : {stats?.free} {t('common:freeStorage')}</Text>}
 
             {myContext.debug && <Text className="text-slate-400 text-xs mt-1">{t('common:ipAddress')} : {myContext?.apiURL}</Text>}
             {myContext.debug && <Text className="text-slate-400 text-xs">{t('common:backendApiVersion')} : v{stats?.backend_api_version}</Text>}
