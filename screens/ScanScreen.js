@@ -599,24 +599,24 @@ export default function ScanScreen({navigation}) {
                       </View>
           
                         {monoBinMode == 0 && <View className="flex flex-row justify-center items-center space-x-2">
-                        <Text className='bg-red-600 text-xs rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
-                        <Text className='bg-green-600 text-xs rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
-                        <Text className='bg-blue-500 text-xs rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
+                        <Text className='bg-red-600 text-xs rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                        <Text className='bg-green-600 text-xs rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                        <Text className='bg-blue-500 text-xs rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                         </View>}
                         {monoBinMode == 1 && <View className="flex flex-row justify-center items-center space-x-2">
-                          <Text className='bg-red-600 text-xs font-bold  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
-                        <Text className='bg-gray-500 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
-                        <Text className='bg-gray-500 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
+                          <Text className='bg-red-600 text-xs font-bold  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                        <Text className='bg-gray-500 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                        <Text className='bg-gray-500 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                         </View>}
                         {monoBinMode == 2 && <View className="flex flex-row justify-center items-center space-x-2">
-                          <Text className='bg-gray-600 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
-                        <Text className='bg-green-600 text-xs font-bold  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
-                        <Text className='bg-gray-500 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
+                          <Text className='bg-gray-600 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                        <Text className='bg-green-600 text-xs font-bold  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                        <Text className='bg-gray-500 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                         </View>}
                         {monoBinMode == 3 && <View className="flex flex-row justify-center items-center space-x-2">
-                          <Text className='bg-gray-500 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
-                        <Text className='bg-gray-500 text-xs  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
-                        <Text className='bg-blue-500 text-xs font-bold  rounded-lg text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
+                          <Text className='bg-gray-500 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.r}</Text>
+                        <Text className='bg-gray-500 text-xs  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.g}</Text>
+                        <Text className='bg-blue-500 text-xs font-bold  rounded-sm text-white px-1' style={{fontSize:10}}>{pixelStats.b}</Text>
                         </View>}
 
                         </View>
@@ -640,7 +640,7 @@ export default function ScanScreen({navigation}) {
           </View>
       </View>
       {!rec && normMode == 0 && <View  className="absolute h-screen flex flex-col justify-center items-center p-4" style={{ left:0, top:0}}>
-          <Text className="text-xs text-white mb-2 text-center" style={{width:35}}>{maxThreshold*16*(colorMode ? 1 : 4)}</Text>
+          <Text className="text-white mb-2 text-center" style={{width:40, fontSize:10}}>{maxThreshold*16*(colorMode ? 1 : 4)}</Text>
             <VerticalSlider     
               value={maxThreshold}
               onChange={(v) => {setMaxThreshold(v)}}
@@ -656,7 +656,7 @@ export default function ScanScreen({navigation}) {
               containerStyle={{ backgroundColor: '#e0e0e0', borderRadius:10 }}
               sliderStyle={{ backgroundColor: 'rgb(82 82 91);', borderRadius: 10 }}
             />
-             <Text className="text-xs text-white mt-2 text-center" style={{width:35}}>0</Text>
+             <Text className="text-white mt-2 text-center" style={{width:35, fontSize:10}}>0</Text>
         </View>
         }
         
