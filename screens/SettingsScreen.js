@@ -140,7 +140,13 @@ export default function SettingsScreen({navigation, isFocused}) {
       },
       { text: 'OK', onPress: async () => {
         const url = 'http://'+myContext.apiURL+"/sunscan/shutdown/"
-        fetch(url).then(response => response.json())
+        fetch(url).then(response => response.json(), {
+          method: "POST", 
+          headers: {
+            'Content-Type': 'application/json'
+        },
+          body: JSON.stringify({}),
+        })
         .then(json => {
           setSunscanIsShutdown(true);
         })
@@ -158,7 +164,13 @@ export default function SettingsScreen({navigation, isFocused}) {
       },
       { text: 'OK', onPress: async () => {
         const url = 'http://'+myContext.apiURL+"/sunscan/reboot/"
-        fetch(url).then(response => response.json())
+        fetch(url).then(response => response.json(), {
+          method: "POST", 
+          headers: {
+            'Content-Type': 'application/json'
+        },
+          body: JSON.stringify({}),
+        })  
         .then(json => {
           setSunscanIsReboot(true);
         })
