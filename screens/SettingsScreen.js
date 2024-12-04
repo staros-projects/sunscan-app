@@ -140,7 +140,13 @@ export default function SettingsScreen({navigation, isFocused}) {
       },
       { text: 'OK', onPress: async () => {
         const url = 'http://'+myContext.apiURL+"/sunscan/shutdown/"
-        fetch(url).then(response => response.json())
+        fetch(url, {
+          method: "POST", 
+          headers: {
+            'Content-Type': 'application/json'
+        },
+          body: JSON.stringify({}),
+        }).then(response => response.json())
         .then(json => {
           setSunscanIsShutdown(true);
         })
@@ -158,7 +164,13 @@ export default function SettingsScreen({navigation, isFocused}) {
       },
       { text: 'OK', onPress: async () => {
         const url = 'http://'+myContext.apiURL+"/sunscan/reboot/"
-        fetch(url).then(response => response.json())
+        fetch(url, {
+          method: "POST", 
+          headers: {
+            'Content-Type': 'application/json'
+        },
+          body: JSON.stringify({}),
+        }).then(response => response.json())  
         .then(json => {
           setSunscanIsReboot(true);
         })
@@ -191,8 +203,11 @@ export default function SettingsScreen({navigation, isFocused}) {
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable> 
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable></>}
               </View>
-              {(sunscanIsShutdown || sunscanIsReboot) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
+              {sunscanIsReboot && <View className="flex flex-row  space-x-4 items-start mt-2 ">
                   <Text className="text-white mb-1 text-xs italic" >{t('common:rebootOk')}</Text>
+                </View>}
+                {sunscanIsShutdown && <View className="flex flex-row  space-x-4 items-start mt-2 ">
+                  <Text className="text-white mb-1 text-xs italic" >{t('common:shutdownOk')}</Text>
                 </View>}
                 </View>
             

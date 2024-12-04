@@ -47,7 +47,7 @@ export default function Infos({isFocused}) {
 
   // Utility function to convert decimal degrees to degrees, minutes, seconds format
   const convertDDToDMS = (D) =>{
-    return D ? ['0'|D, '°', 0|(D=(D<0?-D:D)+1e-4)%1*60, "'", 0|D*60%1*60, '"'].join(''):'';
+    return D ? ['0'|D, '°', 0|(D=(D<0?-D:D)+1e-4)%1*60, "'"].join(''):'';
   }
 
 
