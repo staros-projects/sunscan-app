@@ -11,7 +11,7 @@ import md5 from 'md5';
 import { useTranslation } from 'react-i18next';
 
 // Main Card component for displaying scan information
-export default function Card({scan}) {
+export default function Card({scan, selected, multiSelectMode,  onLongPress}) {
   const { t, i18n } = useTranslation();
   const myContext = useContext(AppContext);
 
@@ -81,12 +81,14 @@ export default function Card({scan}) {
 
   // Render the Card component
   return (
-      <View className="rounded-lg bg-black flex flex-col justify-center items-center" >
-            <View style={{height:squareSize}}>
+      <View className="border-none border-white rounded-lg bg-black flex flex-col justify-center items-center" style={{borderWidth:selected ? 2 : 0}}>
+           
+            <View  className="mx-auto w-full">
+              <View className="absolute top-0 p-2 right-0 z-10">{selected ? <Ionicons name="checkmark-circle" size={30} color="white" />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" />:<></>)}</View>
               { scanStatus == "completed" ? 
                 // Display completed scan image
-                <Pressable style={{width:squareSize}} className="mx-auto rounded-lg grow flex items-center justify-center flex-none z-10"  onPress={() =>navigation.navigate('Picture',{scan:scan})}  >
-                  <View  sytle={{height:squareSize}}>
+                  <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.ser) : navigation.navigate('Picture',{scan:scan})}  >
+                  <View sytle={{height:squareSize}}>
                     <Image
                         style={{width:squareSize, height:squareSize}}
                         className=""
@@ -99,19 +101,21 @@ export default function Card({scan}) {
                 </Pressable>
                 :
                 // Display play button or loader for processing
-                <View style={{width:squareSize}} className="mx-auto h-full grow flex items-center justify-center flex-none" >
-                    {!isStarted ?
-                      <Pressable onPress={()=>processScan()} ><Ionicons name="play-circle" size={squareSize/4} color="lightgray" /></Pressable>
-                      :
-                      <Loader type="white" size={squareSize/4}/>
-                    }
-                  </View>
+                <Pressable onLongPress={onLongPress} onPress={()=>multiSelectMode ? onLongPress(scan.ser) : processScan()} >
+                  <View style={{width:squareSize, height:squareSize}} className="mx-auto h-full grow flex items-center justify-center flex-none" >
+                      {!isStarted ?
+                      <Ionicons name="play-circle" size={squareSize/4} color="lightgray" />
+                        :
+                        <Loader type="white" size={squareSize/4}/>
+                      }
+                    </View>
+                  </Pressable>
                 }
               </View>
             {/* Footer with date and options */}
             <View style={{height:50}} className="bg-zinc-900 w-full rounded-b-lg p-2 flex flex-row justify-between items-center">     
                 <Text className="text-white font-bold text-xs">{scanDate}</Text>
-                <Pressable  onPress={() =>navigation.navigate('Picture',{scan:scan})}  >
+                <Pressable  onPress={() => multiSelectMode ? onLongPress(scan.ser) : navigation.navigate('Picture',{scan:scan})}  >
                   <Ionicons name="ellipsis-vertical" size={20} color="white" />
                 </Pressable>
               </View>

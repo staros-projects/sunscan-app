@@ -33,10 +33,10 @@ export default {
     "offlineDescription": "Force l'affichage des contrôles de la caméra même si sunscan n'est pas connecté",
     "sunscanIP": "IP Sunscan",
     "sunscanIPDescription": "Mode hotspot désactivé, précisez ici l'ip de votre SUNSCAN",
-    "update": "Mise à jour",
+    "update": "Mettre à jour",
     "clearImageCache": "Vider le cache d'images",
     "clearCacheDescription": "Vide le cache d'images pour libérer de l'espace",
-    "updateFirmwareconfirm": "Etes vous certain de vouloir mettre à jour le firmware ?",
+    "updateFirmwareconfirm": "Etes vous certain de vouloir mettre à jour le firmware ? Il est préférable de brancher l'alimentation de votre SUNSCAN pendant la mise à jour.",
     "firmwareIsOutdated": "Votre firmware est obsolète, veuillez mettre à jour le firmware dans la partie réglage de l'application",
     "firmwarePostUpdateMessage": "Le firmware a été mis à jour, veuillez redémarrer l'application et votre SUNSCAN pour appliquer les changements",
     "upToDate": "Vous avez la dernière version",
@@ -47,6 +47,8 @@ export default {
     "reboot": "Redémarrer SUNSCAN",
     "rebootConfirm": "Etes vous certain de vouloir redémarrer votre SUNSCAN ?",
     "rebootOk": "Votre SUNSCAN va redémarrer dans quelques secondes...",
+    "currentVersion": "Version actuelle",
+    "newVersion": "Nouvelle version disponible",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",
@@ -86,5 +88,9 @@ export default {
     "exposure": "Exposition",
     "gain": "Gain",
     "processingLog": "Log de traitement",
+    "scanSelected": "scans selectionnés",
+    "delete": "Supprimer",
+    "stack": "Additionner",
+    "animate": "Animer",
 
 }

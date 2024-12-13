@@ -129,7 +129,7 @@ export default function Status({isFocused})  {
   }
 
   const checkFirmware = () => {
-    if(!firmareIsUpToDate(myContext)) {
+    if(myContext.sunscanIsConnected && !firmareIsUpToDate(myContext)) {
       Alert.alert(t('common:warning'), t('common:firmwareIsOutdated'), [
         { text: 'OK', onPress: async () => {}}]);
     }

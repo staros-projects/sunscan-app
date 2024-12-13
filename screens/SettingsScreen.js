@@ -267,22 +267,26 @@ export default function SettingsScreen({navigation, isFocused}) {
             </View>
 
             {/* Firmware update section */}
-            <View className="flex flex-row  space-x-4 items-start mt-2 ">
+            {(myContext.sunscanIsConnected || myContext.debug) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{backend_current_version}]</Text>
-                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
+                <Text className="text-white mb-1" >{t('common:updateFirmware')}</Text>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:currentVersion')} : {myContext.backendApiVersion}</Text>
+                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:newVersion')} : {backend_current_version}</Text>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
+                </>}
               </View>
               {!firmareIsUpToDate(myContext) || myContext.debug ?
-              <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
-              <Text className="text-white">{t('common:upToDate')}</Text>}
-            </View>
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={updateFirmware}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:update')}</Text></Pressable>:
+              <View className="text-white flex flex-row items-center align-center space-x-2"><Text className="text-white ">{t('common:upToDate')}</Text><Ionicons name="checkmark-circle" size={20} color="white" /></View>}
+            </View>}
 
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
               </View>
-              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button color='gray' title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
+              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={clearImageCache}><Ionicons name="trash" size={20} color="white" /><Text className="text-white">{t('common:clearImageCache')}</Text></Pressable>}
             </View>
 
      
