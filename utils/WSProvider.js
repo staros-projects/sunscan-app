@@ -20,17 +20,32 @@ export default function  WebSocketProvider({ children })  {
     useEffect(() => {
         /* WS initialization and cleanup */
         console.log('WS try to connect to '+myContext.apiURL)
-        ws.current = new ReconnectingWebSocket('ws://'+myContext.apiURL+'/ws');
+        ws.current = new ReconnectingWebSocket('ws://' + myContext.apiURL + '/ws', [], {
+            debug: false,
+            reconnectInterval: 1000,        // Démarre avec un délai de 1 secondes
+            maxReconnectInterval: 5000,     // N'excède pas 5 secondes entre deux tentatives
+            reconnectDecay: 1.2,            // Augmente le délai de 20% après chaque tentative
+            timeoutInterval: 3000,          // Attente maximale de 3 secondes pour établir une connexion
+            maxReconnectAttempts: null,     // Arrête après (infini de) tentatives
+        });
         ws.current.onopen = () => { console.log('WS open'); myContext.setSunscanIsConnected(true); }
-        ws.current.onclose = () => { console.log('WS close'); }
+        ws.current.onclose = () => { console.log('WS close'); myContext.setSunscanIsConnected(false); }
+        ws.current.onerror = (error) => { console.error('WebSocket error:', error); }
         ws.current.onmessage = (message) => {
-            if (message.data) {
+            if (message.data && message.data.includes(";#;")) {
                 const return_text = message.data.split(";#;");
                 if (return_text[0] in channels.current)
                     channels.current[return_text[0]](return_text)
+            } else {
+                console.warn("Unexpected WebSocket message format:", message.data);
             }
         }
-        return () => { ws.current.close() }
+        return () => { 
+            if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
+                ws.current.close();
+            }
+            ws.current.close(); ws.current = null;
+        }
     }, [myContext.apiURL])
 
     /* WS provider dom */
