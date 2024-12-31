@@ -95,8 +95,7 @@ export default function StackedPictureScreen({  route, navigation }) {
             images.push("http://"+myContext.apiURL+"/"+i);
           }
         })
-        console.log(images)
-        setImages(images);
+        setImages(images.sort((a, b) => a.localeCompare(b)));
         setcurrentImage(images[0]);
       }
     }, [scan]));

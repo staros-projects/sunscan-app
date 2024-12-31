@@ -328,7 +328,7 @@ export default function PictureScreen({ route, navigation }) {
                 </Zoomable>
                  {/* Image name display */}
                  {/* <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text>  */}
-                 <View className="absolute z-40 pt-4 bottom-0" style={{right:0}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path} /></View></View>
+                 <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path} /></View></View>
               </View>
               {/* Thumbnail scrollview */}
               <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >

@@ -122,11 +122,11 @@ export default function ListScreen({navigation}) {
       headers: {
         'Content-Type': 'application/json'
     },
-      body: JSON.stringify({paths:selectedItems.map(i => i+'/scan.ser')}),
+      body: JSON.stringify({paths:selectedItems.map(i => i+'/scan.ser'), observer:myContext.showWatermark?myContext.observer:''}),
     }).then(response => response.json())
     .then(json => {
-      console.log(json);
       setDisplayNewStackedItemNotif(true);
+      setModalVisible(false);
     })
 
 
