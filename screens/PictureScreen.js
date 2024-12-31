@@ -323,7 +323,7 @@ export default function PictureScreen({ route, navigation }) {
                     style={styles.image}
                     source={currentImage[1]}
                     transition={300}
-                    contentFit='contain '
+                    contentFit='contain'
                   />
                 </Zoomable>
                  {/* Image name display */}
