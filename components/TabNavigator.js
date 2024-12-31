@@ -19,7 +19,7 @@ import IrisSVG from './svg/IrisSVG';
 import GallerySVG from './svg/GallerySVG';
 import SettingsSVG from './svg/SettingsSVG';
 import AppContext from './AppContext';
-import ImageZoom from 'react-native-image-pan-zoom';
+import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { Image } from 'expo-image';
 
 // Main TabNavigator component
@@ -62,20 +62,20 @@ export default function TabNavigator({
     <NavigationContent>
        
         <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99}}>
-                {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-screen h-screen" style={{zIndex:100, elevation:100}}>
+                {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
                   <Pressable className="absolute right-0 top-0 m-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage(''); console.log('1') }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
-                        <ImageZoom
-                            cropWidth={Dimensions.get('window').width}
-                            cropHeight={Dimensions.get('window').height}
-                            imageWidth={400}
-                            imageHeight={400}>
+                        <Zoomable
+                        isSingleTapEnabled
+                        isDoubleTapEnabled
+                        
+                            >
                               <Image
                                 style={styles.image}
                                 source={myContext.displayFullScreenImage}
-                                contentFit='contain'
+                                contentFit='none'
                               />
-                        </ImageZoom>
+                        </Zoomable>
                 </View>}
                 {/* Sidebar navigation */}
                 <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >

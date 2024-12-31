@@ -49,6 +49,8 @@ export default {
     "rebootOk": "Your SUNSCAN will reboot in a few seconds...",
     "currentVersion": "Current version",
     "newVersion": "New version available",
+    "displayWatermark": "Display watermark",
+    "displayWatermarkDescription": "Displays the SUNSCAN logo and observer name on the bottom left corner of the image",
     // status
     "sunscan": "SUNSCAN",
     "storage": "Storage",
@@ -70,6 +72,8 @@ export default {
     "download": "Download",
     "delete": "Delete",
     "deleteConfirm": "Are you sure you want to delete this scan?",
+    "deleteStackedConfirm": "Are you sure you want to delete this stacked images?",
+    "deleteGenericConfirm": "Are you sure you want to delete these items?",
     "warning": "Warning",
     // scan screen
     "snapShot": "Snapshot",
@@ -107,4 +111,21 @@ export default {
     "delete": "Delete",
     "stack": "Stack",
     "animate": "Animate",
+    // list screen
+    "scans": "Scans",
+    "stacked": "Stacked",
+    "animations": "Animations",
+    "snapshots": "Snapshots",
+    "processing": "Processing in progress...",
+    // animation options modal
+    "animationOptions": "Animation options",
+    "frameDuration": "Frame duration (ms)",
+    "displayDatetime": "Display datetime",
+    "resizeGif": "Resize GIF (50%)",
+    "bidirectional": "Bidirectional",
+    "addAverageFrame": "Add average frame",
+    "startProcessing": "Start processing",
+    "pleaseWait": "The processing may take several minutes...",
+    "selectAtLeastOneItem": "Please select at least two items",
+
 }

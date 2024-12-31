@@ -26,6 +26,9 @@ import { StyleSheet } from 'react-native';
 
 import './localization/i18n';
 import i18next from 'i18next';
+import Animated from 'react-native-reanimated';
+import StackedPictureScreen from './screens/StackedPictureScreen';
+import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
 
 // ...
 
@@ -156,6 +159,8 @@ export default function App() {
     },
   });
 
+  Animated.addWhitelistedNativeProps({ text: true });
+
   return (
     <GestureHandlerRootView style={styles.container}>
     <AppContext.Provider value={userSettings}>
@@ -182,6 +187,14 @@ export default function App() {
               <My.Screen
                 name="Picture"
                 component={PictureScreen}
+              />
+                <My.Screen
+                name="StackedPicture"
+                component={StackedPictureScreen}
+              />
+               <My.Screen
+                name="AnimatedPicture"
+                component={AnimatedPictureScreen}
               />
               <My.Screen name="Settings" component={SettingsScreen} />
             </My.Navigator>

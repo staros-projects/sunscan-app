@@ -49,12 +49,16 @@ export default {
     "rebootOk": "Votre SUNSCAN va redémarrer dans quelques secondes...",
     "currentVersion": "Version actuelle",
     "newVersion": "Nouvelle version disponible",
+    "displayWatermark": "Afficher un filigrane",
+    "displayWatermarkDescription": "Affiche le logo SUNSCAN et le nom de l'observateur en bas à gauche de l'image",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",
     "download": "Télécharger",
     "delete": "Supprimer",
-    "deleteConfirm": "etes vous certain de vouloir supprimer ce scan ?",
+    "deleteConfirm": "êtes vous certain de vouloir supprimer ce scan ?",
+    "deleteStackedConfirm": "êtes vous certain de vouloir supprimer cette images empilée ?",
+    "deleteGenericConfirm": "êtes vous certain de vouloir supprimer ces éléments ?",
     "warning": "Attention",
     // scan screen
     "snapShot": "Snapshot",
@@ -92,5 +96,20 @@ export default {
     "delete": "Supprimer",
     "stack": "Additionner",
     "animate": "Animer",
-
+    // list screen
+    "scans": "Scans",
+    "stacked": "Stacked",
+    "animations": "Animations",
+    "snapshots": "Snapshots",
+    "processing": "Traitement en cours...",
+    // animation options modal
+    "animationOptions": "Options d'animation",
+    "frameDuration": "Durée de chaque image (ms)",
+    "displayDatetime": "Afficher la date et l'heure",
+    "resizeGif": "Redimensionner le GIF (50%)",
+    "bidirectional": "Animation bidirectionnel",
+    "addAverageFrame": "Ajouter des images moyennes entre chaque frame",
+    "startProcessing": "Démarrer le traitement",
+    "pleaseWait": "Le traitement peut prendre plusieurs minutes...",
+    "selectAtLeastOneItem": "Veuillez sélectionner au moins deux éléments",
 }

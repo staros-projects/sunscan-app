@@ -108,9 +108,10 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                    <View className="flex flex-row items-center mb-2">
                     <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
                     <Switch
-                            value={displayOptions}
-
-                            onValueChange={()=>setDisplayOptions(!displayOptions)}
+                     trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                      thumbColor='#fff'
+                      value={displayOptions}
+                      onValueChange={()=>setDisplayOptions(!displayOptions)}
                           />
                     </View>
                     {displayOptions && <View className="flex flex-col space-y-1 rounded-xl p-3 bg-zinc-800 mb-2">

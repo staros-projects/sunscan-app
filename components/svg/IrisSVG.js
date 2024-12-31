@@ -9,8 +9,8 @@ function IrisSVG(props) {
       strokeWidth={0}
       viewBox="0 0 24 24"
       color="#fff"
-      height={32}
-      width={32}
+      height={props.size}
+      width={props.size}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >

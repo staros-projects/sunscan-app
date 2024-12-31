@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Text, View, useWindowDimensions } from "react-native";
-import { VictoryAxis, VictoryChart, VictoryLine, VictoryTheme } from "victory-native";
+import { VictoryAxis, VictoryChart, VictoryLine, VictoryTheme, VictoryZoomContainer } from "victory-native";
 
 // Component to display a spectrum chart
 function Spectrum({data, title, subtitle}) {

@@ -237,10 +237,24 @@ export default function SettingsScreen({navigation, isFocused}) {
             </View>
 
             {/* Observer input */}
-            {/* <View className="flex flex-row  space-x-4 items-center">
+            <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
-              <TextInput className="bg-zinc-700 border border-zinc-500 w-40 text-white rounded-md" style={{padding:10}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
-            </View> */}
+              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" style={{padding:5}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
+            </View> 
+
+             {/* Watermark toggle */}
+             <View className="flex flex-row  space-x-4 items-start mt-2  ">
+              <View className="w-1/2"> 
+                <Text className="text-white mb-1" >{t('common:displayWatermark')}</Text>
+                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:displayWatermarkDescription')}</Text>
+              </View>
+              <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
+                value={myContext.showWatermark}
+                onValueChange={myContext.toggleShowWaterMark}
+              />
+            </View>
 
             {/* Debug mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2  ">
@@ -249,6 +263,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:debugDescription')}</Text>
               </View>
               <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
                 value={myContext.debug}
                 onValueChange={myContext.toggleDebug}
               />
@@ -261,6 +277,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:offlineDescription')}</Text>
               </View>
               <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
                 value={myContext.demo}
                 onValueChange={myContext.toggleDemo}
               />

@@ -20,8 +20,6 @@ NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
-// Import ImageZoom for image zooming functionality
-import ImageZoom from 'react-native-image-pan-zoom';
 
 // Import custom components
 import Loader from '../components/Loader';
@@ -36,6 +34,7 @@ import VerticalSlider from 'rn-vertical-slider';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
+import { Zoomable } from '@likashefqet/react-native-image-zoom';
 
 // Main ScanScreen component
 export default function ScanScreen({navigation}) {
@@ -84,7 +83,6 @@ export default function ScanScreen({navigation}) {
         subscribe('camera', (message) => {
             fcRef.current += 1
             setFC(fcRef.current)
-           
             if (!displaySpectrum) {
               setFrame(message[3]);
             }
@@ -100,7 +98,6 @@ export default function ScanScreen({navigation}) {
       // Subscribe to 'spectrum' events
       subscribe('spectrum', (message) => {
         if (displaySpectrumType == "vertical" && displaySpectrum) {
-          console.log("spectrum")
           if(fcRef.current%2==0)
             setSpectrumData(message[1].split(','));
         }
@@ -111,9 +108,7 @@ export default function ScanScreen({navigation}) {
 
       // Subscribe to 'intensity' events
       subscribe('intensity', (message) => {
-        
         if (displaySpectrumType == "horizontal" && displaySpectrum) {
-            console.log("intensity")
           if(fcRef.current%2==0)
             setIntensityData(message[1].split(','));
         }
@@ -375,21 +370,22 @@ export default function ScanScreen({navigation}) {
             {/* Main container for displaying the camera feed or spectrum */}
             <View className="absolute z-1 flex flex-col justify-center" style={{ right:0, left:0, top:0, width:"100%", height:"100%"}}>
             {!displaySpectrum && (frame && myContext.cameraIsConnected ? 
-            <ImageZoom cropWidth={Dimensions.get('window').width-18}
-                       cropHeight={Dimensions.get('window').height}
-                       imageWidth={500}
-                       imageHeight={crop ? 29:200}>
+            
+                                    <Zoomable
+                                    isSingleTapEnabled
+                                    isDoubleTapEnabled
+                                        >
                         {/* Grid overlay for alignment */}
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 "><View className="mx-auto z-40 h-full" style={{width:1, backgroundColor:"lime"}}></View></View>} 
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 flex flex-row items-center "><View className="z-40 w-full" style={{height:1, backgroundColor:"lime"}}></View></View>}
                 {/* Camera feed image */}
-                <Image
-                style={styles.image}
+                <View className="h-full w-full  flex flex-row justify-center items-center"><Image
+                style={{width:crop?540:402, height:crop ? 30:299}}
                 source={{ uri: frame }} 
                 contentFit='contain'
-                className="border border-white"
-                />
-                </ImageZoom>:<View className="mx-auto"><Loader type="white" /></View>)}
+                className="border border-white mx-auto"
+                /></View>
+                </Zoomable>:<View className="mx-auto"><Loader type="white" /></View>)}
 
                 {/* Spectrum display */}
                 {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} title="Spectre" subtitle="Profil vertical / Mise au point caméra" />}
