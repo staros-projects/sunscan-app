@@ -59,7 +59,7 @@ export default function StackedPictureScreen({  route, navigation }) {
     try {
       const downloadPath = `${FileSystem.cacheDirectory}sunscan.jpg`;
       const { uri: localUrl } = await FileSystem.downloadAsync(
-        currentImage[1],
+        currentImage,
         downloadPath
       );
 
@@ -87,6 +87,7 @@ export default function StackedPictureScreen({  route, navigation }) {
   // Effect to run when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      setMessage('');
       if (scan) {
         setImages([]);
         const images  = [];

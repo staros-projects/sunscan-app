@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { linesDict } from './LineSelector';
 
 // Main Card component for displaying scan information
-export default function Card({scan, selected, multiSelectMode,  onLongPress}) {
+export default function Card({scan, selected, multiSelectMode, onLongPress}) {
   const { t, i18n } = useTranslation();
   const myContext = useContext(AppContext);
 

@@ -25,17 +25,25 @@ export const linesDict = [
   {key:'caIIH', short:"Ca II H", description:'Ca II H line - 3968  Å', color:'#7e22ce'},
 ];
 
-const LineSelector = ({path, tag }) => {
 
-    const [selectedValue, setSelectedValue] = React.useState(null);
-    
 
+
+const LineSelector = ({path, tag}) => {
+
+    const [selectedValue, setSelectedValue] = React.useState('');
+    const lineSelectorComponent = React.useRef(null);
+  
     const myContext = useContext(AppContext);
 
-  
     useFocusEffect(
       useCallback(() => {
-        tag ? setSelectedValue(linesDict.find(item => item.key === tag)) : setSelectedValue(linesDict[0]);
+        lineSelectorComponent.current.reset();
+        if (tag === undefined) {
+          setSelectedValue(linesDict[0]);
+          return;
+        }
+        setSelectedValue(linesDict.find(item => item.key === tag)) 
+
     }, [path, tag]));
 
 
@@ -49,7 +57,7 @@ const LineSelector = ({path, tag }) => {
       body: JSON.stringify({ filename: path, tag:value.key }),
     }).then(response => response.json())
       .then(json => {
-        console.log(json)
+        //console.log(json)
       })
       .catch(error => {
         console.error(error);
@@ -59,7 +67,8 @@ const LineSelector = ({path, tag }) => {
 
     return (
         <SelectDropdown
-            dropdownOverlayColor="rgba(0, 0, 0, 0)"
+          ref={lineSelectorComponent}
+          dropdownOverlayColor="rgba(0, 0, 0, 0)"
           data={linesDict}
           onSelect={(selectedItem, index) => {
             tagScan(selectedItem);

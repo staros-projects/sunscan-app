@@ -180,6 +180,7 @@ export default function PictureScreen({ route, navigation }) {
   // Effect to run when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      setMessage('');
       setIsStarted(false);
       setImages([]);
       setcurrentImage([]);

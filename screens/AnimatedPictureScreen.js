@@ -88,6 +88,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
   // Effect to run when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      setMessage('');
       if (scan) {
         setImages([]);
         const images  = [];
