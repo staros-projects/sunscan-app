@@ -29,7 +29,7 @@ export default function  WebSocketProvider({ children })  {
             maxReconnectAttempts: null,     // Arrête après (infini de) tentatives
         });
         ws.current.onopen = () => { console.log('WS open'); myContext.setSunscanIsConnected(true); }
-        ws.current.onclose = () => { console.log('WS close'); myContext.setSunscanIsConnected(false); }
+        ws.current.onclose = () => { console.log('WS close'); }
         ws.current.onerror = (error) => { console.error('WebSocket error:', error); }
         ws.current.onmessage = (message) => {
             if (message.data && message.data.includes(";#;")) {
