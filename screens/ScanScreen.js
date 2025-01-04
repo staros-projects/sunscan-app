@@ -380,7 +380,7 @@ export default function ScanScreen({navigation}) {
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 flex flex-row items-center "><View className="z-40 w-full" style={{height:1, backgroundColor:"lime"}}></View></View>}
                 {/* Camera feed image */}
                 <View className="h-full w-full  flex flex-row justify-center items-center"><Image
-                style={{width:crop?540:402, height:crop ? 30:299}}
+                style={{width:crop?540:402, height:crop ? 30:200}}
                 source={{ uri: frame }} 
                 contentFit='contain'
                 className="border border-white mx-auto"
