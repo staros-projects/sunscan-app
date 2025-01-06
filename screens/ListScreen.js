@@ -1,4 +1,4 @@
-import  {  useContext,  useState, useCallback } from 'react';
+import  {  useContext,  useState, useCallback, useEffect } from 'react';
 import { View,FlatList, SafeAreaView, ActivityIndicator, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, useAnimatedProps, runOnJS, Easing } from 'react-native-reanimated';
@@ -282,15 +282,20 @@ const updateCurrentView = (view) => {
   setCurrentView(view);
 }
 
+useEffect(() => {
+  setMassEditMode(selectedItems.length > 0);
+}, [selectedItems])
+
 const [displayNewStackededItemNotif, setDisplayNewStackedItemNotif] = useState(false);
 const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(false);
+const [massEditMode, setMassEditMode] = useState(false);
 
 
 
   return (
     <>
     <SafeAreaView className="bg-zinc-700 h-screen" style={{flex:1}}>
-      {selectedItems.length > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 space-x-2" style={{zIndex:20}}>
+      {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 space-x-2" style={{zIndex:20}}>
         <Text className="text-white text-xs mr-4">{selectedItems.length} {t('common:scanSelected')}</Text>
         {currentView == 'scans' && <><Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable>
        <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></Pressable></>}
@@ -298,20 +303,24 @@ const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(f
         <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{setSelectedItems([])}}><Ionicons name="close" size={20} color="white" /></Pressable>
       </View>}
       <View className="flex flex-row items-center justify-center w-full bg-zinc-900/80 pt-1 space-x-2">
-      <Pressable className={currentView == "scans" ?   "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('scans')}}>
-        <IrisSVG color={currentView == "scans" ? "white":"#71717a"} size={21}  />
-        <Text className={currentView == "scans" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:scans')}</Text>
-      </Pressable>
-      <Pressable className={currentView == "stacked" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('stacked')}}>
-        <Ionicons name="logo-stackoverflow" size={20} color={currentView == "stacked" ? "white":"#71717a"}  />
-        <Text className={currentView == "stacked" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:stacked')}</Text>
-        {displayNewStackededItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
-      </Pressable>
-      <Pressable className={currentView == "animated" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('animated')}}>
-        <Ionicons name="film-outline" size={20} color={currentView == "animated" ? "white":"#71717a"}  />
-        <Text className={currentView == "animated" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:animations')}</Text>
-        {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
-      </Pressable>
+        <Pressable className={currentView == "scans" ?   "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('scans')}}>
+          <IrisSVG color={currentView == "scans" ? "white":"#71717a"} size={21}  />
+          <Text className={currentView == "scans" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:scans')}</Text>
+        </Pressable>
+        <Pressable className={currentView == "stacked" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('stacked')}}>
+          <Ionicons name="logo-stackoverflow" size={20} color={currentView == "stacked" ? "white":"#71717a"}  />
+          <Text className={currentView == "stacked" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:stacked')}</Text>
+          {displayNewStackededItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
+        </Pressable>
+        <Pressable className={currentView == "animated" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('animated')}}>
+          <Ionicons name="film-outline" size={20} color={currentView == "animated" ? "white":"#71717a"}  />
+          <Text className={currentView == "animated" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:animations')}</Text>
+          {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
+        </Pressable>
+
+         <Pressable className="absolute right-0 top-0 p-3" onPress={()=>{setMassEditMode(true);}}>
+          <Ionicons name="build-outline" size={20} color={massEditMode ? "white":"#71717a"}  />
+        </Pressable> 
       {/* <Pressable className={currentView == "snapshots" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('snapshots')}}>
         <Ionicons name="camera" size={20} color={currentView == "snapshots" ? "white":"#71717a"}  />
         <Text className={currentView == "snapshots" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:snapshots')}</Text>
@@ -327,16 +336,16 @@ const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(f
             renderItem={({item}) => 
             {
               if(currentView == "scans"){
-                return <ItemScan selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={selectedItems.length > 0} onLongPress={() => handleLongPress(item.path)} />
+                return <ItemScan selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
               }
               else if(currentView == "stacked"){
-                return <ItemStacked selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={selectedItems.length > 0} onLongPress={() => handleLongPress(item.path)} />
+                return <ItemStacked selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
               }
               else if(currentView == "animated"){
-                return <ItemAnimation selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={selectedItems.length > 0} onLongPress={() => handleLongPress(item.path)} />
+                return <ItemAnimation selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
               }
               else if(currentView == "snapshots"){
-                return <ItemSnapshot selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={selectedItems.length > 0} onLongPress={() => handleLongPress(item.path)} />
+                return <ItemSnapshot selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
               }
             }
             }

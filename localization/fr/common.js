@@ -82,6 +82,10 @@ export default {
     "High":"Haut",
     "startProcessing": "Lancer le traitement",
     "pleaseWait": "Le traitement peut prendre plusieurs minutes...",
+    "verticalProfile":"Profil vertical / Mise au point caméra",
+    "horizontalProfile":"Profil horizontal / Mise au point lunette",
+    "verticalProfileTitle" : "Spectre",
+    "horizontalProfileTitle":"Continuum",
     // scan info
     "typeImage": "Type d'image",
     "acquisitionTime": "Heure d'acquisition",

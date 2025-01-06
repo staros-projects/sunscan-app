@@ -97,6 +97,10 @@ export default {
     "High":"High",
     "startProcessing": "Start processing",
     "pleaseWait": "The processing may take several minutes...",
+    "verticalProfile" : "vertical profile / camera focus",
+    "horizontalProfile":"horizontal profile / telescope focus",
+    "verticalProfileTitle" : "Spectrum",
+    "horizontalProfileTitle":"Continuum",
     // scan info
     "typeImage": "Type of image",
     "acquisitionTime": "Acquisition time",

@@ -3,7 +3,7 @@ import { Text, View, useWindowDimensions } from "react-native";
 import { VictoryAxis, VictoryChart, VictoryLine, VictoryTheme, VictoryZoomContainer } from "victory-native";
 
 // Component to display a spectrum chart
-function Spectrum({data, title, subtitle}) {
+function Spectrum({data, title, subtitle, fwhm=''}) {  
   // Get the current window dimensions
   const {height, width} = useWindowDimensions();
 
@@ -14,6 +14,8 @@ function Spectrum({data, title, subtitle}) {
         <Text className="text-white font-bold text-xl">{title}</Text>
         <Text className=" mb-4 text-zinc-500" style={{fontSize:13}}>{subtitle}</Text>
       </View>
+
+      <Text className="absolute z-50 top-0 text-white text-center mt-2" style={{ fontSize: 20, right:50 }}>FWHM : {fwhm?fwhm:'-'}</Text>
       
       {/* Victory Chart component */}
       <VictoryChart 

@@ -52,6 +52,7 @@ export default function ScanScreen({navigation}) {
     const [displaySpectrumType, setDisplaySpectrumType] = useState("vertical");
     const [spectrumData, setSpectrumData] = useState([]);
     const [intensityData, setIntensityData] = useState([]);
+    const [fwhm, setFwhm] = useState('');
 
     const lowerExpLimit = 2000;
     const upperMaxLimit = 4095;
@@ -99,7 +100,8 @@ export default function ScanScreen({navigation}) {
       subscribe('spectrum', (message) => {
         if (displaySpectrumType == "vertical" && displaySpectrum) {
           if(fcRef.current%2==0)
-            setSpectrumData(message[1].split(','));
+            setFwhm(message[1]);
+            setSpectrumData(message[2].split(','));
         }
         else {
           unsubscribe('spectrum');
@@ -388,8 +390,8 @@ export default function ScanScreen({navigation}) {
                 </Zoomable>:<View className="mx-auto"><Loader type="white" /></View>)}
 
                 {/* Spectrum display */}
-                {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} title="Spectre" subtitle="Profil vertical / Mise au point caméra" />}
-                {displaySpectrum && displaySpectrumType === "horizontal"  && <Spectrum data={intensityData} title="Continuum" subtitle="Profil horizontal / Mise au point lunette" />}
+                {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} fwhm={fwhm} title={t('common:verticalProfileTitle')} subtitle={t('common:verticalProfile')} />}
+                {displaySpectrum && displaySpectrumType === "horizontal"  && <Spectrum data={intensityData} title={t('common:horizontalProfileTitle')} subtitle={t('common:horizontalProfile')} />}
                
             </View>
 
