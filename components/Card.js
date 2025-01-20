@@ -43,7 +43,8 @@ export default function Card({scan, selected, multiSelectMode, onLongPress}) {
           surface_sharpen_level:2, 
           pro_sharpen_level:1,
           offset:0,
-          observer:myContext.showWatermark?myContext.observer:''}),
+          observer:myContext.showWatermark?myContext.observer:'',
+          advanced:scan.tag}),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);
@@ -91,14 +92,14 @@ export default function Card({scan, selected, multiSelectMode, onLongPress}) {
               { scanStatus == "completed" ? 
                 // Display completed scan image
                   <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.ser) : navigation.navigate('Picture',{scan:scan})}  >
-                  <View sytle={{height:squareSize}}>
+                  <View sytle={{height:squareSize}} className="w-full">
                     <Image
-                        style={{width:squareSize, height:squareSize}}
-                        className=" rounded-lg "
+                        style={{width:'100%', height:'100%'}}
+                        className="rounded-t-lg w-full "
                         source={imgPath}
                         cacheKey={2}
                         ref={imgPreview}
-                        contentFit="contain"
+                        contentFit="cover"
                         transition={200}
                     />
                   </View>

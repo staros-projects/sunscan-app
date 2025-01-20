@@ -86,6 +86,8 @@ export default {
     "horizontalProfile":"Profil horizontal / Mise au point lunette",
     "verticalProfileTitle" : "Spectre",
     "horizontalProfileTitle":"Continuum",
+    "helium":"Traitement Helium",
+    "selectLineMessage": "Veuillez sélectionner la raie correspondante à votre scan.",
     // scan info
     "typeImage": "Type d'image",
     "acquisitionTime": "Heure d'acquisition",
@@ -116,4 +118,5 @@ export default {
     "startProcessing": "Démarrer le traitement",
     "pleaseWait": "Le traitement peut prendre plusieurs minutes...",
     "selectAtLeastOneItem": "Veuillez sélectionner au moins deux éléments",
+    "disconnectCameraBeforeStacking" : "Veuillez déconnecter la caméra pour pouvoir aditionner des images",
 }

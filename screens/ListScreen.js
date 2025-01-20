@@ -110,12 +110,17 @@ export default function ListScreen({navigation}) {
 
   const stackScans = () => {
     console.log('stack');
+    if(myContext.cameraIsConnected) {
+      Alert.alert(t('common:warning'), t('common:disconnectCameraBeforeStacking'), [
+        { text: 'OK', onPress: async () => {}}]);
+      return;
+    }
     if(selectedItems.length <2) {
       Alert.alert(t('common:warning'), t('common:selectAtLeastOneItem'), [
         { text: 'OK', onPress: async () => {}}]);
       return;
     }
-
+    console.log(selectedItems)
     startModalProcessing(selectedItems.length, 13);
     fetch('http://'+myContext.apiURL+"/sunscan/process/stack/",  {
       method: "POST", 

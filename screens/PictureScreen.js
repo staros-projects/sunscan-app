@@ -137,7 +137,7 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset) {
+  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advanced) {
 
     fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
       method: "POST",
@@ -155,7 +155,8 @@ export default function PictureScreen({ route, navigation }) {
         surface_sharpen_level:surfaceSharpenLevel,
         pro_sharpen_level:protusSharpenLevel,
         offset,
-        observer:myContext.showWatermark?myContext.observer:''}),
+        observer:myContext.showWatermark?myContext.observer:'', 
+        advanced}),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);
@@ -329,7 +330,7 @@ export default function PictureScreen({ route, navigation }) {
                 </Zoomable>
                  {/* Image name display */}
                  {/* <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text>  */}
-                 <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path} /></View></View>
+                 <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path}  /></View></View>
               </View>
               {/* Thumbnail scrollview */}
               <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >

@@ -101,6 +101,8 @@ export default {
     "horizontalProfile":"horizontal profile / telescope focus",
     "verticalProfileTitle" : "Spectrum",
     "horizontalProfileTitle":"Continuum",
+    "helium": "Helium processing",
+    "selectLineMessage": "Please, select the line corresponding to your scan.",
     // scan info
     "typeImage": "Type of image",
     "acquisitionTime": "Acquisition time",
@@ -131,5 +133,6 @@ export default {
     "startProcessing": "Start processing",
     "pleaseWait": "The processing may take several minutes...",
     "selectAtLeastOneItem": "Please select at least two items",
+    "disconnectCameraBeforeStacking" : "Please disconnect the camera before stacking images",
 
 }
