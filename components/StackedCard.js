@@ -50,15 +50,15 @@ export default function StackedCard({scan, selected, multiSelectMode,  onLongPre
                   <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.path) : navigation.navigate('StackedPicture',{scan:scan})}  >
                   <View className="absolute flex flex-row space-x-1 z-20" style={{top:6, left:6}}><Ionicons name="logo-stackoverflow" size={20} color="white" onPress={onLongPress} /><Text className="text-white">{scan.stacked_img_count}</Text></View>
                 
-                  <View sytle={{height:squareSize}}>
+                  <View sytle={{height:squareSize}} className="w-full">
                     <Image
-                        style={{width:squareSize, height:squareSize}}
-                        className=" rounded-lg "
+                        style={{width:'100%', height:'100%'}}
+                        className=" rounded-t-lg "
                         source={imgPath}
                         cacheKey={2}
                         transition={200}
                         ref={imgPreview}
-                        contentFit="contain"
+                        contentFit="cover"
                     />
                   </View>
                 </Pressable>
