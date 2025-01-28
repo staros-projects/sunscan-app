@@ -20,21 +20,34 @@ import StackedCard from '../components/StackedCard';
 import AnimatedCard from '../components/AnimatedCard';
 import AnimationOptionsModal from '../components/AnimationOptionsModal';
 import { StatusBar } from 'expo-status-bar';
+import { size } from 'lodash';
+
+import { Dimensions } from 'react-native';
+
+const getCardSize = () => {
+  const { width, height } = Dimensions.get('window');
+  return  width * 25 / 100; 
+}
+
 // Component to render individual scan items
 const ItemScan = (props) => {
-  return (<View className="w-1/3 p-1"><Card scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  const size = getCardSize();
+  return (<View style={{width:size+20}} className="p-1"><Card squareSize={size} scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemStacked = (props) => {
-  return (<View className="w-1/3 p-1"><StackedCard scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  const size = getCardSize();
+  return (<View style={{width:size+20}} className="p-1"><StackedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemAnimation = (props) => {
-  return (<View className="w-1/3 p-1"><AnimatedCard scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  const size = getCardSize();
+  return (<View style={{width:size+20}} className="p-1"><AnimatedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemSnapshot = (props) => {
-  return (<View className="w-1/3 p-1"></View>);
+  const size = getCardSize();
+  return (<View style={{width:size+20}} className="p-1"></View>);
 }
 
 export default function ListScreen({navigation}) {
@@ -307,7 +320,7 @@ const [massEditMode, setMassEditMode] = useState(false);
         <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={deleteButtonAlert}><Ionicons name="trash" size={20} color="white" /><Text className="text-white"> {t('common:delete')}</Text></Pressable>
         <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{setSelectedItems([])}}><Ionicons name="close" size={20} color="white" /></Pressable>
       </View>}
-      <View className="flex flex-row items-center justify-center w-full bg-zinc-900/80 pt-1 space-x-2">
+      <View className="flex flex-row items-center justify-center w-full bg-zinc-900/80 pt-1 space-x-2" style={{height:40}}>
         <Pressable className={currentView == "scans" ?   "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('scans')}}>
           <IrisSVG color={currentView == "scans" ? "white":"#71717a"} size={21}  />
           <Text className={currentView == "scans" ? "text-white uppercase":"text-zinc-500 uppercase"}>{t('common:scans')}</Text>

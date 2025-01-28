@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { linesDict } from './LineSelector';
 
 // Main Card component for displaying scan information
-export default function Card({scan, selected, multiSelectMode, onLongPress}) {
+export default function Card({squareSize, scan, selected, multiSelectMode, onLongPress}) {
   const { t, i18n } = useTranslation();
   const myContext = useContext(AppContext);
 
@@ -79,7 +79,6 @@ export default function Card({scan, selected, multiSelectMode, onLongPress}) {
   let scanDate = new Date(scan.creation_date*1000).toLocaleDateString(t('common:locale'), options);
   scanDate = scanDate.charAt(0).toUpperCase() + scanDate.slice(1);
   
-  const squareSize = 180;
   const imgPath = "http://"+myContext.apiURL+"/"+scan.path+'/sunscan_preview.jpg?p='+encodeURI(scan.path);
 
   // Render the Card component

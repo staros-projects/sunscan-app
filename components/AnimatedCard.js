@@ -11,7 +11,7 @@ import md5 from 'md5';
 import { useTranslation } from 'react-i18next';
 
 // Main Card component for displaying scan information
-export default function AnimatedCard({scan, selected, multiSelectMode,  onLongPress}) {
+export default function AnimatedCard({squareSize, scan, selected, multiSelectMode,  onLongPress}) {
   const { t, i18n } = useTranslation();
   const myContext = useContext(AppContext);
 
@@ -37,7 +37,6 @@ export default function AnimatedCard({scan, selected, multiSelectMode,  onLongPr
   let scanDate = new Date(scan.creation_date*1000).toLocaleDateString(t('common:locale'), options);
   scanDate = scanDate.charAt(0).toUpperCase() + scanDate.slice(1);
   
-  const squareSize = 180;
   const imgPath = "http://"+myContext.apiURL+"/"+scan.path+'/animated_preview.gif?p='+encodeURI(scan.path);
 
   // Render the Card component
