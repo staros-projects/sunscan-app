@@ -60,6 +60,9 @@ export default function ListScreen({navigation}) {
   const [total, setTotal] = useState(0);
   const size = 20; // Nombre d'éléments par page
   const [selectedItems, setSelectedItems] = useState([]);
+  const [displayNewStackededItemNotif, setDisplayNewStackedItemNotif] = useState(false);
+  const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(false);
+  const [massEditMode, setMassEditMode] = useState(false);
 
   const myContext = useContext(AppContext);
   const isFocused = navigation.isFocused();
@@ -305,9 +308,7 @@ useEffect(() => {
   setMassEditMode(selectedItems.length > 0);
 }, [selectedItems])
 
-const [displayNewStackededItemNotif, setDisplayNewStackedItemNotif] = useState(false);
-const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(false);
-const [massEditMode, setMassEditMode] = useState(false);
+
 
 
 
