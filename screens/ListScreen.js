@@ -296,6 +296,7 @@ const updateCurrentView = (view) => {
     return;
   }
   setScans([]);
+  setTotal(0);
   setSelectedItems([]);
   setCurrentView(view);
 }

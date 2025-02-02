@@ -125,6 +125,7 @@ export default function ScanScreen({navigation}) {
     
         // Subscribe to 'intensity' events
         subscribe('intensity', (message) => {
+          
           if (displaySpectrumType === 'horizontal' && displaySpectrum) {
             if (fcRef.current % 2 === 0) {
               debouncedUpdate(() => setIntensityData(message[1].split(',')));
@@ -141,7 +142,7 @@ export default function ScanScreen({navigation}) {
           unsubscribe('spectrum');
           unsubscribe('intensity');
         };
-      }, [isFocused])
+      }, [isFocused, displaySpectrum, displaySpectrumType])
     );
     
     // Function to fetch camera status and update state

@@ -333,13 +333,13 @@ export default function PictureScreen({ route, navigation }) {
                  <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path}  /></View></View>
               </View>
               {/* Thumbnail scrollview */}
-              <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >
+              <View style={{ width:95 }} className="p-2 mx-auto bg-transparent align-center justify-center text-center flex  " >
               <ScrollView >
                 {images && images.map((i) => {
                   return (
                     <View key={i[1]}  className=" ">
                       <Pressable onPress={() => setcurrentImage(i)}>
-                        <View className={currentImage[1] == i[1] ? "flex flex-col justify-center items-center z-10 border border-white mt-1 rounded-lg":" rounded-lg flex flex-col justify-center items-center z-10 border border-zinc-800 mt-1"}>
+                        <View className={currentImage[1] == i[1] ? "flex flex-col justify-center items-center z-10 border border-white mt-1 rounded-lg bg-black":"bg-black rounded-lg flex flex-col justify-center items-center z-10 border border-zinc-800 mt-1"}>
                           <Image
                             style={{ height: 70, width:70 }}
                             className="z-0 rounded-lg"
