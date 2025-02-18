@@ -32,22 +32,22 @@ const getCardSize = () => {
 // Component to render individual scan items
 const ItemScan = (props) => {
   const size = getCardSize();
-  return (<View style={{width:size+20}} className="p-1"><Card squareSize={size} scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  return (<View style={{width:size+14}} className="p-1"><Card squareSize={size} scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemStacked = (props) => {
   const size = getCardSize();
-  return (<View style={{width:size+20}} className="p-1"><StackedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  return (<View style={{width:size+14}} className="p-1"><StackedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemAnimation = (props) => {
   const size = getCardSize();
-  return (<View style={{width:size+20}} className="p-1"><AnimatedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
+  return (<View style={{width:size+14}} className="p-1"><AnimatedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></View>);
 }
 
 const ItemSnapshot = (props) => {
   const size = getCardSize();
-  return (<View style={{width:size+20}} className="p-1"></View>);
+  return (<View style={{width:size+14}} className="p-1"></View>);
 }
 
 export default function ListScreen({navigation}) {
