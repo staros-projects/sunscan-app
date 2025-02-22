@@ -390,7 +390,7 @@ useEffect(() => {
         >
           <View style={styles.modalBackground}>
             <View style={styles.modalContainer}>
-              <Text style={styles.modalText}>Traitement en cours...</Text>
+              <Text style={styles.modalText}>{t('common:processing')}...</Text>
   
               <View style={styles.progressBarContainer}>
                 <Animated.View style={[styles.progressBar, animatedBarStyle]} />
