@@ -142,7 +142,7 @@ export default function ListScreen({navigation}) {
       headers: {
         'Content-Type': 'application/json'
     },
-      body: JSON.stringify({paths:selectedItems.map(i => i+'/scan.ser'), observer:myContext.showWatermark?myContext.observer:' ', stackingOptions:myContext.stackingOptions}),
+      body: JSON.stringify({paths:selectedItems.map(i => i+'/scan.ser'), observer:myContext.showWatermark?myContext.observer:' ', "patch_size":myContext.stackingOptions.patchSize, "step_size":myContext.stackingOptions.stepSize, "intensity_threshold":myContext.stackingOptions.intensityThreshold}),
     }).then(response => response.json())
     .then(json => {
       setDisplayNewStackedItemNotif(true);
