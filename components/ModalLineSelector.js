@@ -37,6 +37,7 @@ const ModalLineSelector = ({ visible, onSelect }) => {
       visible={visible}
       transparent
       animationType="fade"
+      supportedOrientations={['landscape']}
     >
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>

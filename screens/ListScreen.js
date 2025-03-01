@@ -380,12 +380,13 @@ useEffect(() => {
           />:<></>}
         </View>
       </View>
-    </SafeAreaView>
-          <Modal
+
+      <Modal
           transparent={true}
           visible={modalVisible}
           animationType="fade"
           statusBarTranslucent={true}
+          supportedOrientations={['landscape']}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalBackground}>
@@ -405,6 +406,8 @@ useEffect(() => {
         onClose={() => setAnimationOptionsModalVisible(false)}
         onSubmit={animateScans}
       />
+    </SafeAreaView>
+     
         </>
   );
 }

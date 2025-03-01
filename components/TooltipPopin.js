@@ -27,6 +27,7 @@ const TooltipPopin = ({onClose}) => {
         animationType="fade"
         transparent={true}
         visible={true}
+        supportedOrientations={['landscape']}
       >
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
           {/* Tooltip content container */}

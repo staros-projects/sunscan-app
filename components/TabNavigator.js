@@ -19,8 +19,9 @@ import IrisSVG from './svg/IrisSVG';
 import GallerySVG from './svg/GallerySVG';
 import SettingsSVG from './svg/SettingsSVG';
 import AppContext from './AppContext';
-import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { Image } from 'expo-image';
+
+import { Zoomable } from '@likashefqet/react-native-image-zoom';
 
 // Main TabNavigator component
 export default function TabNavigator({
