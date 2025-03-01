@@ -51,6 +51,10 @@ export default {
     "newVersion": "Nouvelle version disponible",
     "displayWatermark": "Afficher un filigrane",
     "displayWatermarkDescription": "Affiche le logo SUNSCAN et le nom de l'observateur en bas à gauche de l'image",
+    "stackingOptions": "Options de stacking",
+    "patchSize": "Patch size",
+    "stepSize": "Step size",
+    "intensityThreshold": "Intensity threshold",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",

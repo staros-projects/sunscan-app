@@ -307,6 +307,57 @@ export default function SettingsScreen({navigation, isFocused}) {
               {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={clearImageCache}><Ionicons name="trash" size={20} color="white" /><Text className="text-white">{t('common:clearImageCache')}</Text></Pressable>}
             </View>
 
+                        {/* Stacking Configuration */}
+                        <View className="flex flex-col space-y-4 mt-4">
+              <Text className="text-xl text-white font-bold">{t('common:stackingConfiguration')}</Text>
+              
+              {/* Patch Size */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:patchSize')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  keyboardType="numeric"
+                  value={String(myContext.stackingOptions.patchSize)}
+                  onChangeText={(value) => myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    patchSize: Number(value)
+                  })}
+                />
+              </View>
+              
+              {/* Step Size */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:stepSize')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  keyboardType="numeric"
+                  value={String(myContext.stackingOptions.stepSize)}
+                  onChangeText={(value) => myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    stepSize: Number(value)
+                  })}
+                />
+              </View>
+              
+              {/* Intensity Threshold */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:intensityThreshold')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  keyboardType="numeric"
+                  value={String(myContext.stackingOptions.intensityThreshold)}
+                  onChangeText={(value) => myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    intensityThreshold: Number(value)
+                  })}
+                />
+              </View>
+            </View>
+
+
      
             <View className="mt-14"></View>
             <View>
