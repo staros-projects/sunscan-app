@@ -15,6 +15,7 @@ import AppContext from '../components/AppContext';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 import { useFocusEffect } from '@react-navigation/native';
 import ScanInfo from '../components/ScanInfo';
 import ProcessScan from '../components/ProcessScan';
