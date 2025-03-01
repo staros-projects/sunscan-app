@@ -73,7 +73,7 @@ export default function TabNavigator({
                               <Image
                                 style={styles.image}
                                 source={myContext.displayFullScreenImage}
-                                contentFit='none'
+                                contentFit='contain'
                               />
                         </Zoomable>
                 </View>}
