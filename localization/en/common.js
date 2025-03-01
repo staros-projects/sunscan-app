@@ -51,10 +51,12 @@ export default {
     "newVersion": "New version available",
     "displayWatermark": "Display watermark",
     "displayWatermarkDescription": "Displays the SUNSCAN logo and observer name on the bottom left corner of the image",
-    "stackingOptions": "Stacking options",
+    "globalConfiguration": "Global configuration",
+    "stackingConfiguration": "Stacking options",
     "patchSize": "Patch size",
     "stepSize": "Step size",
     "intensityThreshold": "Intensity threshold",
+    "reset": "Valeurs par défaut",
     // status
     "sunscan": "SUNSCAN",
     "storage": "Storage",

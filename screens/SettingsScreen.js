@@ -189,6 +189,8 @@ export default function SettingsScreen({navigation, isFocused}) {
       }
   }, [isFocused, myContext.sunscanIsConnected]));
 
+  const [stackingOptReset, setStackingOptReset] = useState(false);
+
   return (
     <View className="flex flex-col bg-zinc-800">
       <View className="h-full">
@@ -212,6 +214,9 @@ export default function SettingsScreen({navigation, isFocused}) {
                 </View>
             
             
+            {/* Global Configuration */}
+            <Text className="text-lg text-white font-bold my-2">{t('common:globalConfiguration')}</Text>
+
             {/* Language selection */}
             <View className="flex flex-row  space-x-4 items-center mb-4">
               <Text className="text-white w-1/2" >{t('common:language')}</Text>
@@ -239,7 +244,7 @@ export default function SettingsScreen({navigation, isFocused}) {
             {/* Observer input */}
             <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
-              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" style={{padding:5}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
+              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md px-2" key="observer" style={{ padding: 5 }} value={myContext.observer} onChangeText={(value) => myContext.setObserver(value)} />
             </View> 
 
              {/* Watermark toggle */}
@@ -307,22 +312,24 @@ export default function SettingsScreen({navigation, isFocused}) {
               {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={clearImageCache}><Ionicons name="trash" size={20} color="white" /><Text className="text-white">{t('common:clearImageCache')}</Text></Pressable>}
             </View>
 
-                        {/* Stacking Configuration */}
-                        <View className="flex flex-col space-y-4 mt-4">
-              <Text className="text-xl text-white font-bold">{t('common:stackingConfiguration')}</Text>
+              {/* Stacking Configuration */}
+              <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               
+              <View className="flex flex-col space-y-1">
+            
               {/* Patch Size */}
               <View className="flex flex-row space-x-4 items-center">
                 <Text className="text-white w-1/2">{t('common:patchSize')}</Text>
                 <TextInput 
-                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
                   keyboardType="numeric"
+                  key="patchSize"
                   value={String(myContext.stackingOptions.patchSize)}
-                  onChangeText={(value) => myContext.setStackingOptions({
+                  onChangeText={(value) => {myContext.setStackingOptions({
                     ...myContext.stackingOptions,
                     patchSize: Number(value)
-                  })}
+                  }); setStackingOptReset(false);}}
                 />
               </View>
               
@@ -330,14 +337,15 @@ export default function SettingsScreen({navigation, isFocused}) {
               <View className="flex flex-row space-x-4 items-center">
                 <Text className="text-white w-1/2">{t('common:stepSize')}</Text>
                 <TextInput 
-                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
                   keyboardType="numeric"
                   value={String(myContext.stackingOptions.stepSize)}
-                  onChangeText={(value) => myContext.setStackingOptions({
+                  key="stepSize"
+                  onChangeText={(value) => {myContext.setStackingOptions({
                     ...myContext.stackingOptions,
                     stepSize: Number(value)
-                  })}
+                  }); setStackingOptReset(false);}}
                 />
               </View>
               
@@ -345,16 +353,23 @@ export default function SettingsScreen({navigation, isFocused}) {
               <View className="flex flex-row space-x-4 items-center">
                 <Text className="text-white w-1/2">{t('common:intensityThreshold')}</Text>
                 <TextInput 
-                  className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md" 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
+                  key="intensityThreshold"
                   keyboardType="numeric"
                   value={String(myContext.stackingOptions.intensityThreshold)}
-                  onChangeText={(value) => myContext.setStackingOptions({
+                  onChangeText={(value) => {myContext.setStackingOptions({
                     ...myContext.stackingOptions,
                     intensityThreshold: Number(value)
-                  })}
+                  }); setStackingOptReset(false);}}
                 />
               </View>
+              <View className="flex flex-row  space-x-4 items-start mt-4 ">
+              <View className="w-1/2">
+               
+              </View>
+              {stackingOptReset ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}
+            </View>
             </View>
 
 
