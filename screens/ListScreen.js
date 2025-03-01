@@ -313,7 +313,7 @@ useEffect(() => {
 
   return (
     <>
-    <SafeAreaView className="bg-zinc-700 h-screen" style={{flex:1}}>
+    <View className="bg-zinc-700 h-screen" style={{flex:1}}>
       {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 space-x-2" style={{zIndex:20}}>
         <Text className="text-white text-xs mr-4">{selectedItems.length} {t('common:scanSelected')}</Text>
         {currentView == 'scans' && <><Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable>
@@ -337,7 +337,7 @@ useEffect(() => {
           {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
         </Pressable>
 
-         <Pressable className="absolute right-0 top-0 p-3" onPress={()=>{setMassEditMode(true);}}>
+         <Pressable className="absolute right-0 top-0 p-3 mr-4" onPress={()=>{setMassEditMode(true);}}>
           <Ionicons name="build-outline" size={20} color={massEditMode ? "white":"#71717a"}  />
         </Pressable> 
       {/* <Pressable className={currentView == "snapshots" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('snapshots')}}>
@@ -380,12 +380,13 @@ useEffect(() => {
           />:<></>}
         </View>
       </View>
-    </SafeAreaView>
-          <Modal
+
+      <Modal
           transparent={true}
           visible={modalVisible}
           animationType="fade"
           statusBarTranslucent={true}
+          supportedOrientations={['landscape']}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalBackground}>
@@ -405,6 +406,8 @@ useEffect(() => {
         onClose={() => setAnimationOptionsModalVisible(false)}
         onSubmit={animateScans}
       />
+    </View>
+     
         </>
   );
 }

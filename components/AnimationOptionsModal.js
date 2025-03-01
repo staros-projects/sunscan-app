@@ -55,6 +55,7 @@ const AnimationOptionsModal = ({
       animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent={true}
+      supportedOrientations={['landscape']}
     >
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
