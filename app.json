@@ -15,13 +15,13 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber":"29",
+      "buildNumber":"30",
       "supportsTablet": true,
       "requireFullScreen": true,
       "bundleIdentifier": "com.staros.sunscan-app"
     },
     "android": {
-      "versionCode":29,
+      "versionCode":30,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#fff"
