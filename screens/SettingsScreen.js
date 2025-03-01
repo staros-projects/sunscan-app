@@ -312,11 +312,11 @@ export default function SettingsScreen({navigation, isFocused}) {
               {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={clearImageCache}><Ionicons name="trash" size={20} color="white" /><Text className="text-white">{t('common:clearImageCache')}</Text></Pressable>}
             </View>
 
-              {/* Stacking Configuration */}
-              <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               
-              <View className="flex flex-col space-y-1">
-            
+              
+              {myContext.debug && <View className="flex flex-col ">
+            {/* Stacking Configuration */}
+            <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               {/* Patch Size */}
               <View className="flex flex-row space-x-4 items-center">
                 <Text className="text-white w-1/2">{t('common:patchSize')}</Text>
@@ -368,9 +368,9 @@ export default function SettingsScreen({navigation, isFocused}) {
               <View className="w-1/2">
                
               </View>
-              {stackingOptReset ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}
+              {stackingOptReset ? <Text className="text-white"></Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}
             </View>
-            </View>
+            </View>}
 
 
      
