@@ -22,6 +22,7 @@ import ProcessScan from '../components/ProcessScan';
 import { useTranslation } from 'react-i18next';
 import LineSelector from '../components/LineSelector';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import { downloadSunscanImage } from '../utils/Helpers';
 
 export default function PictureScreen({ route, navigation }) {
 
@@ -54,31 +55,7 @@ export default function PictureScreen({ route, navigation }) {
 
   // Function to download the current image
   const download = async () => {
-    setMessage(t('common:downloading')+'...');
-    if (permissionResponse.status !== 'granted') {
-      await requestPermission();
-    }
-
-    try {
-      const downloadPath = `${FileSystem.cacheDirectory}sunscan.jpg`;
-      const { uri: localUrl } = await FileSystem.downloadAsync(
-        currentImage[1],
-        downloadPath
-      );
-
-      const asset = await MediaLibrary.createAssetAsync(downloadPath);
-
-      const album = await MediaLibrary.getAlbumAsync('Download');
-      if (album == null) {
-        await MediaLibrary.createAlbumAsync('Download', asset, false);
-      } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        setMessage(t('common:downloaded')+' !');
-        setTimeout(() => setMessage(''), 1500);
-      }
-    } catch (e) {
-      handleError(e);
-    }
+    downloadSunscanImage(currentImage[1], 'jpg');
   }
 
   const [isStarted, setIsStarted] = useState(false);

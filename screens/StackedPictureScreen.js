@@ -20,6 +20,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { useTranslation } from 'react-i18next';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import { downloadSunscanImage } from '../utils/Helpers';
 
 export default function StackedPictureScreen({  route, navigation }) {
 
@@ -51,31 +52,7 @@ export default function StackedPictureScreen({  route, navigation }) {
 
   // Function to download the current image
   const download = async () => {
-    setMessage(t('common:downloading')+'...');
-    if (permissionResponse.status !== 'granted') {
-      await requestPermission();
-    }
-
-    try {
-      const downloadPath = `${FileSystem.cacheDirectory}sunscan.jpg`;
-      const { uri: localUrl } = await FileSystem.downloadAsync(
-        currentImage,
-        downloadPath
-      );
-
-      const asset = await MediaLibrary.createAssetAsync(downloadPath);
-
-      const album = await MediaLibrary.getAlbumAsync('Download');
-      if (album == null) {
-        await MediaLibrary.createAlbumAsync('Download', asset, false);
-      } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        setMessage(t('common:downloaded')+' !');
-        setTimeout(() => setMessage(''), 1500);
-      }
-    } catch (e) {
-      handleError(e);
-    }
+   downloadSunscanImage(currentImage, 'jpg');
   }
 
   const [isStarted, setIsStarted] = useState(false);

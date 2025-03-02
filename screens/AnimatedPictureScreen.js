@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { useTranslation } from 'react-i18next';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import { downloadSunscanImage } from '../utils/Helpers';
 
 export default function AnimatedPictureScreen({  route, navigation }) {
 
@@ -47,36 +48,27 @@ export default function AnimatedPictureScreen({  route, navigation }) {
   let scanDate = new Date(scan?.creation_date * 1000).toLocaleDateString("fr-FR", options);
   scanDate = scanDate.charAt(0).toUpperCase() + scanDate.slice(1);
 
+  const downloadAndroid = async () => {
+    try {
+      // Définir le chemin du fichier dans le répertoire de l'application
+      const filename = `${FileSystem.documentDirectory}solar-image-${Date.now()}.jpg`;
+  
+      // Copier l'image vers ce répertoire
+      await FileSystem.copyAsync({
+        from: uri,
+        to: filename,
+      });
+  
+      console.log('Image saved at:', filename);
+      return filename;
+    } catch (error) {
+      console.error('Error saving image:', error);
+    }
+  };
 
   // Function to download the current image
   const download = async () => {
-  
-    if (permissionResponse.status !== 'granted') {
-      await requestPermission();
-    }
-
-    try {
-      setMessage(t('common:downloading')+'...');
-      const downloadPath = `${FileSystem.cacheDirectory}sunscan.gif`;
-      console.log(currentImage)
-      const { uri: localUrl } = await FileSystem.downloadAsync(
-        currentImage,
-        downloadPath
-      );
-
-      const asset = await MediaLibrary.createAssetAsync(downloadPath);
-
-      const album = await MediaLibrary.getAlbumAsync('Download');
-      if (album == null) {
-        await MediaLibrary.createAlbumAsync('Download', asset, false);
-      } else {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        setMessage(t('common:downloaded')+' !');
-        setTimeout(() => setMessage(''), 1500);
-      }
-    } catch (e) {
-      handleError(e);
-    }
+   downloadSunscanImage(currentImage, 'gif');
   }
 
   const [isStarted, setIsStarted] = useState(false);
