@@ -55,7 +55,16 @@ export default function PictureScreen({ route, navigation }) {
 
   // Function to download the current image
   const download = async () => {
-    downloadSunscanImage(currentImage[1], 'jpg');
+    setMessage(t('common:downloading')+'...');
+    downloadSunscanImage(currentImage[1], 'jpg')
+          .then(()=>{
+            setMessage(t('common:downloaded')+' !');
+            setTimeout(() => setMessage(''), 1500);
+          })
+          .catch(error => {
+            console.error(error);
+            setMessage('');
+          });
   }
 
   const [isStarted, setIsStarted] = useState(false);

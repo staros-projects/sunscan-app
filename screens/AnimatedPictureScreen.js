@@ -68,7 +68,16 @@ export default function AnimatedPictureScreen({  route, navigation }) {
 
   // Function to download the current image
   const download = async () => {
-   downloadSunscanImage(currentImage, 'gif');
+    setMessage(t('common:downloading')+'...');
+      downloadSunscanImage(currentImage, 'gif')
+      .then(()=>{
+        setMessage(t('common:downloaded')+' !');
+        setTimeout(() => setMessage(''), 1500);
+      })
+      .catch(error => {
+        console.error(error);
+        setMessage('');
+      });
   }
 
   const [isStarted, setIsStarted] = useState(false);

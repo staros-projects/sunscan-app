@@ -20,22 +20,27 @@ export async function downloadAndroid(source, type) {
         const baseFileName = `sunscan-image-${Date.now()}.`+type;
         const filename = `${FileSystem.cacheDirectory}`+baseFileName;
 
+
         // Copier l'image vers ce répertoire
         const { uri: localUrl } = await FileSystem.downloadAsync(
             source,
             filename
         );
+        console.log('Image saved at:', filename);
 
-        const dir = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Pictures'); 
+        const dir = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot(); 
 
+        console.log('dir', dir)
         const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(dir);
             if (!permissions.granted) {
            
             return;
             }
     
-        await FileSystem.StorageAccessFramework.createFileAsync(dir, baseFileName, 'image/jpeg')
+            console.log(permissions)
+        await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, baseFileName, `image/${type}`)
         .then(async (newUri) => {
+            console.log('newUri', newUri)
           await FileSystem.copyAsync({ from: localUrl, to: newUri });
    
         })
@@ -44,7 +49,7 @@ export async function downloadAndroid(source, type) {
     
         });
 
-        console.log('Image saved at:', filename);
+       
     } catch (error) {
         console.error('Error saving image:', error);
     }
