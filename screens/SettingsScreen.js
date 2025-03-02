@@ -244,7 +244,8 @@ export default function SettingsScreen({navigation, isFocused}) {
             {/* Observer input */}
             <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
-              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md px-2" key="observer" style={{ padding: 5 }} value={myContext.observer} onChangeText={(value) => myContext.setObserver(value)} />
+              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md px-2" key="observer" style={{ padding: 5 }} value={myContext.observer} returnKeyLabel='OK'
+              returnKeyType='done' onChangeText={(value) => myContext.setObserver(value)} />
             </View> 
 
              {/* Watermark toggle */}
@@ -314,7 +315,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
               
               
-              {myContext.debug && <View className="flex flex-col ">
+              {myContext.debug && <View className="flex flex-col space-y-1">
             {/* Stacking Configuration */}
             <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               {/* Patch Size */}
@@ -323,6 +324,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                 <TextInput 
                   className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
                   keyboardType="numeric"
                   key="patchSize"
                   value={String(myContext.stackingOptions.patchSize)}
@@ -340,6 +343,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                   className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
                   keyboardType="numeric"
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
                   value={String(myContext.stackingOptions.stepSize)}
                   key="stepSize"
                   onChangeText={(value) => {myContext.setStackingOptions({
@@ -357,6 +362,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                   style={{ padding: 5 }}
                   key="intensityThreshold"
                   keyboardType="numeric"
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
                   value={String(myContext.stackingOptions.intensityThreshold)}
                   onChangeText={(value) => {myContext.setStackingOptions({
                     ...myContext.stackingOptions,
