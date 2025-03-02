@@ -53,15 +53,15 @@ export default function StackedPictureScreen({  route, navigation }) {
   // Function to download the current image
   const download = async () => {
    setMessage(t('common:downloading')+'...');
-       downloadSunscanImage(currentImage, 'jpg')
-             .then(()=>{
-               setMessage(t('common:downloaded')+' !');
-               setTimeout(() => setMessage(''), 1500);
-             })
-             .catch(error => {
-               console.error(error);
-               setMessage('');
-             });
+      const success =await downloadSunscanImage(currentImage, 'jpeg')
+ 
+      if (success) {
+        setMessage(t('common:downloaded')+' !');
+      setTimeout(() => setMessage(''), 1500);
+      }
+      else {
+        setMessage('');
+      }
   }
 
   const [isStarted, setIsStarted] = useState(false);

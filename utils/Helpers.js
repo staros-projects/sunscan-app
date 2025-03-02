@@ -13,47 +13,51 @@ export default function  firmareIsUpToDate(myContext) {
 }
 
 export async function downloadAndroid(source, type) {
-    console.log('downloadAndroid', source, type, FileSystem.documentDirectory)
+    console.log('downloadAndroid', source, type, FileSystem.documentDirectory);
 
     try {
-        // Définir le chemin du fichier dans le répertoire de l'application
-        const baseFileName = `sunscan-image-${Date.now()}.`+type;
-        const filename = `${FileSystem.cacheDirectory}`+baseFileName;
+        // Définir le nom du fichier
+        const baseFileName = `sunscan-image-${Date.now()}.${type}`;
+        const filename = `${FileSystem.cacheDirectory}${baseFileName}`;
 
+        // Télécharger le fichier dans le cache
+        const { uri: localUrl } = await FileSystem.downloadAsync(source, filename);
+        console.log('Image téléchargée localement :', localUrl);
 
-        // Copier l'image vers ce répertoire
-        const { uri: localUrl } = await FileSystem.downloadAsync(
-            source,
-            filename
-        );
-        console.log('Image saved at:', filename);
+        // Demander à l'utilisateur de choisir un dossier
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync('Downloads');
+        if (!permissions.granted) {
+            console.log("Permission non accordée");
+            return false;
+        }
 
-        const dir = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot(); 
+        console.log('Dossier choisi :', permissions.directoryUri);
 
-        console.log('dir', dir)
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(dir);
-            if (!permissions.granted) {
-           
-            return;
-            }
-    
-            console.log(permissions)
-        await FileSystem.StorageAccessFramework.createFileAsync(permissions.directoryUri, baseFileName, `image/${type}`)
-        .then(async (newUri) => {
-            console.log('newUri', newUri)
-          await FileSystem.copyAsync({ from: localUrl, to: newUri });
-   
-        })
-        .catch((err) => {
-          console.error('Erreur de création du fichier :', err);
-    
-        });
+        try {
+            // Créer un fichier dans le dossier sélectionné
+            const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                permissions.directoryUri,
+                baseFileName,
+                `image/${type}`
+            );
 
-       
+            console.log('Fichier créé :', newUri);
+
+            // Copier l'image téléchargée dans le fichier
+            await FileSystem.copyAsync({ from: localUrl, to: newUri });
+
+            console.log('Image copiée avec succès');
+            return true;
+        } catch (err) {
+            console.error('Erreur de création du fichier :', err);
+            return false;
+        }
     } catch (error) {
-        console.error('Error saving image:', error);
+        console.error('Erreur lors de la sauvegarde de l’image :', error);
+        return false;
     }
-};
+}
+
 
 export async function downloadIos(source, type)  {
 
@@ -69,8 +73,6 @@ export async function downloadIos(source, type)  {
             downloadPath
         );
 
-        
-
         const asset = await MediaLibrary.createAssetAsync(downloadPath);
 
         const album = await MediaLibrary.getAlbumAsync('Download');
@@ -79,18 +81,21 @@ export async function downloadIos(source, type)  {
         } else {
             await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
+        return true;
     } catch (e) {
         handleError(e);
+        return false;
     }
+    return false;
 }
 
 // Function to download the current image
-export function downloadSunscanImage(filename, type) {
+export async function downloadSunscanImage(filename, type) {
     if (Platform.OS === 'android') {
-        downloadAndroid(filename,type);
+        return await downloadAndroid(filename,type);
     }
     else{
-        downloadIos(filename, type);
+        return await downloadIos(filename, type);
     }
 }
 
