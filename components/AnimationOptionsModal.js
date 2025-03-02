@@ -58,7 +58,7 @@ const AnimationOptionsModal = ({
       supportedOrientations={['landscape']}
     >
       <View style={styles.modalBackground}>
-        <View style={styles.modalContainer}>
+        <View style={styles.modalContainer} className="space-y-1">
           <View style={styles.optionRow}>
             <Text style={styles.optionLabel}>{t('common:frameDuration')} :</Text>
             <TextInput

@@ -314,7 +314,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
               
               
-              {myContext.debug && <View className="flex flex-col ">
+              {myContext.debug && <View className="flex flex-col space-y-1">
             {/* Stacking Configuration */}
             <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               {/* Patch Size */}
