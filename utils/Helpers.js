@@ -19,12 +19,14 @@ const save = async (uri, fileName, mimetype) => {
         await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
 
       if (permissions.granted) {
+        console.log(permissions);
         const base64 = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        console.log(permissions.directoryUri, fileName, mimetype);
         await FileSystem.StorageAccessFramework.createFileAsync(
           permissions.directoryUri,
-          fileName,
+          fileName.split('.')[0],
           mimetype,
         )
           .then(async (resultUri) => {
