@@ -21,8 +21,8 @@ export async function downloadAndroid(source, type) {
         const filename = `${FileSystem.cacheDirectory}${baseFileName}`;
 
         // Télécharger le fichier dans le cache
-        const { uri: localUrl } = await FileSystem.downloadAsync(source, filename);
-        console.log('Image téléchargée localement :', localUrl);
+        const { uri } = await FileSystem.downloadAsync(source, filename);
+        console.log('Image téléchargée localement :', uri);
 
         // Demander à l'utilisateur de choisir un dossier
         const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync('Downloads');
@@ -34,17 +34,22 @@ export async function downloadAndroid(source, type) {
         console.log('Dossier choisi :', permissions.directoryUri);
 
         try {
-            // Créer un fichier dans le dossier sélectionné
-            const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+
+             // Création du fichier dans le dossier sélectionné par l'utilisateur
+            const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
                 permissions.directoryUri,
                 baseFileName,
-                `image/${type}`
+                'image/jpeg'
             );
 
-            console.log('Fichier créé :', newUri);
+            // Lire l'image temporaire en base64
+            const fileData = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
 
-            // Copier l'image téléchargée dans le fichier
-            await FileSystem.copyAsync({ from: localUrl, to: newUri });
+            // Écrire les données dans le fichier SAF
+            await FileSystem.writeAsStringAsync(fileUri, fileData, {
+                encoding: FileSystem.EncodingType.Base64,
+            });
+
 
             console.log('Image copiée avec succès');
             return true;
