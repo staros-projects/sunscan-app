@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 export const backend_current_version = '1.3.0';
@@ -18,31 +19,39 @@ async function saveAndroidFile(source, type) {
     try {
         const fileName = `sunscan-image-${Date.now()}.${type}`;
         const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-        const { uri: localUri } = await FileSystem.downloadAsync(source, filePath);
+        await FileSystem.downloadAsync(source, filePath);
 
-        console.log('File downloaded at:', localUri);
+        console.log('File downloaded at:', filePath);
 
-        const directoryUri = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Download');
-        const base64 = await FileSystem.readAsStringAsync(localUri, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
+        let storedPermission = await AsyncStorage.getItem('androidStoragePermission');
+        if (!storedPermission) {
+            const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
+                FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Download')
+            );
+            if (!permissions.granted) return false;
 
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(directoryUri);
-        if (!permissions.granted) return false;
+            await AsyncStorage.setItem('androidStoragePermission', JSON.stringify(permissions.directoryUri));
+            storedPermission = permissions.directoryUri;
+        } else {
+            storedPermission = JSON.parse(storedPermission);
+        }
 
         const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
-            permissions.directoryUri,
+            storedPermission,
             fileName.split('.')[0],
             `image/${type}`
         );
 
+        const base64 = await FileSystem.readAsStringAsync(filePath, { encoding: FileSystem.EncodingType.Base64 });
         await FileSystem.writeAsStringAsync(newUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+
         return true;
     } catch (error) {
         console.error('Error saving file on Android:', error);
         return false;
     }
 }
+
 
 async function saveIosFile(source, type) {
     const permissionResponse = await MediaLibrary.requestPermissionsAsync();
