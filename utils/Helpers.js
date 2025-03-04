@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Platform } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { shareAsync } from 'expo-sharing';
 
 export const backend_current_version = '1.3.0';
 
@@ -11,6 +11,35 @@ export default function  firmareIsUpToDate(myContext) {
     // myContext.backendApiVersion is the version of the backend API that is currently running on the SUNSCAN device
     return !myContext.backendApiVersion || parseInt(myContext.backendApiVersion.replaceAll('.','')) >= parseInt(backend_current_version.replaceAll('.',''))
 }
+
+const save = async (uri, fileName, mimetype) => {
+    // This has support only for Android 11 or more as expo requires to eject project in order to save to downloads
+    if (Platform.OS === 'android') {
+      const permissions =
+        await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+      if (permissions.granted) {
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        await FileSystem.StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          fileName,
+          mimetype,
+        )
+          .then(async (resultUri) => {
+            await FileSystem.writeAsStringAsync(resultUri, base64, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          })
+          .catch(console.log);
+      } else {
+        shareAsync(uri);
+      }
+    } else {
+      shareAsync(uri);
+    }
+  };
 
 export async function downloadAndroid(source, type) {
     console.log('downloadAndroid', source, type, FileSystem.documentDirectory);
@@ -22,41 +51,9 @@ export async function downloadAndroid(source, type) {
 
         // Télécharger le fichier dans le cache
         const { uri } = await FileSystem.downloadAsync(source, filename);
-        console.log('Image téléchargée localement :', uri);
 
-        // Demander à l'utilisateur de choisir un dossier
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync('Downloads');
-        if (!permissions.granted) {
-            console.log("Permission non accordée");
-            return false;
-        }
-
-        console.log('Dossier choisi :', permissions.directoryUri);
-
-        try {
-
-             // Création du fichier dans le dossier sélectionné par l'utilisateur
-            const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                baseFileName,
-                'image/jpeg'
-            );
-
-            // Lire l'image temporaire en base64
-            const fileData = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-
-            // Écrire les données dans le fichier SAF
-            await FileSystem.writeAsStringAsync(fileUri, fileData, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-
-
-            console.log('Image copiée avec succès');
-            return true;
-        } catch (err) {
-            console.error('Erreur de création du fichier :', err);
-            return false;
-        }
+        save(uri, baseFileName, `image/${type}`)
+       
     } catch (error) {
         console.error('Erreur lors de la sauvegarde de l’image :', error);
         return false;
