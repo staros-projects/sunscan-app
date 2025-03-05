@@ -15,7 +15,6 @@ import AppContext from '../components/AppContext';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
 import { useFocusEffect } from '@react-navigation/native';
 import ScanInfo from '../components/ScanInfo';
 import ProcessScan from '../components/ProcessScan';
@@ -30,7 +29,6 @@ export default function PictureScreen({ route, navigation }) {
   const { t, i18n } = useTranslation();
   // State variables for managing the component
   const [currentImage, setcurrentImage] = React.useState("");
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [openSettings, setOpenSettings] = React.useState(false);
   const [message, setMessage] = React.useState("");
   const [displayInfo, setDisplayInfo] = React.useState(false);

@@ -15,7 +15,6 @@ import AppContext from '../components/AppContext';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { useTranslation } from 'react-i18next';
@@ -28,7 +27,6 @@ export default function StackedPictureScreen({  route, navigation }) {
   const { t, i18n } = useTranslation();
   // State variables for managing the component
   const [currentImage, setcurrentImage] = React.useState("");
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [message, setMessage] = React.useState("");
   const [displayInfo, setDisplayInfo] = React.useState(false);
   const [displayProcessScan, setDisplayProcessScan] = React.useState(false);

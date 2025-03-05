@@ -1,8 +1,11 @@
 import * as FileSystem from 'expo-file-system';
-import * as MediaLibrary from 'expo-media-library';
+
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+if (Platform.OS === 'ios') {
+    MediaLibrary =  require('expo-media-library');
+}
 
 export const backend_current_version = '1.3.0';
 
