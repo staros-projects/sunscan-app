@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "1.3.0",
+        version: "1.3.1",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -23,7 +23,7 @@ export default ({ config }) => {
           bundleIdentifier: "com.staros.sunscan-app"
         },
         android: {
-          versionCode: 35,
+          versionCode: 36,
           adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#fff"
@@ -32,6 +32,10 @@ export default ({ config }) => {
             "INTERNET",
             "RECEIVE_BOOT_COMPLETED",
             "ACCESS_NETWORK_STATE"
+          ],
+          blockedPermissions: [
+            "android.permission.READ_MEDIA_IMAGES",
+            "android.permission.READ_MEDIA_VIDEO"
           ],
           package: "com.staros.sunscan"
         },
