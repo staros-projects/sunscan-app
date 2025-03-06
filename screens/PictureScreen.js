@@ -140,7 +140,7 @@ export default function PictureScreen({ route, navigation }) {
         surface_sharpen_level:surfaceSharpenLevel,
         pro_sharpen_level:protusSharpenLevel,
         offset,
-        observer:myContext.showWatermark?myContext.observer:'', 
+        observer:myContext.showWatermark?myContext.observer:' ', 
         advanced}),
     }).then(response => response.json())
       .then(json => {

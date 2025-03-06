@@ -230,7 +230,7 @@ export default function ListScreen({navigation}) {
       body: JSON.stringify({
         paths:sortedPaths,
         watermark:myContext.showWatermark,
-        observer:myContext.observer,
+        observer:myContext.showWatermark?myContext.observer:' ',
         ...options
       }),
     }).then(response => response.json())

@@ -43,7 +43,7 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
           surface_sharpen_level:2, 
           pro_sharpen_level:1,
           offset:0,
-          observer:myContext.showWatermark?myContext.observer:'',
+          observer:myContext.showWatermark?myContext.observer:' ',
           advanced:scan.tag}),
     }).then(response => response.json())
     .then(json => {

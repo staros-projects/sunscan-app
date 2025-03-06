@@ -17,13 +17,13 @@ export default ({ config }) => {
         },
         assetBundlePatterns: ["**/*"],
         ios: {
-          buildNumber: "35",
+          buildNumber: "37",
           supportsTablet: true,
           requireFullScreen: true,
           bundleIdentifier: "com.staros.sunscan-app"
         },
         android: {
-          versionCode: 36,
+          versionCode: 37,
           adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#fff"
