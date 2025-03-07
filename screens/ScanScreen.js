@@ -1,6 +1,6 @@
 
 // Import necessary React and React Native components
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Platform, Pressable, StyleSheet, Text, TouchableHighlight, View } from 'react-native';
 import { SafeAreaView } from 'react-native';
 
@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons'
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+
+import { debounce } from 'lodash';
 
 // Import NativeWind for styling
 import { NativeWindStyleSheet } from "nativewind";
@@ -20,8 +22,6 @@ NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
-// Import ImageZoom for image zooming functionality
-import ImageZoom from 'react-native-image-pan-zoom';
 
 // Import custom components
 import Loader from '../components/Loader';
@@ -36,6 +36,9 @@ import VerticalSlider from 'rn-vertical-slider';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
+import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import ModalLineSelector from '../components/ModalLineSelector';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Main ScanScreen component
 export default function ScanScreen({navigation}) {
@@ -53,6 +56,7 @@ export default function ScanScreen({navigation}) {
     const [displaySpectrumType, setDisplaySpectrumType] = useState("vertical");
     const [spectrumData, setSpectrumData] = useState([]);
     const [intensityData, setIntensityData] = useState([]);
+    const [fwhm, setFwhm] = useState('');
 
     const lowerExpLimit = 2000;
     const upperMaxLimit = 4095;
@@ -74,67 +78,72 @@ export default function ScanScreen({navigation}) {
     // Get the global variables & functions via context
     const myContext = useContext(AppContext);
     const isFocused = navigation.isFocused();
-    const [subscribe, unsubscribe] = useContext(WebSocketContext)
+    const [subscribe, unsubscribe] = useContext(WebSocketContext);
+    const [lastScanPath, setLastScanPath] = useState("");
 
     // Effect hook for managing subscriptions and fetching camera status
-    useEffect(() => {
+    //console.log('render')
+    useFocusEffect(
+      useCallback(() => {
+        // Debounce avec lodash (déclenche l'action après 200ms d'inactivité)
+        const debouncedUpdate = debounce((callback) => {
+          callback();
+        }, 200); // 200ms, ce qui permet une mise à jour maximum toutes les 5 fois par seconde
+    
+        // Appel à la fonction pour récupérer l'état de la caméra
         getCameraStatus();
-        
+    
         // Subscribe to 'camera' events
         subscribe('camera', (message) => {
-            fcRef.current += 1
-            setFC(fcRef.current)
-           
-            if (!displaySpectrum) {
-              setFrame(message[3]);
-            }
-        })
-
-        // Subscribe to 'adu' events
-        subscribe('adu', (message) => {  
-          if(fcRef.current%5==0) {
-            setPixelStats({r:parseInt(message[1]), g:parseInt(message[2]), b:parseInt(message[3])});
+          fcRef.current += 1;
+          setFC(fcRef.current);
+          if (!displaySpectrum && !modalLineSelectorVisible) {
+            debouncedUpdate(() => setFrame(message[3]));
           }
-      })
-
-      // Subscribe to 'spectrum' events
-      subscribe('spectrum', (message) => {
-        if (displaySpectrumType == "vertical" && displaySpectrum) {
-          console.log("spectrum")
-          if(fcRef.current%2==0)
-            setSpectrumData(message[1].split(','));
-        }
-        else {
-          unsubscribe('spectrum');
-        }
-    })
-
-      // Subscribe to 'intensity' events
-      subscribe('intensity', (message) => {
-        
-        if (displaySpectrumType == "horizontal" && displaySpectrum) {
-            console.log("intensity")
-          if(fcRef.current%2==0)
-            setIntensityData(message[1].split(','));
-        }
-        else {
-          unsubscribe('intensity');
-        }
-    })
-
-
-       
-
+        });
+    
+        // Subscribe to 'adu' events
+        subscribe('adu', (message) => {
+          if (fcRef.current % 5 === 0) {
+            setPixelStats({ r: parseInt(message[1]), g: parseInt(message[2]), b: parseInt(message[3]) });
+          }
+        });
+    
+        // Subscribe to 'spectrum' events
+        subscribe('spectrum', (message) => {
+          if (displaySpectrumType === 'vertical' && displaySpectrum) {
+            if (fcRef.current % 2 === 0) {
+              debouncedUpdate(() => {
+                setFwhm(message[1]);
+                setSpectrumData(message[2].split(','));
+              });
+            }
+          } else {
+            unsubscribe('spectrum');
+          }
+        });
+    
+        // Subscribe to 'intensity' events
+        subscribe('intensity', (message) => {
+          
+          if (displaySpectrumType === 'horizontal' && displaySpectrum) {
+            if (fcRef.current % 2 === 0) {
+              debouncedUpdate(() => setIntensityData(message[1].split(',')));
+            }
+          } else {
+            unsubscribe('intensity');
+          }
+        });
+    
         // Cleanup function to unsubscribe from all events
         return () => {
           unsubscribe('camera');
           unsubscribe('adu');
           unsubscribe('spectrum');
           unsubscribe('intensity');
-        }
-
-    }, [subscribe, unsubscribe, displaySpectrum, displaySpectrumType]);
-      
+        };
+      }, [isFocused, displaySpectrum, displaySpectrumType])
+    );
     
     // Function to fetch camera status and update state
     async function getCameraStatus() {
@@ -287,6 +296,7 @@ export default function ScanScreen({navigation}) {
       });
     }
 
+    const [modalLineSelectorVisible, setModalLineSelectorVisible] = useState(false);
 
     // Function to update recording status
     async function updateRec(type) {
@@ -303,6 +313,11 @@ export default function ScanScreen({navigation}) {
       .then(json => {
         setRec(!rec)
         setIsLoading(false);
+
+        if (type === 'stop') {
+          setLastScanPath(json.scan);
+          setModalLineSelectorVisible(true);
+        }
       })
       .catch(error => {
         console.error(error);
@@ -348,9 +363,26 @@ export default function ScanScreen({navigation}) {
     });
   }
 
+  const setTagOnScan = (tag) => {
+    console.log('setTagOnScan', tag);
+    setModalLineSelectorVisible(false);
+    fetch('http://'+myContext.apiURL+"/sunscan/scan/tag/", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ filename: lastScanPath, tag:tag }),
+    }).then(response => {
+      setModalLineSelectorVisible(false);
+    })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
   
 
-  // Function to toggle options display
+  // Function to toggle options displaya
   const toggleOptions = () => {
       setDisplayOptions(!displayOptions);
   };
@@ -365,35 +397,38 @@ export default function ScanScreen({navigation}) {
     right: 16,
   });
 
+
+
     return (
     
      <SafeAreaView className="bg-zinc-800" style={{flex:1}}>
+      {/* Modal to select spectral line */}
+      {modalLineSelectorVisible&& <ModalLineSelector visible={modalLineSelectorVisible} onSelect={setTagOnScan} />}
       <View className="flex flex-col " style={{flex:1}}>
-  
-            
   
             {/* Main container for displaying the camera feed or spectrum */}
             <View className="absolute z-1 flex flex-col justify-center" style={{ right:0, left:0, top:0, width:"100%", height:"100%"}}>
-            {!displaySpectrum && (frame && myContext.cameraIsConnected ? 
-            <ImageZoom cropWidth={Dimensions.get('window').width-18}
-                       cropHeight={Dimensions.get('window').height}
-                       imageWidth={500}
-                       imageHeight={crop ? 29:200}>
+            {!displaySpectrum && (!modalLineSelectorVisible && frame && myContext.cameraIsConnected ? 
+            
+                                    <Zoomable
+                                    isSingleTapEnabled
+                                    isDoubleTapEnabled
+                                        >
                         {/* Grid overlay for alignment */}
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 "><View className="mx-auto z-40 h-full" style={{width:1, backgroundColor:"lime"}}></View></View>} 
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 flex flex-row items-center "><View className="z-40 w-full" style={{height:1, backgroundColor:"lime"}}></View></View>}
                 {/* Camera feed image */}
-                <Image
-                style={styles.image}
+                <View className="h-full w-full  flex flex-row justify-center items-center"><Image
+                style={{width:crop?540:402, height:crop ? 30:200}}
                 source={{ uri: frame }} 
                 contentFit='contain'
-                className="border border-white"
-                />
-                </ImageZoom>:<View className="mx-auto"><Loader type="white" /></View>)}
+                className="border border-white mx-auto"
+                /></View>
+                </Zoomable>:<View className="mx-auto"><Loader type="white" /></View>)}
 
                 {/* Spectrum display */}
-                {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} title="Spectre" subtitle="Profil vertical / Mise au point caméra" />}
-                {displaySpectrum && displaySpectrumType === "horizontal"  && <Spectrum data={intensityData} title="Continuum" subtitle="Profil horizontal / Mise au point lunette" />}
+                {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum data={spectrumData} fwhm={fwhm} title={t('common:verticalProfileTitle')} subtitle={t('common:verticalProfile')} />}
+                {displaySpectrum && displaySpectrumType === "horizontal"  && <Spectrum data={intensityData} title={t('common:horizontalProfileTitle')} subtitle={t('common:horizontalProfile')} />}
                
             </View>
 

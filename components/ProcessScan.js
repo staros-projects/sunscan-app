@@ -21,6 +21,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
     const [dopplerShift, setDopplerShift] = react.useState(5);
     const [continuumShift, setContinuumShift] = react.useState(16);
     const [offset, setOffset] = react.useState(0);
+    const [advancedMode, setAdvancedMode] = react.useState('');
 
     const toggleNoiseReduction = () => {
       setNoiseReduction(!noiseReduction);
@@ -104,15 +105,26 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 <ScrollView className="w-full">
                 {!isStarted ? (
                   <>
-           
+                  <View className="flex flex-row items-center">
+                    <Text className="text-white text-xs">{t('common:helium')}</Text>
+                    <Switch
+                     trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                      thumbColor='#fff'
+                      value={advancedMode == 'heI'}
+                      onValueChange={()=>advancedMode == 'heI' ? setAdvancedMode('') : setAdvancedMode('heI')}
+                          /> 
+                    </View>
                    <View className="flex flex-row items-center mb-2">
                     <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
                     <Switch
-                            value={displayOptions}
-
-                            onValueChange={()=>setDisplayOptions(!displayOptions)}
+                     trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                      thumbColor='#fff'
+                      value={displayOptions}
+                      onValueChange={()=>setDisplayOptions(!displayOptions)}
                           />
                     </View>
+
+                   
                     {displayOptions && <View className="flex flex-col space-y-1 rounded-xl p-3 bg-zinc-800 mb-2">
                         <View className="flex flex-row items-start space-x-2 ">
                           <View className="flex flex-col items-center space-y-2">
@@ -185,7 +197,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
                     <Pressable 
                         className=" w-40 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex flex-row align-center justify-center items-center space-x-2"
-                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset); setIsStarted(true);}}
+                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advancedMode); setIsStarted(true);}}
                     >
                         <Ionicons name="caret-forward-outline" size={18} color="white" />
                         <Text className="text-white text-xs">{t('common:startProcessing')}</Text>

@@ -189,6 +189,8 @@ export default function SettingsScreen({navigation, isFocused}) {
       }
   }, [isFocused, myContext.sunscanIsConnected]));
 
+  const [stackingOptReset, setStackingOptReset] = useState(false);
+
   return (
     <View className="flex flex-col bg-zinc-800">
       <View className="h-full">
@@ -212,6 +214,9 @@ export default function SettingsScreen({navigation, isFocused}) {
                 </View>
             
             
+            {/* Global Configuration */}
+            <Text className="text-lg text-white font-bold my-2">{t('common:globalConfiguration')}</Text>
+
             {/* Language selection */}
             <View className="flex flex-row  space-x-4 items-center mb-4">
               <Text className="text-white w-1/2" >{t('common:language')}</Text>
@@ -237,10 +242,25 @@ export default function SettingsScreen({navigation, isFocused}) {
             </View>
 
             {/* Observer input */}
-            {/* <View className="flex flex-row  space-x-4 items-center">
+            <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
-              <TextInput className="bg-zinc-700 border border-zinc-500 w-40 text-white rounded-md" style={{padding:10}}  value={myContext.observer} onChangeText={myContext.setObserver}/>
-            </View> */}
+              <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md px-2" key="observer" style={{ padding: 5 }} value={myContext.observer} returnKeyLabel='OK'
+              returnKeyType='done' onChangeText={(value) => myContext.setObserver(value)} />
+            </View> 
+
+             {/* Watermark toggle */}
+             <View className="flex flex-row  space-x-4 items-start mt-2  ">
+              <View className="w-1/2"> 
+                <Text className="text-white mb-1" >{t('common:displayWatermark')}</Text>
+                <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:displayWatermarkDescription')}</Text>
+              </View>
+              <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
+                value={myContext.showWatermark}
+                onValueChange={myContext.toggleShowWaterMark}
+              />
+            </View>
 
             {/* Debug mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2  ">
@@ -249,6 +269,8 @@ export default function SettingsScreen({navigation, isFocused}) {
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:debugDescription')}</Text>
               </View>
               <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
                 value={myContext.debug}
                 onValueChange={myContext.toggleDebug}
               />
@@ -261,29 +283,102 @@ export default function SettingsScreen({navigation, isFocused}) {
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:offlineDescription')}</Text>
               </View>
               <Switch
+               trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+             thumbColor='#fff'
                 value={myContext.demo}
                 onValueChange={myContext.toggleDemo}
               />
             </View>
 
             {/* Firmware update section */}
-            <View className="flex flex-row  space-x-4 items-start mt-2 ">
+            {(myContext.sunscanIsConnected || myContext.debug) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
-                <Text className="text-white mb-1" >{t('common:updateFirmware')} [v{myContext.backendApiVersion} &#62;&#62; v{backend_current_version}]</Text>
-                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
+                <Text className="text-white mb-1" >{t('common:updateFirmware')}</Text>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:currentVersion')} : {myContext.backendApiVersion}</Text>
+                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:newVersion')} : {backend_current_version}</Text>
+                  <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
+                </>}
               </View>
               {!firmareIsUpToDate(myContext) || myContext.debug ?
-              <Button title={t('common:update')} onPress={updateFirmware} className="mx-2" />:
-              <Text className="text-white">{t('common:upToDate')}</Text>}
-            </View>
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={updateFirmware}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:update')}</Text></Pressable>:
+              <View className="text-white flex flex-row items-center align-center space-x-2"><Text className="text-white ">{t('common:upToDate')}</Text><Ionicons name="checkmark-circle" size={20} color="white" /></View>}
+            </View>}
 
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
               </View>
-              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Button color='gray' title={t('common:clearImageCache')} onPress={clearImageCache} className="mx-2" />}
+              {cacheIsCleared ? <Text className="text-white">Ok !</Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={clearImageCache}><Ionicons name="trash" size={20} color="white" /><Text className="text-white">{t('common:clearImageCache')}</Text></Pressable>}
             </View>
+
+              
+              
+              {myContext.debug && <View className="flex flex-col space-y-1">
+            {/* Stacking Configuration */}
+            <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
+              {/* Patch Size */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:patchSize')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
+                  keyboardType="numeric"
+                  key="patchSize"
+                  value={String(myContext.stackingOptions.patchSize)}
+                  onChangeText={(value) => {myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    patchSize: Number(value)
+                  }); setStackingOptReset(false);}}
+                />
+              </View>
+              
+              {/* Step Size */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:stepSize')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  keyboardType="numeric"
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
+                  value={String(myContext.stackingOptions.stepSize)}
+                  key="stepSize"
+                  onChangeText={(value) => {myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    stepSize: Number(value)
+                  }); setStackingOptReset(false);}}
+                />
+              </View>
+              
+              {/* Intensity Threshold */}
+              <View className="flex flex-row space-x-4 items-center">
+                <Text className="text-white w-1/2">{t('common:intensityThreshold')}</Text>
+                <TextInput 
+                  className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
+                  style={{ padding: 5 }}
+                  key="intensityThreshold"
+                  keyboardType="numeric"
+                  returnKeyLabel='OK'
+                  returnKeyType='done'
+                  value={String(myContext.stackingOptions.intensityThreshold)}
+                  onChangeText={(value) => {myContext.setStackingOptions({
+                    ...myContext.stackingOptions,
+                    intensityThreshold: Number(value)
+                  }); setStackingOptReset(false);}}
+                />
+              </View>
+              <View className="flex flex-row  space-x-4 items-start mt-4 ">
+              <View className="w-1/2">
+               
+              </View>
+              {stackingOptReset ? <Text className="text-white"></Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}
+            </View>
+            </View>}
+
 
      
             <View className="mt-14"></View>

@@ -98,23 +98,30 @@ export default function Status({isFocused})  {
 
   }
 
-  // Function to set SunScan time
+  // Function to set SunScan time with timezone
   async function setSunScanTime() {
     const current_ts = Math.floor(Date.now() / 1000);
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Get current timezone
+    
     fetch('http://'+myContext.apiURL+"/sunscan/set-time/",  {
       method: "POST", 
       headers: {
         'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({unixtime:current_ts.toString()}),
-    }).then(response => response.json())
+      },
+      body: JSON.stringify({
+        unixtime: current_ts.toString(),
+        timezone: timezone
+      }),
+    })
+    .then(response => response.json())
     .then(json => {
-      console.log('set time ok ', current_ts)
+      console.log('set time ok', current_ts, 'timezone:', timezone);
     })
     .catch(error => {
       console.error(error);
     });
   }
+
 
   // Function to get camera status
   async function getCameraStatus() {
@@ -129,7 +136,7 @@ export default function Status({isFocused})  {
   }
 
   const checkFirmware = () => {
-    if(!firmareIsUpToDate(myContext)) {
+    if(myContext.sunscanIsConnected && !firmareIsUpToDate(myContext)) {
       Alert.alert(t('common:warning'), t('common:firmwareIsOutdated'), [
         { text: 'OK', onPress: async () => {}}]);
     }

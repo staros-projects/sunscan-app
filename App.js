@@ -26,6 +26,10 @@ import { StyleSheet } from 'react-native';
 
 import './localization/i18n';
 import i18next from 'i18next';
+import Animated from 'react-native-reanimated';
+import StackedPictureScreen from './screens/StackedPictureScreen';
+import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
+import { set } from 'lodash';
 
 // ...
 
@@ -48,6 +52,7 @@ export default function App() {
   const [backendApiVersion, setBackendApiVersion] = useState("");
   const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
   const [freeStorage, setFreeStorage] = useState(0);
+  const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -106,6 +111,11 @@ export default function App() {
         setShowWatermark(watermark == '1');
       }
     });
+    AsyncStorage.getItem('SUNSCAN_APP::STACKING_OPTIONS').then((stackingOptions) => {
+      if(stackingOptions)  {
+        setStackingOptions(JSON.parse(stackingOptions));
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -117,6 +127,7 @@ export default function App() {
     AsyncStorage.setItem('SUNSCAN_APP::TOOLTIP', `${tooltipVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
+    AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
     
   }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal]);
   
@@ -144,7 +155,9 @@ export default function App() {
     displayFullScreenImage,
     setDisplayFullScreenImage,
     freeStorage,
-    setFreeStorage
+    setFreeStorage,
+    stackingOptions,
+    setStackingOptions
   };
 
   const styles = StyleSheet.create({
@@ -155,6 +168,8 @@ export default function App() {
       flex: 1,
     },
   });
+
+  Animated.addWhitelistedNativeProps({ text: true });
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -182,6 +197,14 @@ export default function App() {
               <My.Screen
                 name="Picture"
                 component={PictureScreen}
+              />
+                <My.Screen
+                name="StackedPicture"
+                component={StackedPictureScreen}
+              />
+               <My.Screen
+                name="AnimatedPicture"
+                component={AnimatedPictureScreen}
               />
               <My.Screen name="Settings" component={SettingsScreen} />
             </My.Navigator>
