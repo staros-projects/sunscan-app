@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "1.3.2",
+        version: "1.3.3",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -17,13 +17,13 @@ export default ({ config }) => {
         },
         assetBundlePatterns: ["**/*"],
         ios: {
-          buildNumber: "38",
+          buildNumber: "39",
           supportsTablet: true,
           requireFullScreen: true,
           bundleIdentifier: "com.staros.sunscan-app"
         },
         android: {
-          versionCode: 38,
+          versionCode: 39,
           adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#fff"
