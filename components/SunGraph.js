@@ -41,7 +41,7 @@ function SunGraph({sunTimes}) {
     const daySectionPosition = (Math.min(minutesSinceDayStarted, eventsAt.sunset - eventsAt.sunrise) * (499 - 106)) / (eventsAt.sunset - eventsAt.sunrise)
     
     // Update the sun's position
-    setSunPosition(sunLine.getPointAtLength(daySectionPosition))
+    setTimeout(()=>setSunPosition(sunLine.getPointAtLength(daySectionPosition)),1000)
   },[sunTimes])
     
   return (
@@ -64,7 +64,7 @@ function SunGraph({sunTimes}) {
       <Line x1="449" y1="25" x2="449" y2="100" />
       
       {/* Sun representation */}
-      <Circle cx={sunPosition.x} cy={sunPosition.y} r="10" opacity="1" stroke="none" fill="rgb(250 204 21)" shape-rendering="geometricPrecision" />
+      { sunPosition.x && <Circle cx={sunPosition.x} cy={sunPosition.y} r="10" opacity="1" stroke="none" fill="rgb(250 204 21)" shape-rendering="geometricPrecision" />}
     </Svg>
   )
 }

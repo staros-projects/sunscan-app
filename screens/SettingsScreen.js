@@ -190,6 +190,7 @@ export default function SettingsScreen({navigation, isFocused}) {
   }, [isFocused, myContext.sunscanIsConnected]));
 
   const [stackingOptReset, setStackingOptReset] = useState(false);
+  
 
   return (
     <View className="flex flex-col bg-zinc-800">
@@ -200,11 +201,11 @@ export default function SettingsScreen({navigation, isFocused}) {
             <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
             <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>
             <View  className="flex flex-col mb-4 ">
-            <View  className="flex flex-row  space-x-4 items-start  ">
-              {(myContext.sunscanIsConnected || myContext.debug) && <>
+             {(myContext.sunscanIsConnected || myContext.debug) &&<View  className="flex flex-row space-x-4 items-start  ">
+         
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable> 
-              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable></>}
-              </View>
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable>
+              </View>}
               {sunscanIsReboot && <View className="flex flex-row  space-x-4 items-start mt-2 ">
                   <Text className="text-white mb-1 text-xs italic" >{t('common:rebootOk')}</Text>
                 </View>}

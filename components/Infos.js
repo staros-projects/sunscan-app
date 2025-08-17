@@ -66,7 +66,7 @@ export default function Infos({isFocused}) {
 
 
   // Render component
-  return (location && sunTimes?.sunset != undefined && <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-col align-center space-y-4 items-center justify-between" >
+  return (sunTimes?.sunset != undefined && <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-col align-center space-y-4 items-center justify-between" >
    
       <Pressable onPress={fetchData} className="w-full"><DateTimeLocation city={geoCode} /></Pressable>
       <View className="flex flex-row items-center space-x-4 w-full">
@@ -88,7 +88,7 @@ export default function Infos({isFocused}) {
             </View>
             
             <View  className="flex flex-row justify-between items-center" >
-              <SunGraph sunTimes={sunTimes} />
+              { sunTimes?.sunset != undefined && <SunGraph sunTimes={sunTimes} />}
             </View>
             <View  className="flex flex-row justify-evenly space-x-12">
               <View className="flex flex-col justify-center items-center">

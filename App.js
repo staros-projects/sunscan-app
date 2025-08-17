@@ -181,7 +181,6 @@ export default function App() {
                 screenOptions={{
                     headerShown: false
                       }}>
-                    
               <My.Screen
                 name="Home"
                 component={HomeScreen}

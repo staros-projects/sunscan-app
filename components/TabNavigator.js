@@ -22,6 +22,7 @@ import AppContext from './AppContext';
 import { Image } from 'expo-image';
 
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Main TabNavigator component
 export default function TabNavigator({
@@ -59,10 +60,13 @@ export default function TabNavigator({
     },
   });
 
+    const insets = useSafeAreaInsets();
+
+
   return (
     <NavigationContent>
        
-        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99}}>
+        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, paddingLeft:insets.left, paddingRight:insets.right, backgroundColor:'#000'}}>
                 {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
                   <Pressable className="absolute right-0 top-0 m-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage(''); console.log('1') }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
