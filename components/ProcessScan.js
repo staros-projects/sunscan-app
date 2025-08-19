@@ -106,8 +106,8 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 {/* Start processing button or loading indicator */}
                 <ScrollView className="w-full">
                 {!isStarted ? (
-                  <View>
-                  <View className="flex flex-row items-center">
+                  <View >
+                    <View className="flex flex-row items-center">
                     <Text className="text-white text-xs">{t('common:helium')}</Text>
                     <Switch
                      trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
@@ -116,7 +116,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       onValueChange={()=>advancedMode == 'heI' ? setAdvancedMode('') : setAdvancedMode('heI')}
                           /> 
                     </View>
-                   <View className="flex flex-row items-center mb-2">
+                   <View className="flex flex-row items-center">
                     <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
                     <Switch
                      trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}

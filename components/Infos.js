@@ -10,6 +10,7 @@ import AppContext from './AppContext';
 import { useFocusEffect } from '@react-navigation/native';
 import SunGraph from './SunGraph';
 import { useTranslation } from 'react-i18next';
+import { set } from 'lodash';
 
 export default function Infos({isFocused}) {
   const { t, i18n } = useTranslation();
@@ -44,19 +45,32 @@ export default function Infos({isFocused}) {
       let geocode = await Location.reverseGeocodeAsync({longitude:location.coords.longitude, latitude:location.coords.latitude});
       setGeoCode(geocode ? geocode[0].city:'');
 
-      // Calculate sun times and positions using SunCalc library
-      setSunTimes(SunCalc.getTimes(new Date(), location?.coords.latitude, location?.coords.longitude));
-      setSunPositions(SunCalc.getPosition(new Date(), location?.coords.latitude, location?.coords.longitude));
+      if (location) {
+        myContext.setLocationData({location:location, geocode:geocode});
+      }
     }
   } 
+
+  // Calculate sun times and positions using SunCalc library
+  const computeEphemeris = async () => {
+    setSunTimes(SunCalc.getTimes(new Date(), location?.coords.latitude, location?.coords.longitude));
+    setSunPositions(SunCalc.getPosition(new Date(), location?.coords.latitude, location?.coords.longitude));
+  }
  
   // Effect hook that runs when the component gains focus
   // Fetches location data, performs reverse geocoding, and calculates sun times and positions
   useFocusEffect(
     useCallback(() => {
-    
+      if (myContext.locationData.location){
+        setLocation(myContext.locationData.location);
+        setGeoCode(myContext.locationData.geocode ? myContext.locationData.geocode[0].city:'');
+      }
     fetchData();
   }, [isFocused]));
+
+  useEffect(() => {
+    computeEphemeris();
+  }, [location])
  
 
   // Utility function to convert decimal degrees to degrees, minutes, seconds format

@@ -48,6 +48,7 @@ export default function App() {
   const [tooltipVal, setTooltip] = useState(false);
   const [camera, setCamera] = useState("");
   const [observerVal, setObserver] = useState("");
+  const [locationData, setLocationData] = useState({});
   const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
   const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
@@ -91,6 +92,11 @@ export default function App() {
         setObserver(observer);
       }
     });
+    AsyncStorage.getItem('SUNSCAN_APP::LOCATION').then((location) => {
+      if (location) {
+        setLocationData(JSON.parse(location));
+      }
+    });
     AsyncStorage.getItem('SUNSCAN_APP::DEMO').then((d) => {
       if(d)  {
         setDemo(d == '1');
@@ -122,14 +128,15 @@ export default function App() {
     if (observerVal !== "") {
       AsyncStorage.setItem('SUNSCAN_APP::OBSERVER', `${observerVal}`);
     }
-
+   
+    AsyncStorage.setItem('SUNSCAN_APP::LOCATION', JSON.stringify(locationData));
     AsyncStorage.setItem('SUNSCAN_APP::DEMO', `${demoVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::TOOLTIP', `${tooltipVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
     
-  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal]);
+  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData]);
   
   const userSettings = {
     sunscanIsConnected:sunscanIsConnected,
@@ -143,6 +150,8 @@ export default function App() {
     tooltip:tooltipVal,
     hotSpotMode:hotSpotModeVal,
     observer:observerVal,
+    locationData,
+    setLocationData,
     showWatermark:showWatermark,
     backendApiVersion,
     setBackendApiVersion,
