@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Modal, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Component for displaying a tooltip popup with random facts
 const TooltipPopin = ({onClose}) => {
@@ -23,6 +24,7 @@ const TooltipPopin = ({onClose}) => {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       {/* Modal for displaying the tooltip */}
+      <SafeAreaView>
       <Modal
         animationType="fade"
         transparent={true}
@@ -45,7 +47,7 @@ const TooltipPopin = ({onClose}) => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </Modal></SafeAreaView>
 
      
     </View>

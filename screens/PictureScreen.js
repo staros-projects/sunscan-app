@@ -352,16 +352,17 @@ export default function PictureScreen({ route, navigation }) {
 
             {/* Process scan and scan info components */}
             <ProcessScan processMethod={processScan} isStarted={isStarted} setIsStarted={setIsStarted}  isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
-            <ScanInfo scan={scan} onClose={()=>setDisplayInfo(false)} logs={logs} currentImage={currentImage[0]} isVisible={displayInfo} />
+            
 
 
 
 
            
 
-
+            <ScanInfo scan={scan} onClose={()=>setDisplayInfo(false)} logs={logs} currentImage={currentImage[0]} isVisible={displayInfo} />
 
         </SafeAreaProvider>
+       
 
 
       </View>

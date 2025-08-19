@@ -312,12 +312,11 @@ useEffect(() => {
 
 
   return (
-    <>
-    <View className="bg-zinc-700 h-screen" style={{flex:1}}>
-      {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 space-x-2" style={{zIndex:20}}>
+    <View className="bg-zinc-700 h-full" >
+      {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 px-0 space-x-2" style={{zIndex:20}}>
         <Text className="text-white text-xs mr-4">{selectedItems.length} {t('common:scanSelected')}</Text>
-        {currentView == 'scans' && <><Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable>
-       <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></Pressable></>}
+        {currentView == 'scans' && <View className="flex flex-row"><Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable>
+       <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></Pressable></View>}
         <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={deleteButtonAlert}><Ionicons name="trash" size={20} color="white" /><Text className="text-white"> {t('common:delete')}</Text></Pressable>
         <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{setSelectedItems([])}}><Ionicons name="close" size={20} color="white" /></Pressable>
       </View>}
@@ -346,8 +345,7 @@ useEffect(() => {
       </Pressable> */}
     </View>
 
-
-      <View className="flex flex-col" style={{flex:1}}>
+      <View className="flex flex-col pb-10" >
         <View className="px-10">
           {scans.length ? <FlatList
             data={scans}
@@ -377,10 +375,11 @@ useEffect(() => {
             onEndReached={loadMoreFiles}
             initialNumToRender={1}
             onEndReachedThreshold={2}
-          />:<></>}
+          />:<View></View>}
         </View>
       </View>
 
+      <SafeAreaView>
       <Modal
           transparent={true}
           visible={modalVisible}
@@ -399,7 +398,7 @@ useEffect(() => {
               <Animated.Text style={styles.percentageText}>{progressValue}</Animated.Text>
             </View>
           </View>
-        </Modal>
+        </Modal></SafeAreaView>
         <AnimationOptionsModal
         visible={animationOptionsModalVisible}
         itemCount={selectedItems.length}
@@ -407,8 +406,6 @@ useEffect(() => {
         onSubmit={animateScans}
       />
     </View>
-     
-        </>
   );
 }
 

@@ -8,6 +8,7 @@ import react from 'react';
 import ReactNativeSegmentedControlTab from 'react-native-segmented-control-tab';
 import { ScrollView } from 'react-native-gesture-handler';
 import CustomNumericInput from './CustomNumericInput';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 // Component for processing scans
@@ -88,7 +89,8 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
       const levels = [t('common:Off'), t('common:Low'), t('common:Medium'), t('common:High')];
     
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
+    <SafeAreaView>
+    <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
         <View style={styles.centeredView}>
             <View style={styles.modalView} className="flex flex-col">
                 {/* Close button */}
@@ -104,7 +106,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                 {/* Start processing button or loading indicator */}
                 <ScrollView className="w-full">
                 {!isStarted ? (
-                  <>
+                  <View>
                   <View className="flex flex-row items-center">
                     <Text className="text-white text-xs">{t('common:helium')}</Text>
                     <Switch
@@ -202,7 +204,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                         <Ionicons name="caret-forward-outline" size={18} color="white" />
                         <Text className="text-white text-xs">{t('common:startProcessing')}</Text>
                     </Pressable>
-                    </>
+                    </View>
                     
                 ) : (
                     <View className="mt-4 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex justify-center items-center">
@@ -215,6 +217,6 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                
             </View>
         </View>
-    </Modal>
+    </Modal></SafeAreaView>
   );
 }

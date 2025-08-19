@@ -296,10 +296,10 @@ export default function SettingsScreen({navigation, isFocused}) {
               <View className="w-1/2">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')}</Text>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:currentVersion')} : {myContext.backendApiVersion}</Text>
-                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <>
+                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <View>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:newVersion')} : {backend_current_version}</Text>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
-                </>}
+                </View>}
               </View>
               {!firmareIsUpToDate(myContext) || myContext.debug ?
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={updateFirmware}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:update')}</Text></Pressable>:

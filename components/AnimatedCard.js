@@ -45,7 +45,7 @@ export default function AnimatedCard({squareSize, scan, selected, multiSelectMod
            
             <View  className="mx-auto w-full">
               <View className="absolute top-0 p-2 right-0 z-20">
-                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<></>)}</View>
+                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<View></View>)}</View>
                   <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.path) : navigation.navigate('AnimatedPicture',{scan:scan})}  >
 
                 

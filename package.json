@@ -67,7 +67,7 @@
     "react-native-web": "0.20.0",
     "rn-vertical-slider": "4.4.0",
     "suncalc": "1.9.0",
-    "victory-native": "36.3.1"
+    "victory-native": "^41.19.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

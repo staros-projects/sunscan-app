@@ -65,9 +65,7 @@ export default function TabNavigator({
 
   return (
     <NavigationContent>
-       
-        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, paddingLeft:insets.left, paddingRight:insets.right, backgroundColor:'#000'}}>
-                {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
+        {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
                   <Pressable className="absolute right-0 top-0 m-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage(''); console.log('1') }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
                         <Zoomable
@@ -82,6 +80,8 @@ export default function TabNavigator({
                               />
                         </Zoomable>
                 </View>}
+        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, paddingLeft:insets.left, paddingRight:insets.right, backgroundColor:'#000'}}>
+               
                 {/* Sidebar navigation */}
                 <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >
                 {/* Home tab */}
