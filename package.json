@@ -25,7 +25,7 @@
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/native": "6.1.9",
     "@react-navigation/native-stack": "6.9.17",
-    "@shopify/react-native-skia": "v2.0.0-next.4",
+    "@shopify/react-native-skia": "~v2.0.0-next.4",
     "expo": "53.0.20",
     "expo-application": "~6.1.5",
     "expo-asset": "~11.1.7",
@@ -65,9 +65,9 @@
     "react-native-svg": "15.11.2",
     "react-native-video": "5.2.1",
     "react-native-web": "0.20.0",
-    "rn-vertical-slider": "4.4.0",
+    "rn-vertical-slider": "~4.4.1",
     "suncalc": "1.9.0",
-    "victory-native": "^41.19.2"
+    "victory-native": "~41.19.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

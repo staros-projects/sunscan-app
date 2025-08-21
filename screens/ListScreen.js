@@ -1,7 +1,7 @@
 import  {  useContext,  useState, useCallback, useEffect } from 'react';
-import { View,FlatList, SafeAreaView, ActivityIndicator, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
+import { View,FlatList, SafeAreaView, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, useAnimatedProps, runOnJS, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from 'react-native-reanimated';
 
 // Configure NativeWind to use native output
 NativeWindStyleSheet.setOutput({
@@ -11,16 +11,12 @@ NativeWindStyleSheet.setOutput({
 import Card from '../components/Card';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import AppContext from '../components/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTranslation } from 'react-i18next';
 import IrisSVG from '../components/svg/IrisSVG';
 import StackedCard from '../components/StackedCard';
 import AnimatedCard from '../components/AnimatedCard';
 import AnimationOptionsModal from '../components/AnimationOptionsModal';
-import { StatusBar } from 'expo-status-bar';
-import { size } from 'lodash';
 
 import { Dimensions } from 'react-native';
 
@@ -367,7 +363,7 @@ useEffect(() => {
             }
             }
             contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={(item, index) => item.path.toString()}
             columnWrapperStyle={{ flex: 1, justifyContent: "center" }}
             ListHeaderComponent={<View className="mt-2"></View>}
             refreshing={isLoading}

@@ -113,11 +113,17 @@ export default function ScanScreen({navigation}) {
 
          // Subscribe to 'focus' events
         subscribe('focus', (message) => {
+          console.log(message)
           if (fcRef.current % 5 === 0) {
-            if(parseFloat(message[2]) > bestSharpness) {
-              setBestSharpness(parseFloat(message[2]));
-            }
-            setSharpness(parseFloat(message[2]));
+            const current = parseFloat(message[1])/100;
+            setSharpness(current);
+
+            setBestSharpness(prev => {
+              if (current > prev) {
+                return current;
+              }
+              return prev;
+            });
 
           }
         });
@@ -440,9 +446,9 @@ export default function ScanScreen({navigation}) {
 
   const toggleFocus = () => {
       setIsLoading(true);
+      setBestSharpness(0);
       fetch('http://'+myContext.apiURL+"/camera/toggle-focus-assistant/").then(response => response.json())
       .then(json => {
-        console.log(json)
         setDisplayFocusAssistant(json.focus_assistant);
         setIsLoading(false);
       })
@@ -456,7 +462,6 @@ export default function ScanScreen({navigation}) {
   const stylesRighttoolBar = StyleSheet.create({
     right: 16,
   });
-
 
 
     return (
@@ -479,7 +484,7 @@ export default function ScanScreen({navigation}) {
                         {displayGrid && !rec && <View className="absolute w-full h-full z-30 flex flex-row items-center "><View className="z-40 w-full" style={{height:1, backgroundColor:"lime"}}></View></View>}
                 {/* Camera feed image */}
                 <View className="h-full w-full  flex flex-row justify-center items-center"><Image
-                style={{width:crop?510:402, height:crop ? 30:200}}
+                style={{width:crop?470:402, height:crop ? 30:200}}
                 source={{ uri: frame }} 
                 contentFit='contain'
                 className="border border-white mx-auto"
@@ -505,15 +510,21 @@ export default function ScanScreen({navigation}) {
                 </View>
 
       
-
-   {displayFocusAssistant && <View className="absolute bottom-0 w-full h-14 z-5 " style={{ right:0, bottom:75}}>
-    <View style={{ left:0, top:0}} className=" flex flex-col mx-auto justify-center items-center rounded-lg px-2 py-1 bg-zinc-600/70 ">
-                  
-               <View className="flex flex-row gap-1 items-center"><Text className="mx-auto text-white text-xs ">{t('common:focusMsg')} :</Text> <Text className="mx-auto text-white text-base font-bold">{sharpness.toFixed(2)}</Text><Text className="mx-auto text-white text-xs">(Max: {bestSharpness.toFixed(2)})</Text></View>
-               <Text className="mx-auto text-gray-400 text-xs italic" style={{fontSize:10}}>{t('common:focusMsg1')}</Text>
-                <Text className="mx-auto text-gray-400 text-xs italic" style={{fontSize:10}}>{t('common:focusMsg2')}</Text>
+          {/* focus assistant */}
+          {displayFocusAssistant && sharpness && !displaySpectrum && <View className="absolute bottom-0 w-full h-14 z-5 " style={{ right:0, bottom:75}}>
+            <View style={{ left:0, top:0}} className=" flex flex-col mx-auto justify-center items-center rounded-lg px-2 py-1 bg-zinc-600/70 space-y-0">
+               <View className="flex flex-row gap-1 items-center">
+                <Text className="mx-auto text-white text-xs ">{t('common:focusMsg')} :</Text>
+                <Text className="mx-auto text-white text-base font-bold">{sharpness.toFixed(2)}</Text>
+                <Text className="mx-auto text-white text-xs">(Best: {bestSharpness.toFixed(2)})</Text>
+                <Pressable onPress={()=>setBestSharpness(0)}><Ionicons name="refresh-sharp" size={14} color="white" /></Pressable> 
+              </View>
+               
+               <Text className="mx-auto text-gray-400 text-xs italic leading-3" style={{fontSize:10}}>{t('common:focusMsg1')}</Text>
+                <Text className="mx-auto text-gray-400 text-xs italic leading-3" style={{fontSize:10}}>{t('common:focusMsg2')}</Text>
           </View></View>}
-           {/* Bottom toolbar */}r
+
+           {/* Bottom toolbar */}
            {!rec && !displaySpectrum && (myContext.cameraIsConnected || myContext.demo)  &&
            <View className="absolute bottom-0 w-full h-14 z-10 " style={{ right:0, bottom:10}}>
 
@@ -683,10 +694,8 @@ export default function ScanScreen({navigation}) {
                     value={expTime}
                     thumbTintColor="white"
                     minimumTrackTintColor="gray"
-                    maximumTrackTintColor="gray"
-                   
-                    onSlidingComplete={(e)=>{updateControls()}}
-                    onValueChange={(e)=>setExptime(e)}
+                    maximumTrackTintColor="gray"             
+                    onSlidingComplete={(e)=>{setExptime(e); updateControls(); }}    
                   />:
                    // Gain slider
                    <Slider
@@ -698,8 +707,7 @@ export default function ScanScreen({navigation}) {
                     thumbTintColor="white"
                     minimumTrackTintColor="gray"
                     maximumTrackTintColor="gray"
-                    onSlidingComplete={(e)=>{updateControls()}}
-                    onValueChange={(e)=>setGain(e)}
+                    onSlidingComplete={(e)=>{setGain(e); updateControls()}}
                   />)}
                  
                     {/* Mono/Bin mode toggle and pixel stats display */}

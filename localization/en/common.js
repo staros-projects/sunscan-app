@@ -132,7 +132,7 @@ export default {
     "stacked": "Stacked",
     "animations": "Animations",
     "snapshots": "Snapshots",
-    "processing": "Processing in progress...",
+    "processing": "Processing in progress",
     // animation options modal
     "animationOptions": "Animation options",
     "frameDuration": "Frame duration (ms)",

@@ -117,7 +117,7 @@ export default {
     "stacked": "Stacked",
     "animations": "Animations",
     "snapshots": "Snapshots",
-    "processing": "Traitement en cours...",
+    "processing": "Traitement en cours",
     // animation options modal
     "animationOptions": "Options d'animation",
     "frameDuration": "Durée de chaque image (ms)",
