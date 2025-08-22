@@ -1,5 +1,9 @@
 {
+   "cli": {
+      "appVersionSource": "remote"
+    },
   "build": {
+   
     "development": {
       "developmentClient": true,
       "distribution": "internal"
@@ -10,6 +14,8 @@
         "ANDROID_HOME": "/Users/guillaumebertrand/Library/Android/sdk"
     }
     },
-    "production": {}
+    "production": {
+      "autoIncrement": true
+    }
   }
 }

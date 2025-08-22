@@ -694,7 +694,8 @@ export default function ScanScreen({navigation}) {
                     value={expTime}
                     thumbTintColor="white"
                     minimumTrackTintColor="gray"
-                    maximumTrackTintColor="gray"             
+                    maximumTrackTintColor="gray"
+                                 
                     onSlidingComplete={(e)=>{setExptime(e); updateControls(); }}    
                   />:
                    // Gain slider

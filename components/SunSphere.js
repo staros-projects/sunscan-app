@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber/native';
 import { Gyroscope } from 'expo-sensors';
 import { Asset } from 'expo-asset';
 import { TextureLoader } from 'three';
-import { loadAsync, loadTextureAsync } from 'expo-three';
+import { loadAsync } from 'expo-three';
 import AppContext from './AppContext';
 
 const SunSphere = forwardRef((props, ref) => {
@@ -41,8 +41,8 @@ const SunSphere = forwardRef((props, ref) => {
     Gyroscope.setUpdateInterval(25);
     const subscription = Gyroscope.addListener(({ x, y }) => {
       targetRotation.current = {
-        x: targetRotation.current.x - y * 0.017,
-        y: targetRotation.current.y + x * 0.017,
+        x: targetRotation.current.x - y * 0.02,
+        y: targetRotation.current.y + x * 0.02 ,
       };
     });
     return () => subscription.remove();

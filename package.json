@@ -13,7 +13,8 @@
     "build-prod-android": "eas build --platform android",
     "build-prod-ios": "eas build --platform ios",
     "submit-prod-ios": "eas submit --platform ios",
-    "build-prev-ios": "eas build --platform ios --profile preview --local"
+    "build-prev-ios": "eas build --platform ios --profile preview --local",
+    "sync-build-version": "eas build:version:set"
   },
   "dependencies": {
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
@@ -27,8 +28,8 @@
     "@react-navigation/native-stack": "6.9.17",
     "@react-three/drei": "^10.7.3",
     "@react-three/fiber": "^9.3.0",
-    "@shopify/react-native-skia": "v2.0.0-next.4",
-    "expo": "53.0.20",
+    "@shopify/react-native-skia": "v2.2.2",
+    "expo": "53.0.22",
     "expo-application": "~6.1.5",
     "expo-asset": "~11.1.7",
     "expo-av": "~15.1.7",
@@ -44,7 +45,7 @@
     "expo-linking": "~7.1.7",
     "expo-location": "~18.1.6",
     "expo-media-library": "~17.1.7",
-    "expo-navigation-bar": "~4.2.7",
+    "expo-navigation-bar": "~4.2.8",
     "expo-screen-orientation": "~8.1.7",
     "expo-sensors": "^14.1.4",
     "expo-sharing": "~13.1.5",
