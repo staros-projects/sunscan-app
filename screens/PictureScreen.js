@@ -98,7 +98,6 @@ export default function PictureScreen({ route, navigation }) {
       const img = getImages(json.images, false);
       if (img.length) {
         setImages(img);
-        console.log(json.planispheres)
         setAvalaiblePlanispheres(json.planispheres);
         setcurrentImage(img[0])
         getLogs();
