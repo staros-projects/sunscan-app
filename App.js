@@ -52,6 +52,7 @@ export default function App() {
   const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
   const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
+  const [displayFullScreen3d, setDisplayFullScreen3d] = useState("");
   const [freeStorage, setFreeStorage] = useState(0);
   const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
 
@@ -163,6 +164,8 @@ export default function App() {
     apiURL:apiURLVal,
     displayFullScreenImage,
     setDisplayFullScreenImage,
+    displayFullScreen3d,
+    setDisplayFullScreen3d,
     freeStorage,
     setFreeStorage,
     stackingOptions,
@@ -172,6 +175,7 @@ export default function App() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: '#000',
     },
     safeArea: {
       flex: 1,
@@ -188,7 +192,7 @@ export default function App() {
         <NavigationContainer>
             <My.Navigator  
                 screenOptions={{
-                    headerShown: false
+                    headerShown: false, 
                       }}>
               <My.Screen
                 name="Home"

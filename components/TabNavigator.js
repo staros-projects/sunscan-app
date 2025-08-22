@@ -1,6 +1,7 @@
 import * as React from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Dimensions, Pressable, View, StyleSheet } from 'react-native';
+import { Dimensions, Pressable, View, StyleSheet, Button, Text } from 'react-native';
+import { OrthographicCamera } from '@react-three/drei/native';
 import {
     createNavigatorFactory,
     DefaultNavigatorOptions,
@@ -23,6 +24,13 @@ import { Image } from 'expo-image';
 
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SunSphere from './SunSphere';
+import { Canvas } from '@react-three/fiber';
+
+
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
+
 
 // Main TabNavigator component
 export default function TabNavigator({
@@ -32,6 +40,8 @@ export default function TabNavigator({
   tabBarStyle,
   contentStyle,
 }) {
+    const { t, i18n } = useTranslation();
+
   // Use the navigation builder hook to create the tab navigation
   const { state, navigation, descriptors, NavigationContent } =
     useNavigationBuilder(TabRouter, {
@@ -39,6 +49,8 @@ export default function TabNavigator({
       screenOptions,
       initialRouteName,
     });
+
+    const sunRef = React.useRef();
 
   // Get the current screen name
   const screenName = state.routes[state.index].name;
@@ -64,11 +76,32 @@ export default function TabNavigator({
 
 
   return (
+
+
     <NavigationContent>
+
+      {myContext.displayFullScreen3d !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
+        <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreen3d('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+                            <View style={{ flex: 1 }}>
+                                                      <Canvas  >
+                                                        <OrthographicCamera
+                                                          makeDefault
+                                                          position={[0, 0, 3]}  // Place la caméra diagonalement pour effet iso
+                                                          zoom={130}             // Zoom pour ajuster la taille de la sphère
+                                                          near={0.1}
+                                                          far={200}
+                                                        />
+                                  <ambientLight intensity={0.1} />
+                                  
+                                  <SunSphere ref={sunRef} textureUri={myContext.displayFullScreen3d} /> 
+                                </Canvas>
+                                <Pressable className="absolute p-10 bottom-0 flex flex-row gap-1 items-center" onPress={() => {sunRef.current?.resetRotation()}}><Ionicons name="refresh" size={24} color="white" /><Text className="text-white">{t('common:resetView')}</Text></Pressable>
+                           
+                    </View></View>}
         {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
-                  <Pressable className="absolute right-0 top-0 m-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage(''); console.log('1') }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+                  <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
-                        <Zoomable
+                         <Zoomable
                         isSingleTapEnabled
                         isDoubleTapEnabled
                         

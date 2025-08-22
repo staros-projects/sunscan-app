@@ -113,7 +113,7 @@ export default function ScanScreen({navigation}) {
 
          // Subscribe to 'focus' events
         subscribe('focus', (message) => {
-          console.log(message)
+          //console.log(message)
           if (fcRef.current % 5 === 0) {
             const current = parseFloat(message[1])/100;
             setSharpness(current);

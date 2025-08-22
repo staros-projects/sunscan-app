@@ -1,6 +1,6 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import md5 from 'md5';
@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next';
 import LineSelector from '../components/LineSelector';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { downloadSunscanImage } from '../utils/Helpers';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { set } from 'lodash';
 
 export default function PictureScreen({ route, navigation }) {
 
@@ -75,7 +77,7 @@ export default function PictureScreen({ route, navigation }) {
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [tag, setTag] = useState("");
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
-
+  const [avalaiblePlanispheres, setAvalaiblePlanispheres] = useState([]);
 
   // Function to fetch scans from the API
   async function getScanDetails(scan) {
@@ -91,10 +93,13 @@ export default function PictureScreen({ route, navigation }) {
     .then(json => {
       setImages([]);
       setcurrentImage([]);
+      setCurrentPlanisphere("");
       
       const img = getImages(json.images, false);
       if (img.length) {
-        setImages(img)
+        setImages(img);
+        console.log(json.planispheres)
+        setAvalaiblePlanispheres(json.planispheres);
         setcurrentImage(img[0])
         getLogs();
       }
@@ -264,8 +269,30 @@ export default function PictureScreen({ route, navigation }) {
         console.error(error);
       });
   }
+  
+  const insets = useSafeAreaInsets();
 
+  const [currentPlanisphere, setCurrentPlanisphere] = useState(""); 
 
+  useEffect(() => {
+    if (!currentImage || !currentImage.length) return;
+    const currentImagePlanisphere = currentImage[1].replace('.jpg', '_proj.jpg');
+    setCurrentPlanisphere("");
+    if (scan?.planispheres.length == 0){
+      avalaiblePlanispheres.forEach(planisphere => {
+        if (currentImagePlanisphere.includes(planisphere)) {
+          setCurrentPlanisphere(planisphere);
+        }
+      });
+    }else {
+      scan?.planispheres.forEach(planisphere => {
+        if (currentImagePlanisphere.includes(planisphere)) {
+          setCurrentPlanisphere(planisphere);
+        }
+      });
+    }
+
+  }, [,currentImage]);
 
   // Render the component
   return (
@@ -301,6 +328,10 @@ export default function PictureScreen({ route, navigation }) {
                 <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
               </View>}
 
+                {currentPlanisphere && <View className="absolute left-0 bottom-0 justify-end  m-4 align-center z-50 flex space-y-4 flex-col">
+                  <Pressable className="" onPress={() => myContext.setDisplayFullScreen3d(currentPlanisphere)}><MaterialIcons name="3d-rotation" size={34} color="white" /></Pressable>
+                </View>}
+              
                     {/* Image zoom component */}
                     <Zoomable
                     isSingleTapEnabled

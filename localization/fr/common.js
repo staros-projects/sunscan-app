@@ -57,6 +57,7 @@ export default {
     "stepSize": "Step size",
     "intensityThreshold": "Intensity threshold",
     "reset": "Default values",
+    "resetView": "Réinitialiser la vue",
     // picture screen
     "downloaded": "Téléchargement terminé",
     "downloading": "Téléchargement en cours",

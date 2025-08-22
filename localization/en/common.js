@@ -57,6 +57,7 @@ export default {
     "stepSize": "Step size",
     "intensityThreshold": "Intensity threshold",
     "reset": "Valeurs par défaut",
+    "resetView": "Reset view",
     // status
     "sunscan": "SUNSCAN",
     "storage": "Storage",
