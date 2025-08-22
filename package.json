@@ -27,7 +27,7 @@
     "@react-navigation/native-stack": "6.9.17",
     "@react-three/drei": "^10.7.3",
     "@react-three/fiber": "^9.3.0",
-    "@shopify/react-native-skia": "~v2.0.0-next.4",
+    "@shopify/react-native-skia": "v2.0.0-next.4",
     "expo": "53.0.20",
     "expo-application": "~6.1.5",
     "expo-asset": "~11.1.7",
@@ -50,7 +50,7 @@
     "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
-    "expo-three": "^8.0.0",
+    "expo-three": "^2.2.1",
     "i18next": "^23.14.0",
     "lodash": "^4.17.21",
     "lottie-react-native": "7.2.2",
@@ -72,7 +72,7 @@
     "react-native-web": "0.20.0",
     "rn-vertical-slider": "~4.4.1",
     "suncalc": "1.9.0",
-    "three": "^0.179.1",
+    "three": "^0.166.0",
     "victory-native": "~41.19.2"
   },
   "devDependencies": {
