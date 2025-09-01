@@ -23,6 +23,7 @@ export default ({ config }) => {
           bundleIdentifier: "com.staros.sunscan-app"
         },
         android: {
+          barStyle: "dark-content",
           versionCode: 41,
           adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
@@ -35,7 +36,8 @@ export default ({ config }) => {
           ],
           blockedPermissions: [
             "android.permission.READ_MEDIA_IMAGES",
-            "android.permission.READ_MEDIA_VIDEO"
+            "android.permission.READ_MEDIA_VIDEO",
+            "android.permission.ACTIVITY_RECOGNITION"
           ],
           package: "com.staros.sunscan"
         },

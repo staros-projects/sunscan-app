@@ -9,6 +9,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import ListScreen from './screens/ListScreen';
 import PictureScreen from './screens/PictureScreen';
 import ScanScreen from './screens/ScanScreen';
+
  
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -179,6 +180,7 @@ export default function App() {
     },
     safeArea: {
       flex: 1,
+      backgroundColor: '#000',
     },
   });
 
@@ -189,6 +191,7 @@ export default function App() {
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
+          
         <NavigationContainer>
             <My.Navigator  
                 screenOptions={{
@@ -220,7 +223,7 @@ export default function App() {
               />
               <My.Screen name="Settings" component={SettingsScreen} />
             </My.Navigator>
-            <StatusBar hidden={true} />
+            <StatusBar hidden={true}  />
           </NavigationContainer>
           </SafeAreaProvider>
        </WebSocketProvider>

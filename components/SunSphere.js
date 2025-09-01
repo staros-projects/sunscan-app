@@ -25,8 +25,10 @@ const SunSphere = forwardRef((props, ref) => {
         const asset = Asset.fromURI(url);
         await asset.downloadAsync();
         const tex = await loadAsync(asset);
-        tex.magFilter = THREE.NearestFilter; // rend l’image plus "piquée"
-        tex.anisotropy = 16; // améliore la netteté des détails en perspective
+        tex.magFilter = THREE.LinearFilter;
+        tex.minFilter = THREE.LinearMipmapLinearFilter; 
+        tex.anisotropy = 16;
+        tex.generateMipmaps = true;
         tex.needsUpdate = true;
         setTexture(tex);
       } catch (e) {
@@ -48,21 +50,20 @@ const SunSphere = forwardRef((props, ref) => {
     return () => subscription.remove();
   }, []);
 
-  // Expose resetRotation to parent
-  useImperativeHandle(ref, () => ({
-    resetRotation: (newX = 0, newY = -1.6) => {
-      targetRotation.current = { x: newX, y: newY };
-    },
-  }));
+    // Expose resetRotation to parent
+    useImperativeHandle(ref, () => ({
+      resetRotation: (newX = 0, newY = -1.6) => {
+        targetRotation.current = { x: newX, y: newY };
+      },
+    }));
 
-  // Animate rotation smoothly
-  useFrame(() => {
-    if (meshRef.current) {
-      // interpolation simple (lerp)
-      meshRef.current.rotation.x += (targetRotation.current.x - meshRef.current.rotation.x) * 0.05;
-      meshRef.current.rotation.y += (targetRotation.current.y - meshRef.current.rotation.y) * 0.05;
-    }
-  });
+    // Animate rotation + zoom
+    useFrame(() => {
+      if (meshRef.current) {
+        meshRef.current.rotation.x += (targetRotation.current.x - meshRef.current.rotation.x) * 0.05;
+        meshRef.current.rotation.y += (targetRotation.current.y - meshRef.current.rotation.y) * 0.05;
+      }
+    });
 
   if (!texture) return null;
 

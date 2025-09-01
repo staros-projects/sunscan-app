@@ -1,6 +1,6 @@
 import * as React from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Dimensions, Pressable, View, StyleSheet, Button, Text } from 'react-native';
+import { Dimensions, Pressable, View, StyleSheet, Button, Text, PanResponder } from 'react-native';
 import { OrthographicCamera } from '@react-three/drei/native';
 import {
     createNavigatorFactory,
@@ -30,6 +30,9 @@ import { Canvas } from '@react-three/fiber';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue } from 'react-native-reanimated';
+import SmoothCamera from './SmoothCamera';
 
 
 // Main TabNavigator component
@@ -73,29 +76,46 @@ export default function TabNavigator({
   });
 
     const insets = useSafeAreaInsets();
+const cameraRef = React.useRef();
+
 
 
   return (
-
-
-    <NavigationContent>
+    <NavigationContent >
 
       {myContext.displayFullScreen3d !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
         <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreen3d('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                             <View style={{ flex: 1 }}>
-                                                      <Canvas  >
-                                                        <OrthographicCamera
-                                                          makeDefault
-                                                          position={[0, 0, 3]}  // Place la caméra diagonalement pour effet iso
-                                                          zoom={130}             // Zoom pour ajuster la taille de la sphère
-                                                          near={0.1}
-                                                          far={200}
-                                                        />
-                                  <ambientLight intensity={0.1} />
-                                  
-                                  <SunSphere ref={sunRef} textureUri={myContext.displayFullScreen3d} /> 
-                                </Canvas>
-                                <Pressable className="absolute p-10 bottom-0 flex flex-row gap-1 items-center" onPress={() => {sunRef.current?.resetRotation()}}><Ionicons name="refresh" size={24} color="white" /><Text className="text-white">{t('common:resetView')}</Text></Pressable>
+                                                    
+    
+              <Canvas>
+                
+                <ambientLight intensity={0.1} />
+
+                {/* On passe zoomScale comme prop à SunSphere */}
+                <SunSphere
+                  ref={sunRef}
+                  textureUri={myContext.displayFullScreen3d}
+                />
+                 <SmoothCamera ref={cameraRef} initialZoom={150} />
+              </Canvas>
+      
+{/* Boutons Zoom */}
+  <View className="absolute bottom-10 right-5 flex flex-row gap-3">
+    <Pressable
+
+      onPress={() => cameraRef.current?.zoomIn()}
+    >
+      <Ionicons name="add-circle" size={34} color="white" />
+    </Pressable>
+    <Pressable
+     
+      onPress={() => cameraRef.current?.zoomOut()}
+    >
+      <Ionicons name="remove-circle" size={34} color="white" />
+    </Pressable>
+  </View>
+                                <Pressable className="absolute p-10 bottom-0 flex flex-row gap-1 items-center" onPress={() => {sunRef.current?.resetRotation(); cameraRef.current?.resetZoom()}}><Ionicons name="refresh" size={24} color="white" /><Text className="text-white">{t('common:resetView')}</Text></Pressable>
                            
                     </View></View>}
         {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
@@ -113,7 +133,7 @@ export default function TabNavigator({
                               />
                         </Zoomable>
                 </View>}
-        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, paddingLeft:insets.left, paddingRight:insets.right, backgroundColor:'#000'}}>
+        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, backgroundColor: '#000'}}>
                 {/* Sidebar navigation */}
                 <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >
                 {/* Home tab */}

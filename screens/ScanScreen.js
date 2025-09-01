@@ -463,6 +463,10 @@ export default function ScanScreen({navigation}) {
     right: 16,
   });
 
+  useEffect(() => {
+  updateControls();
+}, [expTime, gain, maxThreshold]);
+
 
     return (
     
@@ -694,9 +698,8 @@ export default function ScanScreen({navigation}) {
                     value={expTime}
                     thumbTintColor="white"
                     minimumTrackTintColor="gray"
-                    maximumTrackTintColor="gray"
-                                 
-                    onSlidingComplete={(e)=>{setExptime(e); updateControls(); }}    
+                    maximumTrackTintColor="gray"             
+                    onSlidingComplete={(e)=>{ setExptime(e);}}    
                   />:
                    // Gain slider
                    <Slider
@@ -708,7 +711,7 @@ export default function ScanScreen({navigation}) {
                     thumbTintColor="white"
                     minimumTrackTintColor="gray"
                     maximumTrackTintColor="gray"
-                    onSlidingComplete={(e)=>{setGain(e); updateControls()}}
+                    onSlidingComplete={(e)=>{setGain(e); }}
                   />)}
                  
                     {/* Mono/Bin mode toggle and pixel stats display */}
@@ -764,7 +767,6 @@ export default function ScanScreen({navigation}) {
             <VerticalSlider     
               value={maxThreshold}
               onChange={(v) => {setMaxThreshold(v)}}
-              onComplete={v => updateControls()}
               height={250}
               width={20}
               step={2}
