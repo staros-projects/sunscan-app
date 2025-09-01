@@ -102,18 +102,19 @@ const cameraRef = React.useRef();
       
 {/* Boutons Zoom */}
   <View className="absolute bottom-10 right-5 flex flex-row gap-3">
+      <Pressable
+     
+      onPress={() => cameraRef.current?.zoomOut()}
+    >
+      <Ionicons name="remove-circle" size={34} color="white" />
+    </Pressable>
     <Pressable
 
       onPress={() => cameraRef.current?.zoomIn()}
     >
       <Ionicons name="add-circle" size={34} color="white" />
     </Pressable>
-    <Pressable
-     
-      onPress={() => cameraRef.current?.zoomOut()}
-    >
-      <Ionicons name="remove-circle" size={34} color="white" />
-    </Pressable>
+  
   </View>
                                 <Pressable className="absolute p-10 bottom-0 flex flex-row gap-1 items-center" onPress={() => {sunRef.current?.resetRotation(); cameraRef.current?.resetZoom()}}><Ionicons name="refresh" size={24} color="white" /><Text className="text-white">{t('common:resetView')}</Text></Pressable>
                            

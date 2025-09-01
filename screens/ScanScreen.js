@@ -348,9 +348,8 @@ export default function ScanScreen({navigation}) {
 
     // Function to update recording status
     async function updateRec(type) {
-
       // Check if there is enough storage space (1.2 Go minimum) before starting a new scan
-      if (parseFloat(myContext.freeStorage) < 1.2) {
+      if (parseFloat(myContext.freeStorage) / 10e8 < 1.2) {
         console.log("low storage, free : ", parseFloat(myContext.freeStorage))
         Alert.alert(t('common:warning'), t('common:lowStorageWarning'));
         return;

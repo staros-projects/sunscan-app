@@ -25,9 +25,9 @@ const SunSphere = forwardRef((props, ref) => {
         const asset = Asset.fromURI(url);
         await asset.downloadAsync();
         const tex = await loadAsync(asset);
-        tex.magFilter = THREE.LinearFilter;
-        tex.minFilter = THREE.LinearMipmapLinearFilter; 
-        tex.anisotropy = 16;
+        tex.magFilter = THREE.NearestMipmapNearestFilter;
+        tex.minFilter = THREE.NearestMipmapNearestFilter; 
+
         tex.generateMipmaps = true;
         tex.needsUpdate = true;
         setTexture(tex);

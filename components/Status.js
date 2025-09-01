@@ -87,7 +87,7 @@ export default function Status({isFocused})  {
         if(json) {
           console.log(json)
           setStats(json);
-          myContext.setFreeStorage(json.free);
+          myContext.setFreeStorage(json.free_raw);
           myContext.setCamera(json.camera);
           myContext.setSunscanIsConnected(true);
           myContext.setBackendApiVersion(json.backend_api_version);
