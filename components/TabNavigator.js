@@ -134,7 +134,7 @@ const cameraRef = React.useRef();
                               />
                         </Zoomable>
                 </View>}
-        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99, backgroundColor: '#000'}}>
+        <View className="flex-1 flex flex-row bg-black" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:insets.right}}>
                 {/* Sidebar navigation */}
                 <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >
                 {/* Home tab */}

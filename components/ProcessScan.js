@@ -4,11 +4,13 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Loader from '../components/Loader';
 import { t } from 'i18next';
-import react from 'react';
+import react, { use, useContext, useEffect } from 'react';
 import ReactNativeSegmentedControlTab from 'react-native-segmented-control-tab';
 import { ScrollView } from 'react-native-gesture-handler';
 import CustomNumericInput from './CustomNumericInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { set } from 'lodash';
+import AppContext from './AppContext';
 
 
 // Component for processing scans
@@ -23,6 +25,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
     const [continuumShift, setContinuumShift] = react.useState(16);
     const [offset, setOffset] = react.useState(0);
     const [advancedMode, setAdvancedMode] = react.useState('');
+
 
     const toggleNoiseReduction = () => {
       setNoiseReduction(!noiseReduction);
@@ -87,6 +90,9 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
       });
 
       const levels = [t('common:Off'), t('common:Low'), t('common:Medium'), t('common:High')];
+      const dopplerColorValues = [t('common:orangeblue'), t('common:redblue')];
+
+      const context = useContext(AppContext);
     
   return (
     <SafeAreaView>
@@ -191,6 +197,18 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
           onTabPress={setProtuSharpenLevel}
         />
                         </View>
+                         <View className="flex flex-col space-x-2">
+                          <Text className="text-white text-xs mb-2">{t('common:dopplerColor')}</Text>
+                          <ReactNativeSegmentedControlTab
+                                         tabStyle={stylesTab.tabStyle}
+                                         tabTextStyle={stylesTab.tabTextStyle}
+                                         activeTabStyle={stylesTab.activeTabStyle}
+                                         activeTabTextStyle={stylesTab.activeTabTextStyle}
+                                        values={dopplerColorValues}
+                                        selectedIndex={context.dopplerColor}
+                                        onTabPress={context.setDopplerColor}
+                                      />
+                        </View>
 
                       
 
@@ -199,7 +217,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
                     <Pressable 
                         className=" w-40 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex flex-row align-center justify-center items-center space-x-2"
-                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advancedMode); setIsStarted(true);}}
+                        onPress={() => {processMethod(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advancedMode, context.dopplerColor); setIsStarted(true);}}
                     >
                         <Ionicons name="caret-forward-outline" size={18} color="white" />
                         <Text className="text-white text-xs">{t('common:startProcessing')}</Text>

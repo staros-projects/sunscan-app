@@ -145,7 +145,9 @@ export default function PictureScreen({ route, navigation }) {
         pro_sharpen_level:protusSharpenLevel,
         offset,
         observer:myContext.showWatermark?myContext.observer:' ', 
-        advanced}),
+        advanced,
+        doppler_color:myContext.dopplerColor
+      }),
     }).then(response => response.json())
       .then(json => {
         setIsStarted(true);

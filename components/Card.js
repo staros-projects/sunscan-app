@@ -44,7 +44,8 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
           pro_sharpen_level:1,
           offset:0,
           observer:myContext.showWatermark?myContext.observer:' ',
-          advanced:scan.tag}),
+          advanced:scan.tag,
+          doppler_color:myContext.dopplerColor}),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);

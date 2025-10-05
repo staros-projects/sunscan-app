@@ -114,6 +114,9 @@ export default {
     "horizontalProfileTitle":"Continuum",
     "helium": "Helium processing",
     "selectLineMessage": "Please, select the line corresponding to your scan.",
+    "dopplerColor": "Doppler color",
+    "orangeblue": "Orange-Blue",
+    "redblue": "Red-Blue",
     // scan info
     "typeImage": "Type of image",
     "acquisitionTime": "Acquisition time",

@@ -99,6 +99,9 @@ export default {
     "horizontalProfileTitle":"Continuum",
     "helium":"Traitement Helium",
     "selectLineMessage": "Veuillez sélectionner la raie correspondante à votre scan.",
+    "dopplerColor": "Couleur Doppler",
+    "orangeblue": "Orange-Bleu",
+    "redblue": "Rouge-Bleu",
     // scan info
     "typeImage": "Type d'image",
     "acquisitionTime": "Heure d'acquisition",

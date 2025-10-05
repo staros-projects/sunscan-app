@@ -92,7 +92,15 @@ export default ({ config }) => {
                   }
                 ]
               ]
-            : [])
+            :  [
+                [
+                  "expo-media-library",
+                  {
+                    savePhotosPermission: "Allow $(PRODUCT_NAME) to save your sun images.",
+                    isAccessMediaLocationEnabled: false
+                  }
+                ]
+              ])
         ]
       }
     };
