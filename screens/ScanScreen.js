@@ -226,7 +226,7 @@ export default function ScanScreen({navigation}) {
     const [binMode, setBinMode] = React.useState(false);
     const [colorMode, setColorMode] = React.useState(false);
     const [expTime, setExptime] = React.useState(130);
-    const [gain, setGain] = React.useState(3.0);
+    const [gain, setGain] = React.useState(1.0);
     const [isLoading, setIsLoading] = useState(false);
     const [displayGrid, setDisplayGrid] = useState(false);
     const [displayFocusAssistant, setDisplayFocusAssistant] = useState(false);
