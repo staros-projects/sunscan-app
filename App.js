@@ -57,6 +57,7 @@ export default function App() {
   const [freeStorage, setFreeStorage] = useState(0);
   const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
   const [dopplerColor, setDopplerColor] = useState(1);
+  const [processDoppler, setProcessDoppler] = useState(false);
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -98,6 +99,11 @@ export default function App() {
     AsyncStorage.getItem('SUNSCAN_APP::DOPPLER_COLOR').then((c) => {
       if (c) {
         setDopplerColor(c);
+      }
+    });
+    AsyncStorage.getItem('SUNSCAN_APP::PROCESS_DOPPLER').then((c) => {
+      if (c) {
+        setProcessDoppler(c == '1');
       }
     });
     AsyncStorage.getItem('SUNSCAN_APP::LOCATION').then((location) => {
@@ -144,7 +150,7 @@ export default function App() {
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
     
-  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor]);
+  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler]);
   
   const userSettings = {
     sunscanIsConnected:sunscanIsConnected,
@@ -163,6 +169,8 @@ export default function App() {
     showWatermark:showWatermark,
     dopplerColor,
     setDopplerColor,
+    processDoppler,
+    setProcessDoppler,
     backendApiVersion,
     setBackendApiVersion,
     setObserver,

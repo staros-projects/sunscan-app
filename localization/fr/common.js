@@ -78,7 +78,7 @@ export default {
     "focusMsg1": "Positionner le soleil au centre de manière a ce qu'il soit le plus large possible puis",
     "focusMsg2": "maximiser le score ci-dessus en faisant la mise au point de la lunette à l'avant de SUNSCAN.",
     "auto": "Auto",
-    "advancedProcessing":"Traitement du scan",
+    "advancedProcessing":"Traitement avancé du scan",
     "advancedProcessingOptions":"Mode avancé",
     "noiseReduction":"Réduction du bruit",
     "dopplerShift":"Doppler (+/-)",
@@ -102,6 +102,7 @@ export default {
     "dopplerColor": "Couleur Doppler",
     "orangeblue": "Orange-Bleu",
     "redblue": "Rouge-Bleu",
+    "doppler": "Calculer l'image Doppler",
     // scan info
     "typeImage": "Type d'image",
     "acquisitionTime": "Heure d'acquisition",

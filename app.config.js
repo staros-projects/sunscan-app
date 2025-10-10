@@ -20,7 +20,10 @@ export default ({ config }) => {
           buildNumber: "41",
           supportsTablet: true,
           requireFullScreen: true,
-          bundleIdentifier: "com.staros.sunscan-app"
+          bundleIdentifier: "com.staros.sunscan-app",
+          infoPlist: {
+            ITSAppUsesNonExemptEncryption: false
+          }
         },
         android: {
           barStyle: "dark-content",

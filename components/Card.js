@@ -38,14 +38,16 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
         dopcont:false,
          noisereduction:false,
           doppler_shift:5, 
-          continuum_shift:15, 
+          continuum_shift:16, 
           cont_sharpen_level:2, 
           surface_sharpen_level:2, 
           pro_sharpen_level:1,
           offset:0,
           observer:myContext.showWatermark?myContext.observer:' ',
           advanced:scan.tag,
-          doppler_color:myContext.dopplerColor}),
+          doppler_color:myContext.dopplerColor,
+          process_doppler:false
+      }),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);

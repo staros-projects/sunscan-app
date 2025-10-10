@@ -115,7 +115,7 @@ export default function PictureScreen({ route, navigation }) {
 
   // Function to get images from the scan
   const getImages = (images, forceDownload) => {
-    results = Object.entries(images).map(([k, data]) => {
+    const results = Object.entries(images).map(([k, data]) => {
       if (data[1] || forceDownload) {
         //console.log('load '+"http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]); 
         return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]]
@@ -126,47 +126,63 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advanced) {
+  async function processScan(options) {
+    const {
+      dopplerShift,
+      continuumShift,
+      noiseReduction,
+      continuumSharpenLevel,
+      protusSharpenLevel,
+      surfaceSharpenLevel,
+      offset,
+      advancedMode,
+      dopplerColor,
+      processDoppler
+    } = options;
 
-    fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ filename: scan.ser, 
-        dopcont:true,
-        autocrop:true,
-        autocrop_size:1100,
-        noisereduction:noiseReduction, 
-        doppler_shift:dopplerShift,
-        continuum_shift:continuumShift, 
-        cont_sharpen_level:continuumSharpenLevel, 
-        surface_sharpen_level:surfaceSharpenLevel,
-        pro_sharpen_level:protusSharpenLevel,
-        offset,
-        observer:myContext.showWatermark?myContext.observer:' ', 
-        advanced,
-        doppler_color:myContext.dopplerColor
-      }),
-    }).then(response => response.json())
-      .then(json => {
-        setIsStarted(true);
-
-
-        key = md5(scan.ser);
-        console.log('subscribe to ', 'scan_process_' + key)
-        subscribe('scan_process_' + key, (message) => {
-          setIsStarted(false);
-          setDisplayProcessScan(false);
-          setScanStatus(message[1])
-          unsubscribe('scan_process_' + key);
-          getScanDetails(scan);
-        });
-      })
-      .catch(error => {
-        console.error(error);
+    try {
+      const response = await fetch(`http://${myContext.apiURL}/sunscan/scan/process/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: scan.ser,
+          dopcont: true,
+          autocrop: true,
+          autocrop_size: 1100,
+          noisereduction: noiseReduction,
+          doppler_shift: dopplerShift,
+          continuum_shift: continuumShift,
+          cont_sharpen_level: continuumSharpenLevel,
+          surface_sharpen_level: surfaceSharpenLevel,
+          pro_sharpen_level: protusSharpenLevel,
+          offset,
+          observer: myContext.showWatermark ? myContext.observer : " ",
+          advanced: advancedMode,
+          doppler_color: dopplerColor,
+          process_doppler: processDoppler
+        }),
       });
+
+      const json = await response.json();
+      setIsStarted(true);
+
+      const key = md5(scan.ser);
+      console.log("subscribe to", "scan_process_" + key);
+
+      subscribe("scan_process_" + key, (message) => {
+        setIsStarted(false);
+        setDisplayProcessScan(false);
+        setScanStatus(message[1]);
+        unsubscribe("scan_process_" + key);
+        getScanDetails(scan);
+      });
+    } catch (error) {
+      console.error("Error during scan processing:", error);
+    }
   }
+
 
 
   // Effect to run when the screen comes into focus

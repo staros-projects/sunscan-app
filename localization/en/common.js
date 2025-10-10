@@ -93,7 +93,7 @@ export default {
     "focusMsg1": "Center the sun as much as possible to make it the largest possible then",
     "focusMsg2": "maximize the score above by focusing the front of the SUNSCAN lens.",
     "auto": "Auto",
-    "advancedProcessing":"Scan processing",
+    "advancedProcessing":"Advanced scan processing",
     "advancedProcessingOptions":"Advanced mode",
     "noiseReduction":"Noise reduction",
     "offset":"Offset",
@@ -117,6 +117,7 @@ export default {
     "dopplerColor": "Doppler color",
     "orangeblue": "Orange-Blue",
     "redblue": "Red-Blue",
+    "doppler": "Calculate Doppler image",
     // scan info
     "typeImage": "Type of image",
     "acquisitionTime": "Acquisition time",
