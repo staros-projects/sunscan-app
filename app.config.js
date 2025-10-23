@@ -84,6 +84,9 @@ export default ({ config }) => {
               behavior: "inset-swipe"
             }
           ],
+          [
+            "react-native-edge-to-edge"
+          ],
           ...(isIOS
             ? [
                 [
