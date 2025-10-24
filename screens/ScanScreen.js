@@ -39,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import ModalLineSelector from '../components/ModalLineSelector';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Main ScanScreen component
 export default function ScanScreen({navigation}) {
@@ -457,9 +458,13 @@ export default function ScanScreen({navigation}) {
       });
   };
 
+  
+const insets = useSafeAreaInsets();
+
   // Styles for right toolbar (platform-specific)
   const stylesRighttoolBar = StyleSheet.create({
-    right: 16,
+    marginRight: insets.right,
+    right: 5,
   });
 
   useEffect(() => {
@@ -597,7 +602,7 @@ export default function ScanScreen({navigation}) {
 
            {/* Spectrum toggle buttons */}
            {(!rec && myContext.cameraIsConnected && crop)   &&
-           <View className="absolute bottom-0 z-10 h-14" style={{ right:16, bottom:10}}>
+           <View className="absolute bottom-0 z-10 h-14" style={{ right:5, bottom:10, marginRight:insets.right}}>
             <View style={{ left:0, top:0}} className="  flex flex-row self-start ml-4 justify-center items-end rounded-lg px-2 py-1 bg-zinc-600/70 ">
                 <TouchableHighlight underlayColor="rgb(113 113 122)"  onPress={()=>toggleSpectrum('vertical') } className="flex flex-col justify-center items-center px-1 py-2 ">
                     <View className="flex flex-col items-center">

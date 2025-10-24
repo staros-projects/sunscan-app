@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
 import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View, Platform } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons'
 
 import { NativeWindStyleSheet } from "nativewind";
@@ -190,12 +190,12 @@ export default function SettingsScreen({navigation, isFocused}) {
 
   const [stackingOptReset, setStackingOptReset] = useState(false);
   
-
+  const insets = useSafeAreaInsets();
   return (
     <View className="flex flex-col bg-zinc-800">
       <View className="h-full">
-        <SafeAreaProvider  className="flex flex-col space-y-4 px-8 pt-4">
-          <ScrollView >
+        <SafeAreaProvider  className="flex flex-col space-y-4 pl-4 pr-2 pt-4" style={{flex: 1, paddingRight: insets.right}}>
+          <ScrollView  >
             {/* Settings header */}
             <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
             <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>

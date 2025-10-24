@@ -19,6 +19,7 @@ import AnimatedCard from '../components/AnimatedCard';
 import AnimationOptionsModal from '../components/AnimationOptionsModal';
 
 import { Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const getCardSize = () => {
   const { width, height } = Dimensions.get('window');
@@ -306,6 +307,7 @@ useEffect(() => {
 
 
 
+  const insets = useSafeAreaInsets();
 
   return (
     <View className="bg-zinc-700 h-full" >
@@ -333,7 +335,7 @@ useEffect(() => {
           {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
         </Pressable>
 
-         <Pressable className="absolute right-0 top-0 p-3 mr-4" onPress={()=>{setMassEditMode(true);}}>
+         <Pressable className="absolute right-0 top-0 p-3 mr-4" onPress={()=>{setMassEditMode(true);}} style={{paddingRight:insets.right}}>
           <Ionicons name="build-outline" size={20} color={massEditMode ? "white":"#71717a"}  />
         </Pressable> 
       {/* <Pressable className={currentView == "snapshots" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('snapshots')}}>

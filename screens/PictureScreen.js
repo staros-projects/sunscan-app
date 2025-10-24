@@ -333,7 +333,7 @@ export default function PictureScreen({ route, navigation }) {
       <View className="h-full ">
         <SafeAreaProvider className="flex flex-col justify-between">
        
-            <View className="flex flex-row" style={{zIndex:102, elevation:102, paddingRight:insets.right}}>
+            <View className="flex flex-row border" style={{zIndex:102, elevation:102, marginRight:insets.right}}>
               {/* Main image display */}
               <View className="w-5/6" style={{ height: height }}>
 
@@ -368,7 +368,7 @@ export default function PictureScreen({ route, navigation }) {
                  <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path}  /></View></View>
               </View>
               {/* Thumbnail scrollview */}
-              <View style={{ width:95 }} className="p-2 mx-auto bg-transparent align-center justify-center text-center flex  " >
+              <View style={{ width:74 }} className="mx-auto bg-transparent align-center justify-  border  text-center flex  " >
               <ScrollView >
                 {images && images.map((i) => {
                   return (
