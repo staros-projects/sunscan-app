@@ -333,7 +333,7 @@ export default function PictureScreen({ route, navigation }) {
        
             <View className="flex flex-row" >
               {/* Main image display */}
-              <View className="w-5/6  h-screen" >
+              <View className="w-5/6 h-full" >
 
               {/* Action buttons */}
               {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
