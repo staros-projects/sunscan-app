@@ -84,7 +84,7 @@ const cameraRef = React.useRef();
     <NavigationContent >
 
       {myContext.displayFullScreen3d !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
-        <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreen3d('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+        <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102, paddingRight:insets.right}} onPress={()=>{ myContext.setDisplayFullScreen3d('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                             <View style={{ flex: 1 }}>
                                                     
     
@@ -101,7 +101,7 @@ const cameraRef = React.useRef();
               </Canvas>
       
 {/* Boutons Zoom */}
-  <View className="absolute bottom-10 right-5 flex flex-row gap-3">
+  <View className="absolute bottom-10 right-5 flex flex-row gap-3" style={{zIndex:102, elevation:102, paddingRight:insets.right}}>
       <Pressable
      
       onPress={() => cameraRef.current?.zoomOut()}
@@ -120,7 +120,7 @@ const cameraRef = React.useRef();
                            
                     </View></View>}
         {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
-                  <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+                  <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102, paddingRight:insets.right}} onPress={()=>{ myContext.setDisplayFullScreenImage('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
                          <Zoomable
                         isSingleTapEnabled
@@ -134,9 +134,9 @@ const cameraRef = React.useRef();
                               />
                         </Zoomable>
                 </View>}
-        <View className="flex-1 flex flex-row bg-black" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:insets.right}}>
+        <View className="flex-1 flex flex-row bg-black" style={{zIndex:99, elevation:99, backgroundColor: '#000'}}>
                 {/* Sidebar navigation */}
-                <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >
+                <View  className="  flex-0  bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:0}} >
                 {/* Home tab */}
                 <View  className={screenName == "Home" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
                     <Pressable onPress={() =>navigation.navigate('Home') } className="flex flex-col justify-center items-center w-12">

@@ -333,12 +333,12 @@ export default function PictureScreen({ route, navigation }) {
       <View className="h-full ">
         <SafeAreaProvider className="flex flex-col justify-between">
        
-            <View className="flex flex-row" >
+            <View className="flex flex-row" style={{zIndex:102, elevation:102, paddingRight:insets.right}}>
               {/* Main image display */}
               <View className="w-5/6" style={{ height: height }}>
 
               {/* Action buttons */}
-              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
+              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col" >
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
                 {images.length > 1 && <Pressable className="" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])}><Ionicons name="expand" size={28} color="white" /></Pressable>}  
                 {(images.length > 1 || myContext.debug) && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
