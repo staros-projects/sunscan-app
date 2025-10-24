@@ -1,6 +1,5 @@
-
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
-import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons'
 
@@ -242,6 +241,8 @@ export default function SettingsScreen({navigation, isFocused}) {
               })}
             </View>
 
+     
+
             {/* Observer input */}
             <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
@@ -249,9 +250,46 @@ export default function SettingsScreen({navigation, isFocused}) {
               returnKeyType='done' onChangeText={(value) => myContext.setObserver(value)} />
             </View> 
 
+                   {/* Screen Orientation selection */}
+            <View className="flex flex-row space-x-4 items-start mt-4">
+              <View className="w-2/5">
+                <Text className="text-white mb-1">{t('common:screenOrientation')}</Text>
+                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:screenOrientationDescription')}</Text>
+              </View>
+              <View className="flex flex-row space-x-2">
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('AUTO')}
+                  className={myContext.screenOrientation === 'AUTO' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center justify-center" style={{minWidth: 60}}>
+                    <Ionicons name="sync" size={24} color="white" />
+                    <Text className="text-white text-xs mt-1">{t('common:auto')}</Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('LANDSCAPE_RIGHT')}
+                  className={myContext.screenOrientation === 'LANDSCAPE_RIGHT' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center" style={{minWidth: 60}}>
+                    <Ionicons name="phone-landscape" size={24} color="white" />
+                    <Text className="text-white text-xs mt-1">{t('common:cameraLeft')}</Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('LANDSCAPE_LEFT')}
+                  className={myContext.screenOrientation === 'LANDSCAPE_LEFT' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center" style={{minWidth: 60}}>
+                    <Ionicons name="phone-landscape" size={24} color="white" style={{transform: [{rotate: '180deg'}]}} />
+                    <Text className="text-white text-xs mt-1">{t('common:cameraRight')}</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+
              {/* Watermark toggle */}
              <View className="flex flex-row  space-x-4 items-start mt-2  ">
-              <View className="w-1/2"> 
+              <View className="w-2/5"> 
                 <Text className="text-white mb-1" >{t('common:displayWatermark')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:displayWatermarkDescription')}</Text>
               </View>
@@ -265,7 +303,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Debug mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2  ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:debugMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:debugDescription')}</Text>
               </View>
@@ -279,7 +317,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Offline mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:offlineMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:offlineDescription')}</Text>
               </View>
@@ -293,7 +331,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Firmware update section */}
             {(myContext.sunscanIsConnected || myContext.debug) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')}</Text>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:currentVersion')} : {myContext.backendApiVersion}</Text>
                   {(!firmareIsUpToDate(myContext) || myContext.debug) && <View>
@@ -307,7 +345,7 @@ export default function SettingsScreen({navigation, isFocused}) {
             </View>}
 
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
               </View>
@@ -373,7 +411,7 @@ export default function SettingsScreen({navigation, isFocused}) {
                 />
               </View>
               <View className="flex flex-row  space-x-4 items-start mt-4 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                
               </View>
               {stackingOptReset ? <Text className="text-white"></Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}

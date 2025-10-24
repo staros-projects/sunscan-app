@@ -19,7 +19,6 @@
   "dependencies": {
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@expo-google-fonts/baumans": "^0.2.3",
-    "@expo/config-plugins": "~10.1.1",
     "@likashefqet/react-native-image-zoom": "4.3.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/slider": "4.5.6",
