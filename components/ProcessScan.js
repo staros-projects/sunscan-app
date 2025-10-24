@@ -219,7 +219,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                           activeTabStyle={stylesTab.activeTabStyle}
                           activeTabTextStyle={stylesTab.activeTabTextStyle}
                           values={dopplerColorValues}
-                          selectedIndex={context.dopplerColor}
+                          selectedIndex={parseInt(context.dopplerColor)}
                           onTabPress={context.setDopplerColor}
                         />
                       </View>
