@@ -35,27 +35,33 @@ function SunGraph({ sunTimes }) {
       const el = curveRef.current;
       if (!el) return;
 
-      const curveLen = el.getTotalLength();
-      const targetLen = progress * curveLen;
+      try {
+        const curveLen = el.getTotalLength();
+        if (!curveLen || curveLen <= 0) return;
+        
+        const targetLen = progress * curveLen;
 
-      // reset animation values
-      animatedLen.setValue(0);
-      animatedOpacity.setValue(0);
+        // reset animation values
+        animatedLen.setValue(0);
+        animatedOpacity.setValue(0);
 
-      Animated.parallel([
-        Animated.timing(animatedLen, {
-          toValue: targetLen,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(animatedOpacity, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.linear,
-          useNativeDriver: false,
-        }),
-      ]).start();
+        Animated.parallel([
+          Animated.timing(animatedLen, {
+            toValue: targetLen,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: false,
+          }),
+          Animated.timing(animatedOpacity, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.linear,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      } catch (error) {
+        console.warn('Error getting total length:', error);
+      }
     });
   }, [sunTimes]);
 
@@ -64,8 +70,15 @@ function SunGraph({ sunTimes }) {
     const id = animatedLen.addListener(({ value }) => {
       const el = curveRef.current;
       if (!el) return;
-      const p = el.getPointAtLength(value);
-      setSunPos({ x: p.x, y: p.y });
+      
+      try {
+        const p = el.getPointAtLength(value);
+        if (p && typeof p.x === 'number' && typeof p.y === 'number') {
+          setSunPos({ x: p.x, y: p.y });
+        }
+      } catch (error) {
+        console.warn('Error getting point at length:', error);
+      }
     });
     return () => animatedLen.removeListener(id);
   }, []);

@@ -120,7 +120,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       value={context.processDoppler}
                       onValueChange={context.setProcessDoppler}
                       style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 0,
+                        marginVertical: Platform.OS === 'android' ? -6 : 4,
                       }}
                     />
                   </View>
@@ -133,7 +133,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       value={advancedMode === 'heI'}
                       onValueChange={() => setAdvancedMode(advancedMode === 'heI' ? '' : 'heI')}
                       style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 0,
+                        marginVertical: Platform.OS === 'android' ? -6 : 4,
                       }}
                     />
                   </View>
@@ -146,7 +146,7 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       value={displayOptions}
                       onValueChange={() => setDisplayOptions(!displayOptions)}
                       style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 0,
+                        marginVertical: Platform.OS === 'android' ? -6 : 4,
                       }}
                     />
                   </View>

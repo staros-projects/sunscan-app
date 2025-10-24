@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 import HomeScreen from './screens/HomeScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -58,6 +59,7 @@ export default function App() {
   const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
   const [dopplerColor, setDopplerColor] = useState(1);
   const [processDoppler, setProcessDoppler] = useState(false);
+  const [screenOrientationVal, setScreenOrientation] = useState('AUTO'); // Par défaut: Auto
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -89,6 +91,24 @@ export default function App() {
     loadLanguage()
     },[])
 
+  // Gestion de l'orientation de l'écran
+  useEffect(() => {
+    const lockOrientation = async () => {
+      try {
+        if (screenOrientationVal === 'AUTO') {
+          // Mode auto : permet les deux orientations paysage
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        } else if (screenOrientationVal === 'LANDSCAPE_LEFT') {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_LEFT);
+        } else {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        }
+      } catch (error) {
+        console.error('Error locking orientation:', error);
+      }
+    };
+    lockOrientation();
+  }, [screenOrientationVal]);
 
   useEffect(() => {
     AsyncStorage.getItem('SUNSCAN_APP::OBSERVER').then((observer) => {
@@ -136,6 +156,11 @@ export default function App() {
         setStackingOptions(JSON.parse(stackingOptions));
       }
     });
+    AsyncStorage.getItem('SUNSCAN_APP::SCREEN_ORIENTATION').then((orientation) => {
+      if(orientation)  {
+        setScreenOrientation(orientation);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -149,8 +174,9 @@ export default function App() {
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
+    AsyncStorage.setItem('SUNSCAN_APP::SCREEN_ORIENTATION', screenOrientationVal);
     
-  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler]);
+  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal]);
   
   const userSettings = {
     sunscanIsConnected:sunscanIsConnected,
@@ -186,7 +212,9 @@ export default function App() {
     freeStorage,
     setFreeStorage,
     stackingOptions,
-    setStackingOptions
+    setStackingOptions,
+    screenOrientation: screenOrientationVal,
+    setScreenOrientation
   };
 
   const styles = StyleSheet.create({
