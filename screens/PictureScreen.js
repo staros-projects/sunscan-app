@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -29,6 +29,8 @@ export default function PictureScreen({ route, navigation }) {
 
   // Initialize translation hook
   const { t, i18n } = useTranslation();
+  const { width, height } = useWindowDimensions();
+  
   // State variables for managing the component
   const [currentImage, setcurrentImage] = React.useState("");
   const [openSettings, setOpenSettings] = React.useState(false);
@@ -333,7 +335,7 @@ export default function PictureScreen({ route, navigation }) {
        
             <View className="flex flex-row" >
               {/* Main image display */}
-              <View className="w-5/6 h-full" >
+              <View className="w-5/6" style={{ height: height }}>
 
               {/* Action buttons */}
               {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">

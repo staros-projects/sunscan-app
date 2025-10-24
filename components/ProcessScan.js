@@ -1,4 +1,4 @@
-import { Modal, View, Text, Pressable, StyleSheet, Switch, TextInput } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Switch, TextInput, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Loader from '../components/Loader';
@@ -119,8 +119,8 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       thumbColor="#fff"
                       value={context.processDoppler}
                       onValueChange={context.setProcessDoppler}
-                     style={{
-                        marginVertical: -6,
+                      style={{
+                        marginVertical: Platform.OS === 'android' ? -6 : 0,
                       }}
                     />
                   </View>
@@ -132,8 +132,8 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       thumbColor="#fff"
                       value={advancedMode === 'heI'}
                       onValueChange={() => setAdvancedMode(advancedMode === 'heI' ? '' : 'heI')}
-                                        style={{
-                        marginVertical: -6,
+                      style={{
+                        marginVertical: Platform.OS === 'android' ? -6 : 0,
                       }}
                     />
                   </View>
@@ -145,8 +145,8 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                       thumbColor="#fff"
                       value={displayOptions}
                       onValueChange={() => setDisplayOptions(!displayOptions)}
-                                        style={{
-                        marginVertical: -6,
+                      style={{
+                        marginVertical: Platform.OS === 'android' ? -6 : 0,
                       }}
                     />
                   </View>
