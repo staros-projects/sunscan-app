@@ -5,10 +5,6 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 
 
-if (Platform.OS === 'ios') {
-    MediaLibrary =  require('expo-media-library');
-}
-
 export const backend_current_version = '1.4.0';
 
 export default function  firmareIsUpToDate(myContext) {
