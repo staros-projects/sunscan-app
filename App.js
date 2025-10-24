@@ -149,6 +149,8 @@ export default function App() {
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
+    AsyncStorage.setItem('SUNSCAN_APP::DOPPLER_COLOR', `${dopplerColor}`);
+    AsyncStorage.setItem('SUNSCAN_APP::PROCESS_DOPPLER', `${processDoppler?'1':'0'}`);
     
   }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler]);
   
