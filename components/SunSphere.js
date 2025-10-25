@@ -40,11 +40,11 @@ const SunSphere = forwardRef((props, ref) => {
 
   // Gyroscope
   useEffect(() => {
-    Gyroscope.setUpdateInterval(25);
+    Gyroscope.setUpdateInterval(200);
     const subscription = Gyroscope.addListener(({ x, y }) => {
       targetRotation.current = {
-        x: targetRotation.current.x - y * 0.02,
-        y: targetRotation.current.y + x * 0.02 ,
+        x: targetRotation.current.x - y * 0.1,
+        y: targetRotation.current.y + x * 0.1 ,
       };
     });
     return () => subscription.remove();

@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, Platform } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import md5 from 'md5';
@@ -171,7 +171,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
         console.error(error);
       });
   }
-
+  const insets = useSafeAreaInsets();
   // Render the component
   return (
     scan &&
@@ -189,7 +189,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
         </View>}
       <View className="h-full ">
         <SafeAreaProvider className="flex flex-col justify-between">
-            <View className="flex flex-row" >
+             <View className="flex flex-row" style={{zIndex:102, elevation:102, marginRight:insets.right}}>
               {/* Main image display */}
               <View className="w-5/6 h-screen " >
 
@@ -218,7 +218,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
                  {/* <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text>  */}
               </View>
               {/* Thumbnail scrollview */}
-              <View style={{ width:95 }} className="p-2 mx-auto bg-black align-center justify-center text-center flex  " >
+               <View style={{ width:74 }} className="mx-auto bg-transparent align-center   text-center flex  " >
               <ScrollView >
                 {images && images.map((i) => {
                   console.log(i)

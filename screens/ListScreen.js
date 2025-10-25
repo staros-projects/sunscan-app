@@ -344,8 +344,8 @@ useEffect(() => {
       </Pressable> */}
     </View>
 
-      <View className="flex flex-col pb-10" >
-        <View className="px-10">
+      <View className="flex flex-col pb-10" style={{paddingRight:insets.right}}>
+        <View className="px-2">
           {scans.length ? <FlatList
             data={scans}
             numColumns={3}
