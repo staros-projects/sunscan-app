@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 
 
-export const backend_current_version = '1.4.0';
+export const backend_current_version = '1.4.2';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date

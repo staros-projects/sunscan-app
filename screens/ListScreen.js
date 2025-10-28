@@ -219,6 +219,8 @@ export default function ListScreen({navigation}) {
      .map(i => i + filename)
      .sort((a, b) => a.localeCompare(b)); 
 
+     console.log('sorted', sortedPaths);
+
     await fetch('http://'+myContext.apiURL+"/sunscan/process/animate/",  {
       method: "POST", 
       headers: {
