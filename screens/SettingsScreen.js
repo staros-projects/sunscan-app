@@ -25,6 +25,7 @@ NativeWindStyleSheet.setOutput({
 const languages = [ // Language List
   { code: 'en', label: 'English' },
   { code: 'fr', label: 'Français' },
+  { code: 'es', label: 'Español' },
 ];
 
 export default function SettingsScreen({navigation, isFocused}) {
@@ -219,12 +220,13 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Language selection */}
             <View className="flex flex-row  space-x-4 items-center mb-4">
-              <Text className="text-white w-1/2" >{t('common:language')}</Text>
+              <Text className="text-white w-2/5" >{t('common:language')}</Text>
               {languages.map((currentLang, i) => {
                 const selectedLanguage = currentLang.code === selectedLanguageCode;
                 return (
                   <Text
                     key={i}
+                    className={selectedLanguage ?  'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
                     onPress={() => {
                       changeLang(currentLang.code);
                       i18n.changeLanguage(currentLang.code);
@@ -245,7 +247,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Observer input */}
             <View className="flex flex-row  space-x-4 items-center">
-              <Text className="text-white w-1/2" >{t('common:observer')}</Text>
+              <Text className="text-white w-2/5" >{t('common:observer')}</Text>
               <TextInput className="bg-zinc-700 border border-zinc-500 grow mr-2 text-white rounded-md px-2" key="observer" style={{ padding: 5 }} value={myContext.observer} returnKeyLabel='OK'
               returnKeyType='done' onChangeText={(value) => myContext.setObserver(value)} />
             </View> 
@@ -359,7 +361,7 @@ export default function SettingsScreen({navigation, isFocused}) {
             <Text className="text-lg text-white font-bold my-4">{t('common:stackingConfiguration')}</Text>
               {/* Patch Size */}
               <View className="flex flex-row space-x-4 items-center">
-                <Text className="text-white w-1/2">{t('common:patchSize')}</Text>
+                <Text className="text-white w-2/5">{t('common:patchSize')}</Text>
                 <TextInput 
                   className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
@@ -377,7 +379,7 @@ export default function SettingsScreen({navigation, isFocused}) {
               
               {/* Step Size */}
               <View className="flex flex-row space-x-4 items-center">
-                <Text className="text-white w-1/2">{t('common:stepSize')}</Text>
+                <Text className="text-white w-2/5">{t('common:stepSize')}</Text>
                 <TextInput 
                   className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}
@@ -395,7 +397,7 @@ export default function SettingsScreen({navigation, isFocused}) {
               
               {/* Intensity Threshold */}
               <View className="flex flex-row space-x-4 items-center">
-                <Text className="text-white w-1/2">{t('common:intensityThreshold')}</Text>
+                <Text className="text-white w-2/5">{t('common:intensityThreshold')}</Text>
                 <TextInput 
                   className="bg-zinc-700 border border-zinc-500 grow mr-2 px-2 text-white rounded-md" 
                   style={{ padding: 5 }}

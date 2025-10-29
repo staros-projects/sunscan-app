@@ -9,7 +9,8 @@ import {
   StyleSheet,
   TextInput,
   Switch,
-  ActivityIndicator, // Importer ActivityIndicator pour le loader
+  ActivityIndicator,
+  Platform, // Importer ActivityIndicator pour le loader
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,7 +20,7 @@ const AnimationOptionsModal = ({
   onClose,
   onSubmit,
   defaultOptions = {
-    frame_duration: 120,
+    frame_duration: 160,
     display_datetime: true,
     resize_gif: true,
     bidirectional: true,
@@ -80,6 +81,9 @@ const AnimationOptionsModal = ({
                trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
               onValueChange={setDisplayDatetime}
+               style={{
+                                      marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                    }}
             />
           </View>
 
@@ -88,6 +92,9 @@ const AnimationOptionsModal = ({
             <Switch 
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
+              style={{
+                                     marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                   }}
             value={resizeGif} onValueChange={setResizeGif} />
           </View>
 
@@ -96,6 +103,9 @@ const AnimationOptionsModal = ({
             <Switch 
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
+              style={{
+                                     marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                   }}
            value={bidirectional} onValueChange={setBidirectional} />
           </View>
 
@@ -105,6 +115,9 @@ const AnimationOptionsModal = ({
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
               value={addAverageFrame}
+               style={{
+                                      marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                    }}
               onValueChange={setAddAverageFrame}
             />
           </View>
@@ -113,6 +126,7 @@ const AnimationOptionsModal = ({
             <Pressable
               style={[styles.button, styles.cancelButton]}
               onPress={onClose}
+              
               disabled={isLoading} // Désactiver pendant le chargement
             >
               <Text style={styles.buttonText}>{t('common:cancel')}</Text>
