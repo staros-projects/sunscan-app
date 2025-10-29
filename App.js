@@ -3,12 +3,14 @@ import { StatusBar } from 'expo-status-bar';
 import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 import HomeScreen from './screens/HomeScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import ListScreen from './screens/ListScreen';
 import PictureScreen from './screens/PictureScreen';
 import ScanScreen from './screens/ScanScreen';
+
  
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -48,11 +50,16 @@ export default function App() {
   const [tooltipVal, setTooltip] = useState(false);
   const [camera, setCamera] = useState("");
   const [observerVal, setObserver] = useState("");
+  const [locationData, setLocationData] = useState({});
   const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
   const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
+  const [displayFullScreen3d, setDisplayFullScreen3d] = useState("");
   const [freeStorage, setFreeStorage] = useState(0);
   const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
+  const [dopplerColor, setDopplerColor] = useState(1);
+  const [processDoppler, setProcessDoppler] = useState(false);
+  const [screenOrientationVal, setScreenOrientation] = useState('AUTO'); // Par défaut: Auto
 
   const toggleShowWaterMark = () => {
     setShowWatermark(!showWatermark);
@@ -84,11 +91,44 @@ export default function App() {
     loadLanguage()
     },[])
 
+  // Gestion de l'orientation de l'écran
+  useEffect(() => {
+    const lockOrientation = async () => {
+      try {
+        if (screenOrientationVal === 'AUTO') {
+          // Mode auto : permet les deux orientations paysage
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        } else if (screenOrientationVal === 'LANDSCAPE_LEFT') {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_LEFT);
+        } else {
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        }
+      } catch (error) {
+        console.error('Error locking orientation:', error);
+      }
+    };
+    lockOrientation();
+  }, [screenOrientationVal]);
 
   useEffect(() => {
     AsyncStorage.getItem('SUNSCAN_APP::OBSERVER').then((observer) => {
       if (observer) {
         setObserver(observer);
+      }
+    });
+    AsyncStorage.getItem('SUNSCAN_APP::DOPPLER_COLOR').then((c) => {
+      if (c) {
+        setDopplerColor(c);
+      }
+    });
+    AsyncStorage.getItem('SUNSCAN_APP::PROCESS_DOPPLER').then((c) => {
+      if (c) {
+        setProcessDoppler(c == '1');
+      }
+    });
+    AsyncStorage.getItem('SUNSCAN_APP::LOCATION').then((location) => {
+      if (location) {
+        setLocationData(JSON.parse(location));
       }
     });
     AsyncStorage.getItem('SUNSCAN_APP::DEMO').then((d) => {
@@ -116,20 +156,30 @@ export default function App() {
         setStackingOptions(JSON.parse(stackingOptions));
       }
     });
+    AsyncStorage.getItem('SUNSCAN_APP::SCREEN_ORIENTATION').then((orientation) => {
+      if(orientation)  {
+        setScreenOrientation(orientation);
+      }
+    });
   }, []);
 
   useEffect(() => {
     if (observerVal !== "") {
       AsyncStorage.setItem('SUNSCAN_APP::OBSERVER', `${observerVal}`);
     }
-
+   
+    AsyncStorage.setItem('SUNSCAN_APP::LOCATION', JSON.stringify(locationData));
     AsyncStorage.setItem('SUNSCAN_APP::DEMO', `${demoVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::TOOLTIP', `${tooltipVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
     AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
+    AsyncStorage.setItem('SUNSCAN_APP::DOPPLER_COLOR', `${dopplerColor}`);
+    AsyncStorage.setItem('SUNSCAN_APP::PROCESS_DOPPLER', `${processDoppler?'1':'0'}`);
+    AsyncStorage.setItem('SUNSCAN_APP::SCREEN_ORIENTATION', screenOrientationVal);
+
     
-  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal]);
+  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal]);
   
   const userSettings = {
     sunscanIsConnected:sunscanIsConnected,
@@ -143,7 +193,13 @@ export default function App() {
     tooltip:tooltipVal,
     hotSpotMode:hotSpotModeVal,
     observer:observerVal,
+    locationData,
+    setLocationData,
     showWatermark:showWatermark,
+    dopplerColor,
+    setDopplerColor,
+    processDoppler,
+    setProcessDoppler,
     backendApiVersion,
     setBackendApiVersion,
     setObserver,
@@ -154,18 +210,24 @@ export default function App() {
     apiURL:apiURLVal,
     displayFullScreenImage,
     setDisplayFullScreenImage,
+    displayFullScreen3d,
+    setDisplayFullScreen3d,
     freeStorage,
     setFreeStorage,
     stackingOptions,
-    setStackingOptions
+    setStackingOptions,
+    screenOrientation: screenOrientationVal,
+    setScreenOrientation
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: '#000',
     },
     safeArea: {
       flex: 1,
+      backgroundColor: '#000',
     },
   });
 
@@ -176,12 +238,12 @@ export default function App() {
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
+          
         <NavigationContainer>
             <My.Navigator  
                 screenOptions={{
-                    headerShown: false
+                    headerShown: false, 
                       }}>
-                    
               <My.Screen
                 name="Home"
                 component={HomeScreen}
@@ -208,7 +270,7 @@ export default function App() {
               />
               <My.Screen name="Settings" component={SettingsScreen} />
             </My.Navigator>
-            <StatusBar hidden={true} />
+            <StatusBar hidden={true}  />
           </NavigationContainer>
           </SafeAreaProvider>
        </WebSocketProvider>

@@ -5,6 +5,7 @@ import AppContext from './AppContext';
 import { ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Component for displaying detailed scan information in a modal
 export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose }) {
@@ -12,6 +13,8 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
   const myContext = useContext(AppContext);
   const [hideScrollToEnd, setHideScrollToEnd] = useState(false);
   const [hideScrollToTop, setHideScrollToTop] = useState(true);
+
+  const insets = useSafeAreaInsets();
 
   // Styles for the modal and its contents
   const styles = StyleSheet.create({
@@ -68,8 +71,11 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
     setHideScrollToTop(true);
   }
 
+  
+
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
+     <SafeAreaView>
+    <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
       <View style={styles.centeredView}>
         <View style={styles.modalView} className="flex flex-col justify-center items-center">
           {/* Close button */}
@@ -113,6 +119,6 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
           </View>
         </View>
       </View>
-    </Modal>
+    </Modal></SafeAreaView>
   );
 }

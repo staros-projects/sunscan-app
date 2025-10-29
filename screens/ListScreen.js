@@ -1,7 +1,7 @@
 import  {  useContext,  useState, useCallback, useEffect } from 'react';
-import { View,FlatList, SafeAreaView, ActivityIndicator, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
+import { View,FlatList, SafeAreaView, Text, Pressable, StyleSheet, Modal, Alert } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, useAnimatedProps, runOnJS, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing } from 'react-native-reanimated';
 
 // Configure NativeWind to use native output
 NativeWindStyleSheet.setOutput({
@@ -11,18 +11,15 @@ NativeWindStyleSheet.setOutput({
 import Card from '../components/Card';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import AppContext from '../components/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTranslation } from 'react-i18next';
 import IrisSVG from '../components/svg/IrisSVG';
 import StackedCard from '../components/StackedCard';
 import AnimatedCard from '../components/AnimatedCard';
 import AnimationOptionsModal from '../components/AnimationOptionsModal';
-import { StatusBar } from 'expo-status-bar';
-import { size } from 'lodash';
 
 import { Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const getCardSize = () => {
   const { width, height } = Dimensions.get('window');
@@ -215,12 +212,14 @@ export default function ListScreen({navigation}) {
 
   const animateScans = async (options) => {
     console.log('animate', options);
-   
+
+    const filename = currentView == 'scans' ? '/scan.ser' : '';
 
      const sortedPaths = selectedItems
-     .map(i => i + '/scan.ser')
+     .map(i => i + filename)
      .sort((a, b) => a.localeCompare(b)); 
 
+     console.log('sorted', sortedPaths);
 
     await fetch('http://'+myContext.apiURL+"/sunscan/process/animate/",  {
       method: "POST", 
@@ -310,14 +309,15 @@ useEffect(() => {
 
 
 
+  const insets = useSafeAreaInsets();
 
   return (
-    <>
-    <View className="bg-zinc-700 h-screen" style={{flex:1}}>
-      {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 space-x-2" style={{zIndex:20}}>
+    <View className="bg-zinc-700 h-full" >
+      {massEditMode > 0 && <View className="absolute bottom-0 flex flex-row items-center justify-center w-full bg-zinc-900/80 py-2 px-0 space-x-2" style={{zIndex:20}}>
         <Text className="text-white text-xs mr-4">{selectedItems.length} {t('common:scanSelected')}</Text>
-        {currentView == 'scans' && <><Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable>
-       <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></Pressable></>}
+        {currentView == 'scans' && <View className="flex flex-row">
+          <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></Pressable></View>}
+         <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></Pressable>
         <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={deleteButtonAlert}><Ionicons name="trash" size={20} color="white" /><Text className="text-white"> {t('common:delete')}</Text></Pressable>
         <Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{setSelectedItems([])}}><Ionicons name="close" size={20} color="white" /></Pressable>
       </View>}
@@ -337,7 +337,7 @@ useEffect(() => {
           {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:0, right:-6}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
         </Pressable>
 
-         <Pressable className="absolute right-0 top-0 p-3 mr-4" onPress={()=>{setMassEditMode(true);}}>
+         <Pressable className="absolute right-0 top-0 p-3 mr-4" onPress={()=>{setMassEditMode(true);}} style={{paddingRight:insets.right}}>
           <Ionicons name="build-outline" size={20} color={massEditMode ? "white":"#71717a"}  />
         </Pressable> 
       {/* <Pressable className={currentView == "snapshots" ? "bg-zinc-700 p-2 rounded-t-lg flex flex-row items-center space-x-2":"p-2 rounded-lg flex flex-row items-center space-x-2"} onPress={()=>{updateCurrentView('snapshots')}}>
@@ -346,9 +346,8 @@ useEffect(() => {
       </Pressable> */}
     </View>
 
-
-      <View className="flex flex-col" style={{flex:1}}>
-        <View className="px-10">
+      <View className="flex flex-col pb-10" style={{paddingRight:insets.right}}>
+        <View className="px-2">
           {scans.length ? <FlatList
             data={scans}
             numColumns={3}
@@ -369,7 +368,7 @@ useEffect(() => {
             }
             }
             contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={(item, index) => item.path.toString()}
             columnWrapperStyle={{ flex: 1, justifyContent: "center" }}
             ListHeaderComponent={<View className="mt-2"></View>}
             refreshing={isLoading}
@@ -377,10 +376,11 @@ useEffect(() => {
             onEndReached={loadMoreFiles}
             initialNumToRender={1}
             onEndReachedThreshold={2}
-          />:<></>}
+          />:<View></View>}
         </View>
       </View>
 
+      <SafeAreaView>
       <Modal
           transparent={true}
           visible={modalVisible}
@@ -399,7 +399,7 @@ useEffect(() => {
               <Animated.Text style={styles.percentageText}>{progressValue}</Animated.Text>
             </View>
           </View>
-        </Modal>
+        </Modal></SafeAreaView>
         <AnimationOptionsModal
         visible={animationOptionsModalVisible}
         itemCount={selectedItems.length}
@@ -407,8 +407,6 @@ useEffect(() => {
         onSubmit={animateScans}
       />
     </View>
-     
-        </>
   );
 }
 

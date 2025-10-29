@@ -1,6 +1,6 @@
-import React, { useCallback, useContext, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, useWindowDimensions } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import md5 from 'md5';
@@ -22,11 +22,15 @@ import { useTranslation } from 'react-i18next';
 import LineSelector from '../components/LineSelector';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { downloadSunscanImage } from '../utils/Helpers';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { set } from 'lodash';
 
 export default function PictureScreen({ route, navigation }) {
 
   // Initialize translation hook
   const { t, i18n } = useTranslation();
+  const { width, height } = useWindowDimensions();
+  
   // State variables for managing the component
   const [currentImage, setcurrentImage] = React.useState("");
   const [openSettings, setOpenSettings] = React.useState(false);
@@ -75,7 +79,7 @@ export default function PictureScreen({ route, navigation }) {
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [tag, setTag] = useState("");
   const [subscribe, unsubscribe] = useContext(WebSocketContext)
-
+  const [avalaiblePlanispheres, setAvalaiblePlanispheres] = useState([]);
 
   // Function to fetch scans from the API
   async function getScanDetails(scan) {
@@ -91,10 +95,12 @@ export default function PictureScreen({ route, navigation }) {
     .then(json => {
       setImages([]);
       setcurrentImage([]);
+      setCurrentPlanisphere("");
       
       const img = getImages(json.images, false);
       if (img.length) {
-        setImages(img)
+        setImages(img);
+        setAvalaiblePlanispheres(json.planispheres);
         setcurrentImage(img[0])
         getLogs();
       }
@@ -111,7 +117,7 @@ export default function PictureScreen({ route, navigation }) {
 
   // Function to get images from the scan
   const getImages = (images, forceDownload) => {
-    results = Object.entries(images).map(([k, data]) => {
+    const results = Object.entries(images).map(([k, data]) => {
       if (data[1] || forceDownload) {
         //console.log('load '+"http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]); 
         return [data[0], "http://" + myContext.apiURL + "/" + scan.path + "/sunscan_" + k + ".jpg?v="+data[2]]
@@ -122,45 +128,63 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan(dopplerShift, continuumShift, noiseReduction, continuumSharpenLevel, protusSharpenLevel, surfaceSharpenLevel, offset, advanced) {
+  async function processScan(options) {
+    const {
+      dopplerShift,
+      continuumShift,
+      noiseReduction,
+      continuumSharpenLevel,
+      protusSharpenLevel,
+      surfaceSharpenLevel,
+      offset,
+      advancedMode,
+      dopplerColor,
+      processDoppler
+    } = options;
 
-    fetch('http://' + myContext.apiURL + "/sunscan/scan/process/", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ filename: scan.ser, 
-        dopcont:true,
-        autocrop:true,
-        autocrop_size:1100,
-        noisereduction:noiseReduction, 
-        doppler_shift:dopplerShift,
-        continuum_shift:continuumShift, 
-        cont_sharpen_level:continuumSharpenLevel, 
-        surface_sharpen_level:surfaceSharpenLevel,
-        pro_sharpen_level:protusSharpenLevel,
-        offset,
-        observer:myContext.showWatermark?myContext.observer:' ', 
-        advanced}),
-    }).then(response => response.json())
-      .then(json => {
-        setIsStarted(true);
-
-
-        key = md5(scan.ser);
-        console.log('subscribe to ', 'scan_process_' + key)
-        subscribe('scan_process_' + key, (message) => {
-          setIsStarted(false);
-          setDisplayProcessScan(false);
-          setScanStatus(message[1])
-          unsubscribe('scan_process_' + key);
-          getScanDetails(scan);
-        });
-      })
-      .catch(error => {
-        console.error(error);
+    try {
+      const response = await fetch(`http://${myContext.apiURL}/sunscan/scan/process/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filename: scan.ser,
+          dopcont: true,
+          autocrop: true,
+          autocrop_size: 1100,
+          noisereduction: noiseReduction,
+          doppler_shift: dopplerShift,
+          continuum_shift: continuumShift,
+          cont_sharpen_level: continuumSharpenLevel,
+          surface_sharpen_level: surfaceSharpenLevel,
+          pro_sharpen_level: protusSharpenLevel,
+          offset,
+          observer: myContext.showWatermark ? myContext.observer : " ",
+          advanced: advancedMode,
+          doppler_color: dopplerColor,
+          process_doppler: processDoppler
+        }),
       });
+
+      const json = await response.json();
+      setIsStarted(true);
+
+      const key = md5(scan.ser);
+      console.log("subscribe to", "scan_process_" + key);
+
+      subscribe("scan_process_" + key, (message) => {
+        setIsStarted(false);
+        setDisplayProcessScan(false);
+        setScanStatus(message[1]);
+        unsubscribe("scan_process_" + key);
+        getScanDetails(scan);
+      });
+    } catch (error) {
+      console.error("Error during scan processing:", error);
+    }
   }
+
 
 
   // Effect to run when the screen comes into focus
@@ -264,8 +288,30 @@ export default function PictureScreen({ route, navigation }) {
         console.error(error);
       });
   }
+  
+  const insets = useSafeAreaInsets();
 
+  const [currentPlanisphere, setCurrentPlanisphere] = useState(""); 
 
+  useEffect(() => {
+    if (!currentImage || !currentImage.length) return;
+    const currentImagePlanisphere = currentImage[1].replace('.jpg', '_proj.jpg');
+    setCurrentPlanisphere("");
+    if (scan?.planispheres.length == 0){
+      avalaiblePlanispheres.forEach(planisphere => {
+        if (currentImagePlanisphere.includes(planisphere)) {
+          setCurrentPlanisphere(planisphere);
+        }
+      });
+    }else {
+      scan?.planispheres.forEach(planisphere => {
+        if (currentImagePlanisphere.includes(planisphere)) {
+          setCurrentPlanisphere(planisphere);
+        }
+      });
+    }
+
+  }, [,currentImage]);
 
   // Render the component
   return (
@@ -287,12 +333,12 @@ export default function PictureScreen({ route, navigation }) {
       <View className="h-full ">
         <SafeAreaProvider className="flex flex-col justify-between">
        
-            <View className="flex flex-row" >
+            <View className="flex flex-row " style={{zIndex:102, elevation:102, marginRight:insets.right}}>
               {/* Main image display */}
-              <View className="w-5/6  h-screen" >
+              <View className="w-5/6" style={{ height: height }}>
 
               {/* Action buttons */}
-              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
+              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col" >
                 <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
                 {images.length > 1 && <Pressable className="" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])}><Ionicons name="expand" size={28} color="white" /></Pressable>}  
                 {(images.length > 1 || myContext.debug) && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
@@ -301,6 +347,10 @@ export default function PictureScreen({ route, navigation }) {
                 <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
               </View>}
 
+                {currentPlanisphere && <View className="absolute left-0 bottom-0 justify-end  m-4 align-center z-50 flex space-y-4 flex-col">
+                  <Pressable className="" onPress={() => myContext.setDisplayFullScreen3d(currentPlanisphere)}><MaterialIcons name="3d-rotation" size={34} color="white" /></Pressable>
+                </View>}
+              
                     {/* Image zoom component */}
                     <Zoomable
                     isSingleTapEnabled
@@ -318,7 +368,7 @@ export default function PictureScreen({ route, navigation }) {
                  <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path}  /></View></View>
               </View>
               {/* Thumbnail scrollview */}
-              <View style={{ width:95 }} className="p-2 mx-auto bg-transparent align-center justify-center text-center flex  " >
+              <View style={{ width:74 }} className="mx-auto bg-transparent align-center   text-center flex  " >
               <ScrollView >
                 {images && images.map((i) => {
                   return (
@@ -352,16 +402,17 @@ export default function PictureScreen({ route, navigation }) {
 
             {/* Process scan and scan info components */}
             <ProcessScan processMethod={processScan} isStarted={isStarted} setIsStarted={setIsStarted}  isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
-            <ScanInfo scan={scan} onClose={()=>setDisplayInfo(false)} logs={logs} currentImage={currentImage[0]} isVisible={displayInfo} />
+            
 
 
 
 
            
 
-
+            <ScanInfo scan={scan} onClose={()=>setDisplayInfo(false)} logs={logs} currentImage={currentImage[0]} isVisible={displayInfo} />
 
         </SafeAreaProvider>
+       
 
 
       </View>

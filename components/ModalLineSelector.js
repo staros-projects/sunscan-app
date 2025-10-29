@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { linesDict } from './LineSelector';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 const ModalLineSelector = ({ visible, onSelect }) => {
@@ -33,6 +34,7 @@ const ModalLineSelector = ({ visible, onSelect }) => {
       }, [memoizedLinesDict]);
 
   return (
+    <SafeAreaView>
     <Modal
       visible={visible}
       transparent
@@ -45,7 +47,7 @@ const ModalLineSelector = ({ visible, onSelect }) => {
           {renderOptions}
         </View>
       </View>
-    </Modal>
+    </Modal></SafeAreaView>
   );
 };
 

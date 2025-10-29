@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "1.3.4",
+        version: "1.4.2",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -17,13 +17,17 @@ export default ({ config }) => {
         },
         assetBundlePatterns: ["**/*"],
         ios: {
-          buildNumber: "40",
+          buildNumber: "41",
           supportsTablet: true,
           requireFullScreen: true,
-          bundleIdentifier: "com.staros.sunscan-app"
+          bundleIdentifier: "com.staros.sunscan-app",
+          infoPlist: {
+            ITSAppUsesNonExemptEncryption: false
+          }
         },
         android: {
-          versionCode: 40,
+          barStyle: "dark-content",
+          versionCode: 41,
           adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#fff"
@@ -35,7 +39,8 @@ export default ({ config }) => {
           ],
           blockedPermissions: [
             "android.permission.READ_MEDIA_IMAGES",
-            "android.permission.READ_MEDIA_VIDEO"
+            "android.permission.READ_MEDIA_VIDEO",
+            "android.permission.ACTIVITY_RECOGNITION"
           ],
           package: "com.staros.sunscan"
         },
@@ -79,6 +84,9 @@ export default ({ config }) => {
               behavior: "inset-swipe"
             }
           ],
+          [
+            "react-native-edge-to-edge"
+          ],
           ...(isIOS
             ? [
                 [
@@ -90,7 +98,15 @@ export default ({ config }) => {
                   }
                 ]
               ]
-            : [])
+            :  [
+                [
+                  "expo-media-library",
+                  {
+                    savePhotosPermission: "Allow $(PRODUCT_NAME) to save your sun images.",
+                    isAccessMediaLocationEnabled: false
+                  }
+                ]
+              ])
         ]
       }
     };

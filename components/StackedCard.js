@@ -46,7 +46,7 @@ export default function StackedCard({squareSize, scan, selected, multiSelectMode
            
             <View  className="mx-auto w-full">
               <View className="absolute top-0 p-2 right-0 z-20">
-                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<></>)}</View>
+                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<View></View>)}</View>
                   <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.path) : navigation.navigate('StackedPicture',{scan:scan})}  >
                   <View className="absolute flex flex-row space-x-1 z-20" style={{top:6, left:6}}><Ionicons name="logo-stackoverflow" size={20} color="white" onPress={onLongPress} /><Text className="text-white">{scan.stacked_img_count}</Text></View>
                 

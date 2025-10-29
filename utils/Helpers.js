@@ -1,13 +1,11 @@
 import * as FileSystem from 'expo-file-system';
 
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-if (Platform.OS === 'ios') {
-    MediaLibrary =  require('expo-media-library');
-}
+import * as MediaLibrary from 'expo-media-library';
 
-export const backend_current_version = '1.3.4';
+
+export const backend_current_version = '1.4.2';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date
@@ -16,45 +14,53 @@ export default function  firmareIsUpToDate(myContext) {
     return !myContext.backendApiVersion || parseInt(myContext.backendApiVersion.replaceAll('.','')) >= parseInt(backend_current_version.replaceAll('.',''))
 }
 
+
 async function saveAndroidFile(source, type) {
     console.log('Downloading for Android:', source, type);
 
     try {
+        // 1. Télécharger le fichier dans le cache
         const fileName = `sunscan-image-${Date.now()}.${type}`;
         const filePath = `${FileSystem.cacheDirectory}${fileName}`;
         await FileSystem.downloadAsync(source, filePath);
-
         console.log('File downloaded at:', filePath);
 
-        let storedPermission = await AsyncStorage.getItem('androidStoragePermission');
-        if (!storedPermission) {
-            const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
-                FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Download')
-            );
-            if (!permissions.granted) return false;
-
-            await AsyncStorage.setItem('androidStoragePermission', JSON.stringify(permissions.directoryUri));
-            storedPermission = permissions.directoryUri;
-        } else {
-            storedPermission = JSON.parse(storedPermission);
+        // 2. Demander la permission MEDIA_LIBRARY (juste pour sauvegarder, pas pour lire)
+        const { status } = await MediaLibrary.requestPermissionsAsync(false); // false = writeOnly
+        if (status !== 'granted') {
+            console.log('Permission denied');
+            return false;
         }
 
-        const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
-            storedPermission,
-            fileName.split('.')[0],
-            `image/${type}`
-        );
+        // 3. Créer l'asset (sauvegarde l'image dans la galerie)
+        const asset = await MediaLibrary.createAssetAsync(filePath);
+        console.log('Asset created:', asset.uri);
 
-        const base64 = await FileSystem.readAsStringAsync(filePath, { encoding: FileSystem.EncodingType.Base64 });
-        await FileSystem.writeAsStringAsync(newUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        // 4. Optionnel : créer/ajouter à un album "SUNSCAN"
+        try {
+            const album = await MediaLibrary.getAlbumAsync('SUNSCAN');
+            if (album) {
+                await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+            } else {
+                await MediaLibrary.createAlbumAsync('SUNSCAN', asset, false);
+            }
+            console.log('Asset added to SUNSCAN album');
+        } catch (albumError) {
+            console.log('Could not add to album:', albumError.message);
+            // L'image est quand même sauvegardée dans la galerie principale
+        }
+
+        // 5. Nettoyer le cache
+        await FileSystem.deleteAsync(filePath, { idempotent: true });
 
         return true;
+
     } catch (error) {
         console.error('Error saving file on Android:', error);
+        console.error('Error details:', error.message);
         return false;
     }
 }
-
 
 async function saveIosFile(source, type) {
     const permissionResponse = await MediaLibrary.requestPermissionsAsync();

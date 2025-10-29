@@ -11,6 +11,7 @@ import {
   Switch,
   ActivityIndicator, // Importer ActivityIndicator pour le loader
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AnimationOptionsModal = ({
   visible,
@@ -48,7 +49,7 @@ const AnimationOptionsModal = ({
   };
 
   return (
-    <>
+    <SafeAreaView>
     <Modal
       transparent={true}
       visible={visible}
@@ -131,8 +132,7 @@ const AnimationOptionsModal = ({
           </View>
         </View>
       </View>
-    </Modal>
-    </>
+    </Modal></SafeAreaView>
   );
 };
 

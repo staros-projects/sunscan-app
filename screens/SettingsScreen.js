@@ -1,7 +1,6 @@
-
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
-import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {  Alert, Button, Pressable, ScrollView, Switch, Text, TextInput, View, Platform } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons'
 
 import { NativeWindStyleSheet } from "nativewind";
@@ -190,21 +189,22 @@ export default function SettingsScreen({navigation, isFocused}) {
   }, [isFocused, myContext.sunscanIsConnected]));
 
   const [stackingOptReset, setStackingOptReset] = useState(false);
-
+  
+  const insets = useSafeAreaInsets();
   return (
     <View className="flex flex-col bg-zinc-800">
       <View className="h-full">
-        <SafeAreaProvider  className="flex flex-col space-y-4 px-8 pt-4">
-          <ScrollView >
+        <SafeAreaProvider  className="flex flex-col space-y-4 pl-4 pr-2 pt-4" style={{flex: 1, paddingRight: insets.right}}>
+          <ScrollView  >
             {/* Settings header */}
             <Text className="text-xl text-white font-bold pt-4">{t('common:configuration')}</Text>
             <Text className="text-xs text-zinc-500 mb-4 mt-1">Sunscan v{Application.nativeApplicationVersion} app by STAROS ©{new Date().getFullYear()}</Text>
             <View  className="flex flex-col mb-4 ">
-            <View  className="flex flex-row  space-x-4 items-start  ">
-              {(myContext.sunscanIsConnected || myContext.debug) && <>
+             {(myContext.sunscanIsConnected || myContext.debug) &&<View  className="flex flex-row space-x-4 items-start  ">
+         
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={shutdown}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:shutdown')}</Text></Pressable> 
-              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable></>}
-              </View>
+              <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={reboot}><Ionicons name="power" size={20} color="white" /><Text className="text-white">{t('common:reboot')}</Text></Pressable>
+              </View>}
               {sunscanIsReboot && <View className="flex flex-row  space-x-4 items-start mt-2 ">
                   <Text className="text-white mb-1 text-xs italic" >{t('common:rebootOk')}</Text>
                 </View>}
@@ -241,6 +241,8 @@ export default function SettingsScreen({navigation, isFocused}) {
               })}
             </View>
 
+     
+
             {/* Observer input */}
             <View className="flex flex-row  space-x-4 items-center">
               <Text className="text-white w-1/2" >{t('common:observer')}</Text>
@@ -248,9 +250,46 @@ export default function SettingsScreen({navigation, isFocused}) {
               returnKeyType='done' onChangeText={(value) => myContext.setObserver(value)} />
             </View> 
 
+                   {/* Screen Orientation selection */}
+            <View className="flex flex-row space-x-4 items-start mt-4">
+              <View className="w-2/5">
+                <Text className="text-white mb-1">{t('common:screenOrientation')}</Text>
+                <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:screenOrientationDescription')}</Text>
+              </View>
+              <View className="flex flex-row space-x-2">
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('AUTO')}
+                  className={myContext.screenOrientation === 'AUTO' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center justify-center" style={{minWidth: 60}}>
+                    <Ionicons name="sync" size={24} color="white" />
+                    <Text className="text-white text-xs mt-1">{t('common:auto')}</Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('LANDSCAPE_RIGHT')}
+                  className={myContext.screenOrientation === 'LANDSCAPE_RIGHT' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center" style={{minWidth: 60}}>
+                    <Ionicons name="phone-landscape" size={24} color="white" />
+                    <Text className="text-white text-xs mt-1">{t('common:cameraLeft')}</Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  onPress={() => myContext.setScreenOrientation('LANDSCAPE_LEFT')}
+                  className={myContext.screenOrientation === 'LANDSCAPE_LEFT' ? 'bg-emerald-600 p-2 rounded-lg' : 'bg-zinc-700 p-2 rounded-lg'}
+                >
+                  <View className="flex flex-col items-center" style={{minWidth: 60}}>
+                    <Ionicons name="phone-landscape" size={24} color="white" style={{transform: [{rotate: '180deg'}]}} />
+                    <Text className="text-white text-xs mt-1">{t('common:cameraRight')}</Text>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+
              {/* Watermark toggle */}
              <View className="flex flex-row  space-x-4 items-start mt-2  ">
-              <View className="w-1/2"> 
+              <View className="w-2/5"> 
                 <Text className="text-white mb-1" >{t('common:displayWatermark')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:displayWatermarkDescription')}</Text>
               </View>
@@ -264,7 +303,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Debug mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2  ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:debugMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:debugDescription')}</Text>
               </View>
@@ -278,7 +317,7 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Offline mode toggle */}
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:offlineMode')}</Text>
                 <Text className="text-white text-zinc-600" style={{fontSize:11}}>{t('common:offlineDescription')}</Text>
               </View>
@@ -292,13 +331,13 @@ export default function SettingsScreen({navigation, isFocused}) {
 
             {/* Firmware update section */}
             {(myContext.sunscanIsConnected || myContext.debug) && <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:updateFirmware')}</Text>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:currentVersion')} : {myContext.backendApiVersion}</Text>
-                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <>
+                  {(!firmareIsUpToDate(myContext) || myContext.debug) && <View>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:newVersion')} : {backend_current_version}</Text>
                   <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:updateFirmwareDescription')}</Text>
-                </>}
+                </View>}
               </View>
               {!firmareIsUpToDate(myContext) || myContext.debug ?
               <Pressable className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={updateFirmware}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:update')}</Text></Pressable>:
@@ -306,7 +345,7 @@ export default function SettingsScreen({navigation, isFocused}) {
             </View>}
 
             <View className="flex flex-row  space-x-4 items-start mt-2 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                 <Text className="text-white mb-1" >{t('common:clearImageCache')}</Text>
                 <Text className="text-zinc-600" style={{fontSize:11}}>{t('common:clearCacheDescription')}</Text>
               </View>
@@ -372,7 +411,7 @@ export default function SettingsScreen({navigation, isFocused}) {
                 />
               </View>
               <View className="flex flex-row  space-x-4 items-start mt-4 ">
-              <View className="w-1/2">
+              <View className="w-2/5">
                
               </View>
               {stackingOptReset ? <Text className="text-white"></Text>:<Pressable className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={()=>{myContext.setStackingOptions({patchSize:32, stepSize:10, intensityThreshold:0}); setStackingOptReset(true);}}><Ionicons name="refresh" size={20} color="white" /><Text className="text-white">{t('common:reset')}</Text></Pressable>}

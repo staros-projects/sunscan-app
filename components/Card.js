@@ -38,13 +38,16 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
         dopcont:false,
          noisereduction:false,
           doppler_shift:5, 
-          continuum_shift:15, 
+          continuum_shift:16, 
           cont_sharpen_level:2, 
           surface_sharpen_level:2, 
           pro_sharpen_level:1,
           offset:0,
           observer:myContext.showWatermark?myContext.observer:' ',
-          advanced:scan.tag}),
+          advanced:scan.tag,
+          doppler_color:myContext.dopplerColor,
+          process_doppler:false
+      }),
     }).then(response => response.json())
     .then(json => {
       setIsStarted(true);
@@ -87,7 +90,7 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
            
             <View  className="mx-auto w-full">
               <View className="absolute top-0 p-2 right-0 z-20">
-                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<></>)}</View>
+                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<View></View>)}</View>
               { scanStatus == "completed" ? 
                 // Display completed scan image
                   <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.ser) : navigation.navigate('Picture',{scan:scan})}  >

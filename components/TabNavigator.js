@@ -1,6 +1,7 @@
 import * as React from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Dimensions, Pressable, View, StyleSheet } from 'react-native';
+import { Dimensions, Pressable, View, StyleSheet, Button, Text, PanResponder } from 'react-native';
+import { OrthographicCamera } from '@react-three/drei/native';
 import {
     createNavigatorFactory,
     DefaultNavigatorOptions,
@@ -22,6 +23,17 @@ import AppContext from './AppContext';
 import { Image } from 'expo-image';
 
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SunSphere from './SunSphere';
+import { Canvas } from '@react-three/fiber';
+
+
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue } from 'react-native-reanimated';
+import SmoothCamera from './SmoothCamera';
+
 
 // Main TabNavigator component
 export default function TabNavigator({
@@ -31,6 +43,8 @@ export default function TabNavigator({
   tabBarStyle,
   contentStyle,
 }) {
+    const { t, i18n } = useTranslation();
+
   // Use the navigation builder hook to create the tab navigation
   const { state, navigation, descriptors, NavigationContent } =
     useNavigationBuilder(TabRouter, {
@@ -38,6 +52,8 @@ export default function TabNavigator({
       screenOptions,
       initialRouteName,
     });
+
+    const sunRef = React.useRef();
 
   // Get the current screen name
   const screenName = state.routes[state.index].name;
@@ -59,14 +75,54 @@ export default function TabNavigator({
     },
   });
 
+    const insets = useSafeAreaInsets();
+const cameraRef = React.useRef();
+
+
+
   return (
-    <NavigationContent>
-       
-        <View className="flex-1 flex flex-row" style={{zIndex:99, elevation:99}}>
-                {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
-                  <Pressable className="absolute right-0 top-0 m-4" style={{zIndex:102, elevation:102}} onPress={()=>{ myContext.setDisplayFullScreenImage(''); console.log('1') }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+    <NavigationContent >
+
+      {myContext.displayFullScreen3d !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
+        <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102, paddingRight:insets.right}} onPress={()=>{ myContext.setDisplayFullScreen3d('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
+                            <View style={{ flex: 1 }}>
+                                                    
+    
+              <Canvas>
+                
+                <ambientLight intensity={0.1} />
+
+                {/* On passe zoomScale comme prop à SunSphere */}
+                <SunSphere
+                  ref={sunRef}
+                  textureUri={myContext.displayFullScreen3d}
+                />
+                 <SmoothCamera ref={cameraRef} initialZoom={150} />
+              </Canvas>
+      
+{/* Boutons Zoom */}
+  <View className="absolute bottom-10 right-5 flex flex-row gap-3" style={{zIndex:102, elevation:102, paddingRight:insets.right}}>
+      <Pressable
+     
+      onPress={() => cameraRef.current?.zoomOut()}
+    >
+      <Ionicons name="remove-circle" size={34} color="white" />
+    </Pressable>
+    <Pressable
+
+      onPress={() => cameraRef.current?.zoomIn()}
+    >
+      <Ionicons name="add-circle" size={34} color="white" />
+    </Pressable>
+  
+  </View>
+                                <Pressable className="absolute p-10 bottom-0 flex flex-row gap-1 items-center" onPress={() => {sunRef.current?.resetRotation(); cameraRef.current?.resetZoom()}}><Ionicons name="refresh" size={24} color="white" /><Text className="text-white">{t('common:resetView')}</Text></Pressable>
+                           
+                    </View></View>}
+        {myContext.displayFullScreenImage !== '' && <View className="absolute bg-black w-full h-full" style={{zIndex:100, elevation:100}}>
+                  <Pressable className="absolute right-0 top-0 p-4" style={{zIndex:102, elevation:102, paddingRight:insets.right}} onPress={()=>{ myContext.setDisplayFullScreenImage('');  }}><MaterialIcons name="close" color="#fff" size={22} /></Pressable>
                         {/* Image zoom component */}
-                        <Zoomable
+                         <Zoomable
                         isSingleTapEnabled
                         isDoubleTapEnabled
                         
@@ -78,29 +134,27 @@ export default function TabNavigator({
                               />
                         </Zoomable>
                 </View>}
+        <View className="flex-1 flex flex-row bg-black" style={{zIndex:99, elevation:99, backgroundColor: '#000'}}>
                 {/* Sidebar navigation */}
-                <View  className="  flex-0 w-14 bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99}} >
+                <View  className="  flex-0  bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:0}} >
                 {/* Home tab */}
                 <View  className={screenName == "Home" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
                     <Pressable onPress={() =>navigation.navigate('Home') } className="flex flex-col justify-center items-center w-12">
                     <HomeSVG color="white" size="32"  />
                     </Pressable>
                 </View>
-
                 {/* Scan tab */}
                 <View className={screenName == "Scan" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
                     <Pressable onPress={() =>navigation.navigate('Scan') } className="flex flex-col justify-center items-center w-12">
                     <IrisSVG color="white" size="32"  />
                     </Pressable>
                 </View>
-
                 {/* List tab */}
                 <View className={screenName == "List" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
                 <Pressable onPress={() =>navigation.navigate('List') } className="flex flex-col justify-center items-center w-12">
                 <GallerySVG color="white" size="32"  />
                     </Pressable>
                 </View>
-
                 {/* Settings tab */}
                 <View className={screenName == "Settings" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
                 <Pressable onPress={() =>navigation.navigate('Settings') } className="flex flex-col justify-center items-center w-12">
@@ -108,7 +162,6 @@ export default function TabNavigator({
                     </Pressable>
                 </View>
                 </View>
-            
             {/* Content area */}
             <View  className="grow">
             {/* Render the current screen */}
@@ -127,7 +180,6 @@ export default function TabNavigator({
             })}
             </View>
         </View>
- 
     </NavigationContent>
   );
 }
