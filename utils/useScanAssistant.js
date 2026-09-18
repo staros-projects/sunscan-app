@@ -6,7 +6,6 @@
 // string twice per frame.
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import AppContext from '../components/AppContext';
 import { acquirePosition } from './Position';
@@ -18,16 +17,13 @@ import {
 import {
   analyzeProfile,
   createCalibration,
-  createSignTracker,
   measureOffsetArcmin,
   refineCalibration,
   sensorEndArcmin,
   sensorTargetArcmin,
+  ALONG_SLIT_SIGN,
   TARGET_TOLERANCE_ARCMIN,
-  updateSignTracker,
 } from './ScanGeometry';
-
-const SIGN_STORAGE_KEY = 'SUNSCAN_APP::ALONG_SLIT_SIGN';
 
 // The backend pushes a profile about four times a second. Twice is plenty for a
 // human aiming a tripod, and halves the work.
@@ -82,8 +78,6 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
 
   const retryLocation = useCallback(() => setLocateAttempt((n) => n + 1), []);
 
-  const [alongSlitSign, setAlongSlitSign] = useState(1);
-  const [signKnown, setSignKnown] = useState(false);
   const [measuredArcmin, setMeasuredArcmin] = useState(null);
   const [geometry, setGeometry] = useState(null);
   // True once the disk has been parked on the mark. Survives the disk leaving
@@ -93,14 +87,9 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
   const [armed, setArmed] = useState(false);
 
   const calibrationRef = useRef(createCalibration());
-  const signTrackerRef = useRef(createSignTracker());
   const lastMeasureRef = useRef(0);
   const smoothedRef = useRef(null);
   const geometryRef = useRef(null);
-  const signManuallySetRef = useRef(false);
-  // Mirrors alongSlitSign for the measurement path, which runs outside render
-  const signRef = useRef(1);
-  useEffect(() => { signRef.current = alongSlitSign; }, [alongSlitSign]);
 
   // A finished scan leaves the instrument pointing wherever the Sun drifted to :
   // the next one has to be aimed again from scratch.
@@ -116,38 +105,6 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
     if (!demo) return null;
     return simulatedDaytime(latitude, longitude);
   }, [demo, latitude, longitude]);
-
-  // --- persisted sensor axis direction --------------------------------------
-
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(SIGN_STORAGE_KEY)
-      .then((stored) => {
-        if (cancelled || stored == null) return;
-        const value = parseInt(stored, 10);
-        if (value === 1 || value === -1) {
-          setAlongSlitSign(value);
-          setSignKnown(true);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
-  const persistSign = useCallback((value) => {
-    AsyncStorage.setItem(SIGN_STORAGE_KEY, `${value}`).catch(() => {});
-  }, []);
-
-  const flipSign = useCallback(() => {
-    signManuallySetRef.current = true;
-    setAlongSlitSign((previous) => {
-      const next = -previous;
-      persistSign(next);
-      return next;
-    });
-    setSignKnown(true);
-    signTrackerRef.current = createSignTracker();
-  }, [persistSign]);
 
   // --- ephemeris ------------------------------------------------------------
 
@@ -210,34 +167,14 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
       return;
     }
 
-    const target = sensorTargetArcmin(current, signRef.current);
+    const target = sensorTargetArcmin(current);
     setArmed(Math.abs(target - offset) <= TARGET_TOLERANCE_ARCMIN);
-
-    // While the disk is crossing the slit the profile is a chord, not the disk :
-    // measuring it would be meaningless, so guidance freezes during the scan.
-    if (!recording) {
-      const tracker = updateSignTracker(
-        signTrackerRef.current,
-        offset,
-        current.alongRateArcminPerS,
-        now,
-      );
-      signTrackerRef.current = tracker;
-      if (tracker.confident && !signManuallySetRef.current) {
-        setAlongSlitSign((previous) => {
-          if (previous === tracker.sign) return previous;
-          persistSign(tracker.sign);
-          return tracker.sign;
-        });
-        setSignKnown(true);
-      }
-    }
 
     smoothedRef.current = smoothedRef.current == null
       ? offset
       : smoothedRef.current + POSITION_SMOOTHING * (offset - smoothedRef.current);
     setMeasuredArcmin(smoothedRef.current);
-  }, [enabled, demo, recording, persistSign]);
+  }, [enabled, demo]);
 
   // --- offline simulation ---------------------------------------------------
 
@@ -248,7 +185,7 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
     // to ask for, then let it drift at the real rate the ephemeris gives.
     const start = geometry.marginArcmin * (Math.random() - 0.5);
     const startedAt = Date.now();
-    const rate = geometry.alongRateArcminPerS * alongSlitSign;
+    const rate = geometry.alongRateArcminPerS * ALONG_SLIT_SIGN;
 
     const id = setInterval(() => {
       const elapsed = (Date.now() - startedAt) / 1000;
@@ -260,18 +197,12 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
     }, SIMULATION_INTERVAL_MS);
 
     return () => clearInterval(id);
-  }, [enabled, demo, geometry, alongSlitSign]);
+  }, [enabled, demo, geometry]);
 
   // --- derived --------------------------------------------------------------
 
-  const targetArcmin = useMemo(
-    () => sensorTargetArcmin(geometry, alongSlitSign),
-    [geometry, alongSlitSign],
-  );
-  const endArcmin = useMemo(
-    () => sensorEndArcmin(geometry, alongSlitSign),
-    [geometry, alongSlitSign],
-  );
+  const targetArcmin = useMemo(() => sensorTargetArcmin(geometry), [geometry]);
+  const endArcmin = useMemo(() => sensorEndArcmin(geometry), [geometry]);
 
   return {
     geometry,
@@ -280,8 +211,6 @@ export default function useScanAssistant({ enabled = true, recording = false, lo
     measuredArcmin,
     armed,
     simulatedDate,
-    signKnown,
-    flipSign,
     ingestProfile,
     observingWindow,
     hasLocation,

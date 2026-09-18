@@ -801,8 +801,6 @@ const insets = useSafeAreaInsets();
                   recording={rec}
                   elapsedS={elapsedS}
                   simulatedDate={assistant.simulatedDate}
-                  signKnown={assistant.signKnown}
-                  onFlipSign={assistant.flipSign}
                   window={assistant.observingWindow}
                 />
               </View>}

@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "2.0.0",
+        version: "2.0.1",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",

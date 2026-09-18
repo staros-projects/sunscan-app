@@ -144,8 +144,6 @@ function AlignmentLane({ geometry, targetArcmin, endArcmin, measuredArcmin, widt
  * @param recording       true while the scan runs
  * @param elapsedS        seconds since the record button was pressed
  * @param simulatedDate   non null in offline mode : the drawn-at-random instant
- * @param signKnown       false until the sensor axis direction has been resolved
- * @param onFlipSign      flips that direction by hand
  * @param window          best observing window of the day, or null
  */
 export default function ScanAssistant({
@@ -160,8 +158,6 @@ export default function ScanAssistant({
   recording = false,
   elapsedS = 0,
   simulatedDate = null,
-  signKnown = true,
-  onFlipSign,
   window: observingWindow,
 }) {
   const { t } = useTranslation();
@@ -274,11 +270,6 @@ export default function ScanAssistant({
           <Text className="text-slate-400" style={{ fontSize: 11 }}>
             {t('common:shearAngle')} {Math.abs(geometry.shearDeg).toFixed(0)}°
           </Text>
-          {onFlipSign && (
-            <PressableScale onPress={onFlipSign} className="flex flex-row items-center">
-              <Ionicons name="swap-horizontal" size={15} color={signKnown ? '#71717a' : '#fbbf24'} />
-            </PressableScale>
-          )}
         </View>
       </View>
 

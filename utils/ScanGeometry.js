@@ -8,10 +8,7 @@
 // Measuring beats trusting the optical formulas here. The arcmin-per-sample
 // scale falls out of the observed disk width compared to the known solar
 // diameter, so it stays right whatever the binning mode, and it absorbs any
-// error in the assumed focal lengths or slit length. Same for the direction of
-// the sensor axis : rather than reasoning about how many times the light folds
-// inside the box, we watch which way the disk drifts and compare it to the
-// drift the ephemeris predicts.
+// error in the assumed focal lengths or slit length.
 
 import { sensorFieldArcmin, SUNSCAN_OPTICS } from './SolarGeometry';
 
@@ -282,91 +279,29 @@ export function measureOffsetArcmin(analysis, calibration, diameterArcmin) {
 // altitude). `measureOffsetArcmin` is expressed in the sensor frame. One sign
 // relates the two, and it is a property of the instrument alone : tilting the
 // SUNSCAN in elevation or swinging it in azimuth never flips it, and neither
-// does changing hemisphere. So it is worth measuring once and keeping.
+// does changing hemisphere.
 //
-// The measurement is simply : leave the instrument still, watch which way the
-// disk walks, compare with the direction the ephemeris says it should walk.
-
-const SIGN_BUFFER_S = 40;
-const SIGN_MIN_SPAN_S = 12;
-const SIGN_MIN_OBSERVED_ARCMIN = 1.5;
-const SIGN_MIN_EXPECTED_ARCMIN = 1.0;
-// A jump larger than this between two samples is the observer nudging the
-// tripod, not the sky : start over.
-const SIGN_JUMP_ARCMIN = 4;
-
-export function createSignTracker() {
-  return { samples: [], sign: null, confident: false };
-}
-
-function regressionSlope(samples) {
-  const n = samples.length;
-  let sumT = 0;
-  let sumY = 0;
-  for (const s of samples) { sumT += s.t; sumY += s.y; }
-  const meanT = sumT / n;
-  const meanY = sumY / n;
-  let num = 0;
-  let den = 0;
-  for (const s of samples) {
-    num += (s.t - meanT) * (s.y - meanY);
-    den += (s.t - meanT) ** 2;
-  }
-  return den > 0 ? num / den : 0;
-}
-
-/**
- * Feed one measurement to the sign tracker.
- *
- * @param tracker state from createSignTracker
- * @param offsetArcmin sensor-frame offset just measured
- * @param alongRateArcminPerS sky-frame drift rate from the ephemeris (signed)
- * @param timestampMs
- * @returns a new tracker; `sign` is +1 / -1 once it is confident, null before.
- */
-export function updateSignTracker(tracker, offsetArcmin, alongRateArcminPerS, timestampMs = Date.now()) {
-  if (!Number.isFinite(offsetArcmin)) {
-    return { ...tracker, samples: [] };
-  }
-
-  const t = timestampMs / 1000;
-  const previous = tracker.samples[tracker.samples.length - 1];
-  // The observer moved the instrument : everything before is meaningless
-  if (previous && Math.abs(offsetArcmin - previous.y) > SIGN_JUMP_ARCMIN) {
-    return { ...tracker, samples: [{ t, y: offsetArcmin }] };
-  }
-
-  const samples = [...tracker.samples, { t, y: offsetArcmin }].filter((s) => t - s.t <= SIGN_BUFFER_S);
-  if (samples.length < 4) {
-    return { ...tracker, samples };
-  }
-
-  const span = samples[samples.length - 1].t - samples[0].t;
-  const observed = regressionSlope(samples) * span;
-  const expected = alongRateArcminPerS * span;
-
-  if (span < SIGN_MIN_SPAN_S
-    || Math.abs(observed) < SIGN_MIN_OBSERVED_ARCMIN
-    || Math.abs(expected) < SIGN_MIN_EXPECTED_ARCMIN) {
-    return { ...tracker, samples };
-  }
-
-  const sign = Math.sign(observed) * Math.sign(expected);
-  return { samples, sign, confident: true };
-}
+// The SUNSCAN is always built the same way, so the sign is a constant : the
+// disk walks towards the right-hand end of the profile while the Sun climbs
+// (morning) and towards the left while it comes down (afternoon).
+//
+// It used to be learnt by watching the disk drift, but a hand slowly moving the
+// tripod head looks exactly like the sky drift, and the learnt sign then always
+// put the mark on the side opposite to where the observer was heading.
+export const ALONG_SLIT_SIGN = 1;
 
 /**
  * Where the disk should sit on the sensor before the scan is started, in
  * arcminutes from the centre of the field, in the same frame as
  * measureOffsetArcmin.
  */
-export function sensorTargetArcmin(geometry, alongSlitSign = 1) {
+export function sensorTargetArcmin(geometry, alongSlitSign = ALONG_SLIT_SIGN) {
   if (!geometry) return 0;
   return alongSlitSign * geometry.startOffsetArcmin;
 }
 
 /** Same, for where the disk will have arrived once the scan ends. */
-export function sensorEndArcmin(geometry, alongSlitSign = 1) {
+export function sensorEndArcmin(geometry, alongSlitSign = ALONG_SLIT_SIGN) {
   if (!geometry) return 0;
   return alongSlitSign * geometry.endOffsetArcmin;
 }
