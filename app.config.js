@@ -83,7 +83,11 @@ export default ({ config }) => {
             "expo-build-properties",
             {
               android: {
-                usesCleartextTraffic: true
+                usesCleartextTraffic: true,
+                // Google Play requires targeting Android 16 (API 36) for updates
+                compileSdkVersion: 36,
+                targetSdkVersion: 36,
+                buildToolsVersion: "36.0.0"
               }
             }
           ],
