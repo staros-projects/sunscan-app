@@ -27,7 +27,9 @@ export default ({ config }) => {
             // the phone (non-hotspot mode) and to scan for it automatically.
             NSLocalNetworkUsageDescription:
               "Allow $(PRODUCT_NAME) to find your SUNSCAN on your local network.",
-            NSBonjourServices: ["_http._tcp"]
+            // _sunscan._tcp is the service the backend announces once it has
+            // joined the home wifi: without it iOS 14+ browses nothing.
+            NSBonjourServices: ["_http._tcp", "_sunscan._tcp"]
           }
         },
         android: {
@@ -42,7 +44,9 @@ export default ({ config }) => {
             "RECEIVE_BOOT_COMPLETED",
             "ACCESS_NETWORK_STATE",
             // Needed to read the phone's own IP and derive the subnet to scan
-            "ACCESS_WIFI_STATE"
+            "ACCESS_WIFI_STATE",
+            // mDNS discovery of the SUNSCAN (react-native-zeroconf takes the multicast lock)
+            "CHANGE_WIFI_MULTICAST_STATE"
           ],
           blockedPermissions: [
             "android.permission.READ_MEDIA_IMAGES",

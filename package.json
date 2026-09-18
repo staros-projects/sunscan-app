@@ -73,6 +73,7 @@
     "react-native-select-dropdown": "^4.0.1",
     "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
+    "react-native-zeroconf": "^0.14.0",
     "rn-vertical-slider": "~4.4.1",
     "suncalc": "1.9.0",
     "three": "^0.166.1",

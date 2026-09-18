@@ -18,6 +18,8 @@ import firmareIsUpToDate from '../utils/Helpers';
 import { backend_current_version } from '../utils/Helpers';
 import { discoverSunscan, normalizeApiURL } from '../utils/Discovery';
 import PressableScale from '../components/PressableScale';
+import WifiSetupModal from '../components/WifiSetupModal';
+import { forgetWifi, getNetworkStatus, switchToHotspot } from '../utils/SunscanNetwork';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -108,6 +110,10 @@ export default function SettingsScreen({navigation, isFocused}) {
   const [sunscanIsReboot, setSunscanIsReboot] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState(null);
+  // /network/status of the connected SUNSCAN (null until read / when unreachable)
+  const [netStatus, setNetStatus] = useState(null);
+  const [wifiModalVisible, setWifiModalVisible] = useState(false);
+  const [wifiBusy, setWifiBusy] = useState(false);
 
 
   // Prefetch the firmware update ZIP file so the upload does not have to wait
@@ -253,6 +259,8 @@ export default function SettingsScreen({navigation, isFocused}) {
     setSearchProgress(null);
     try {
       const found = await discoverSunscan({
+        deviceId: myContext.sunscanDevice?.id,
+        lastIp: myContext.sunscanDevice?.lastIp,
         onProgress: (progress) => {
           if (searchRunRef.current === run) {
             setSearchProgress(progress);
@@ -299,6 +307,123 @@ export default function SettingsScreen({navigation, isFocused}) {
       searchRunRef.current = null;
     }
   }, []);
+
+  // --- Home wifi ------------------------------------------------------------
+
+  const { apiURL, sunscanIsConnected, setSunscanDevice, setCustomApiURL, setHotSpotMode } = myContext;
+
+  const refreshNetworkStatus = useCallback(async () => {
+    if (!sunscanIsConnected) {
+      return;
+    }
+    try {
+      const status = await getNetworkStatus(apiURL);
+      setNetStatus(status);
+      if (status?.device_id) {
+        // Keep the identity of the SUNSCAN and its home address: they are what
+        // finds it again once it has left the hotspot.
+        const lastIp = status.mode === 'client' ? status.ip : status.last_client?.ip;
+        setSunscanDevice((prev) => (
+          prev?.id === status.device_id && (!lastIp || prev?.lastIp === lastIp)
+            ? prev
+            : { ...prev, id: status.device_id, lastIp: lastIp || prev?.lastIp }
+        ));
+      }
+    } catch (e) {
+      console.log('network status unavailable', e?.message);
+    }
+  }, [apiURL, sunscanIsConnected, setSunscanDevice]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNetworkStatus();
+    }, [refreshNetworkStatus]));
+
+  // The SUNSCAN has been found on the home wifi: point the app at it
+  const onWifiConnected = useCallback((url) => {
+    setCustomApiURL(url);
+    setHotSpotMode(false);
+    setSunscanDevice((prev) => ({ ...prev, lastIp: url.split(':')[0] }));
+  }, [setCustomApiURL, setHotSpotMode, setSunscanDevice]);
+
+  const onWifiManualIp = () => {
+    setWifiModalVisible(false);
+    setHotSpotMode(false);
+  };
+
+  const closeWifiModal = () => {
+    setWifiModalVisible(false);
+    refreshNetworkStatus();
+  };
+
+  const hotspotName = netStatus?.hotspot?.ssid || 'sunscan';
+
+  // Both actions below drop the SUNSCAN back to its hotspot: the app follows,
+  // and the user has to put the phone back on it.
+  const followToHotspot = () => {
+    setHotSpotMode(true);
+    setNetStatus(null);
+    Alert.alert(t('common:wifiNetwork'), t('common:wifiRejoinHotspot', { hotspot: hotspotName }));
+  };
+
+  const backToHotspot = () => {
+    Alert.alert(t('common:warning'), t('common:wifiBackToHotspotConfirm', { hotspot: hotspotName }), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: 'OK', onPress: async () => {
+        setWifiBusy(true);
+        try {
+          await switchToHotspot(apiURL);
+          followToHotspot();
+        } catch (e) {
+          Alert.alert(t('common:warning'), t('common:wifiUnreachable'));
+        } finally {
+          setWifiBusy(false);
+        }
+      }}]);
+  };
+
+  const forgetNetwork = (ssid) => {
+    const isCurrent = netStatus?.mode === 'client' && netStatus?.ssid === ssid;
+    const message = isCurrent
+      ? t('common:wifiForgetCurrentConfirm', { ssid, hotspot: hotspotName })
+      : t('common:wifiForgetConfirm', { ssid });
+    Alert.alert(t('common:warning'), message, [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: t('common:wifiForget'), style: 'destructive', onPress: async () => {
+        setWifiBusy(true);
+        try {
+          const answer = await forgetWifi(apiURL, ssid);
+          if (isCurrent && answer.ok) {
+            followToHotspot();
+          } else {
+            refreshNetworkStatus();
+          }
+        } catch (e) {
+          // Forgetting the current network cuts the connection before the
+          // answer may come back: same outcome as a success.
+          if (isCurrent) {
+            followToHotspot();
+          } else {
+            Alert.alert(t('common:warning'), t('common:wifiUnreachable'));
+          }
+        } finally {
+          setWifiBusy(false);
+        }
+      }}]);
+  };
+
+  const wifiModeLabel = () => {
+    switch (netStatus?.mode) {
+      case 'hotspot':
+        return t('common:wifiModeHotspot', { ssid: netStatus.ssid });
+      case 'client':
+        return t('common:wifiModeClient', { ssid: netStatus.ssid, ip: netStatus.ip });
+      case 'connecting':
+        return t('common:wifiModeConnecting');
+      default:
+        return t('common:wifiModeDisconnected');
+    }
+  };
 
   // Effect to fetch stats when the component gains focus
   useFocusEffect(
@@ -553,7 +678,50 @@ export default function SettingsScreen({navigation, isFocused}) {
                 </Row>
               }
 
+              {/* Home wifi: only backends with NetworkManager support it */}
+              {myContext.sunscanIsConnected && netStatus?.supported &&
+                <Row label={t('common:wifiNetwork')} hint={wifiModeLabel()}>
+                  <View className="flex flex-row flex-wrap justify-end" style={{gap: 8}}>
+                    {netStatus.mode === 'client' &&
+                      <PressableScale className="bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-2 flex flex-row items-center" disabled={wifiBusy} onPress={backToHotspot}>
+                        <Ionicons name="radio-outline" size={16} color="white" />
+                        <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:wifiBackToHotspot')}</Text>
+                      </PressableScale>
+                    }
+                    <PressableScale className="bg-emerald-600 rounded-xl px-3 py-2 flex flex-row items-center" disabled={wifiBusy} onPress={() => setWifiModalVisible(true)}>
+                      <Ionicons name="wifi" size={16} color="white" />
+                      <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:wifiConnectHome')}</Text>
+                    </PressableScale>
+                  </View>
+                </Row>
+              }
+
+              {myContext.sunscanIsConnected && netStatus?.supported && netStatus.saved_networks?.length > 0 &&
+                <Row label={t('common:wifiSavedNetworks')} hint={t('common:wifiSavedNetworksHint')}>
+                  <View className="flex-1 flex flex-col items-end" style={{gap: 6}}>
+                    {netStatus.saved_networks.map((ssid) => (
+                      <View key={ssid} className="flex flex-row items-center">
+                        <Text className="text-white mr-3" numberOfLines={1}>{ssid}</Text>
+                        <PressableScale className="bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-1" disabled={wifiBusy} onPress={() => forgetNetwork(ssid)}>
+                          <Text className="text-white" style={{fontSize:12}}>{t('common:wifiForget')}</Text>
+                        </PressableScale>
+                      </View>
+                    ))}
+                  </View>
+                </Row>
+              }
+
             </Section>
+
+            <WifiSetupModal
+              visible={wifiModalVisible}
+              apiURL={myContext.apiURL}
+              status={netStatus}
+              lastIp={myContext.sunscanDevice?.lastIp}
+              onClose={closeWifiModal}
+              onConnected={onWifiConnected}
+              onManualIp={onWifiManualIp}
+            />
 
             {/* ---- Device ---- */}
             <Section title={t('common:deviceSection')}>

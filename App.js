@@ -31,14 +31,20 @@ import i18next from 'i18next';
 import Animated from 'react-native-reanimated';
 import StackedPictureScreen from './screens/StackedPictureScreen';
 import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
+import { HOTSPOT_API_URL } from './utils/SunscanNetwork';
 
 // ...
 
 const createMyNavigator = createNavigatorFactory(TabNavigator);
 const My = createMyNavigator();
 
-// Default URL when the SUNSCAN runs in hotspot mode (it creates its own wifi network)
-const DEFAULT_HOTSPOT_API_URL = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '10.42.0.1:8000';
+// URL of the SUNSCAN in hotspot mode (it creates its own wifi network). Fixed:
+// the hotspot address never changes, and the wifi setup polls it directly.
+const DEFAULT_HOTSPOT_API_URL = HOTSPOT_API_URL;
+// Dev override (.env), e.g. a Pi on the home network. Only a default for the
+// non-hotspot address: it used to replace the hotspot one, so hotspot mode
+// kept targeting the dev Pi.
+const DEV_API_URL = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '';
 
 const STORAGE_KEYS = {
   language: 'SUNSCAN_APP::LANGUAGE',
@@ -54,6 +60,7 @@ const STORAGE_KEYS = {
   screenOrientation: 'SUNSCAN_APP::SCREEN_ORIENTATION',
   hotSpotMode: 'SUNSCAN_APP::HOTSPOT_MODE',
   customApiURL: 'SUNSCAN_APP::CUSTOM_API_URL',
+  sunscanDevice: 'SUNSCAN_APP::SUNSCAN_DEVICE',
 };
 
 const DEFAULT_STACKING_OPTIONS = {patchSize:32, stepSize:10, intensityThreshold:0};
@@ -76,6 +83,10 @@ export default function App() {
   const [cameraIsConnected, setCameraIsConnected] = useState(false);
   const [hotSpotModeVal, setHotSpotMode] = useState(true);
   const [customApiURLVal, setCustomApiURL] = useState("");
+  // Identity of the SUNSCAN, read from /network/status: {id, lastIp}. The id
+  // finds it again by mDNS once it has joined the home wifi, lastIp is the
+  // address it last had there (fallback when mDNS finds nothing).
+  const [sunscanDevice, setSunscanDevice] = useState({});
   const [showWatermark, setShowWatermark] = useState(true);
   const [debugVal, setDebug] = useState(false);
   const [demoVal, setDemo] = useState(false);
@@ -95,7 +106,7 @@ export default function App() {
 
   // Effective API URL: hotspot mode uses the default SUNSCAN wifi address,
   // otherwise the user-defined IP (same network as the phone)
-  const apiURLVal = hotSpotModeVal ? DEFAULT_HOTSPOT_API_URL : (customApiURLVal || DEFAULT_HOTSPOT_API_URL);
+  const apiURLVal = hotSpotModeVal ? DEFAULT_HOTSPOT_API_URL : (customApiURLVal || DEV_API_URL || DEFAULT_HOTSPOT_API_URL);
 
   const toggleShowWaterMark = useCallback(() => setShowWatermark(v => !v), []);
   const toggleDemo = useCallback(() => setDemo(v => !v), []);
@@ -180,6 +191,10 @@ export default function App() {
         if (customApiURL) {
           setCustomApiURL(customApiURL);
         }
+        const device = stored[STORAGE_KEYS.sunscanDevice];
+        if (device) {
+          setSunscanDevice(JSON.parse(device));
+        }
       } catch (e) {
         console.log('Error loading settings', e);
       }
@@ -206,12 +221,13 @@ export default function App() {
       [STORAGE_KEYS.screenOrientation, screenOrientationVal],
       [STORAGE_KEYS.hotSpotMode, hotSpotModeVal?'1':'0'],
       [STORAGE_KEYS.customApiURL, customApiURLVal],
+      [STORAGE_KEYS.sunscanDevice, JSON.stringify(sunscanDevice)],
     ];
     if (observerVal !== "") {
       pairs.push([STORAGE_KEYS.observer, `${observerVal}`]);
     }
     AsyncStorage.multiSet(pairs).catch((e) => console.log('Error saving settings', e));
-  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
+  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
 
   // Memoized so consumers only re-render when a value actually changes
   const userSettings = useMemo(() => ({
@@ -244,6 +260,8 @@ export default function App() {
     apiURL:apiURLVal,
     customApiURL:customApiURLVal,
     setCustomApiURL,
+    sunscanDevice,
+    setSunscanDevice,
     displayFullScreenImage,
     setDisplayFullScreenImage,
     displayFullScreen3d,
@@ -257,7 +275,7 @@ export default function App() {
   }), [
     sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, tooltipVal,
     hotSpotModeVal, observerVal, locationData, showWatermark, dopplerColor,
-    processDoppler, backendApiVersion, apiURLVal, customApiURLVal,
+    processDoppler, backendApiVersion, apiURLVal, customApiURLVal, sunscanDevice,
     displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
     screenOrientationVal, toggleShowWaterMark, toggleDebug, toggleDemo, toggleTooltip
   ]);

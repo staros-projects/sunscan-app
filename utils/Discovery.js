@@ -1,6 +1,8 @@
 import * as Network from 'expo-network';
 
-export const DEFAULT_SUNSCAN_PORT = 8000;
+import { DEFAULT_SUNSCAN_PORT, locateSunscan } from './SunscanNetwork';
+
+export { DEFAULT_SUNSCAN_PORT };
 
 // The SUNSCAN backend answers /sunscan/stats with a payload carrying
 // backend_api_version. We use that field as a fingerprint so another device
@@ -10,6 +12,10 @@ const PROBE_PATH = '/sunscan/stats';
 // On a local network a SUNSCAN answers well under a second; unused addresses
 // have to hit this timeout before we move on, so it drives the total scan time.
 const PROBE_TIMEOUT_MS = 1200;
+
+// Short: the service answers within a second or two when it is there, and the
+// sweep below remains as a fallback.
+const ZEROCONF_TIMEOUT_MS = 4000;
 
 // mDNS resolution is slower than a direct IP hit, hence a longer timeout.
 const MDNS_HOST = 'sunscan.local';
@@ -80,16 +86,19 @@ export async function probeSunscan(hostWithPort, timeoutMs = PROBE_TIMEOUT_MS) {
 /**
  * Looks for a SUNSCAN reachable on the same network as the phone.
  *
- * Tries the sunscan.local mDNS name first (instant when the network resolves
- * it), then falls back to sweeping the phone's /24 subnet.
+ * Tries the `_sunscan._tcp` service announced by recent backends and the
+ * address the SUNSCAN had last time on this network, then the sunscan.local
+ * mDNS name, then falls back to sweeping the phone's /24 subnet.
  *
  * @param {object} options
  * @param {number} options.port          port the backend listens on
+ * @param {string} options.deviceId      SUNSCAN to look for (any when empty)
+ * @param {string} options.lastIp        address it had on the home network
  * @param {function} options.onProgress  called with {phase, scanned, total}
  * @param {function} options.isCancelled polled between batches to abort early
  * @returns {Promise<{url: string, method: string}|null>}
  */
-export async function discoverSunscan({ port = DEFAULT_SUNSCAN_PORT, onProgress, isCancelled } = {}) {
+export async function discoverSunscan({ port = DEFAULT_SUNSCAN_PORT, deviceId, lastIp, onProgress, isCancelled } = {}) {
   const cancelled = () => typeof isCancelled === 'function' && isCancelled();
   const report = (phase, scanned, total) => {
     if (typeof onProgress === 'function') {
@@ -97,8 +106,19 @@ export async function discoverSunscan({ port = DEFAULT_SUNSCAN_PORT, onProgress,
     }
   };
 
-  // 1. mDNS hostname: no scan needed when the network resolves it.
+  // 1. DNS-SD service, then the last known address. The sunscan.local check
+  // done by locateSunscan requires the network API, hence step 2 below for
+  // older backends.
   report('mdns', 0, 0);
+  const located = await locateSunscan({ deviceId, lastIp, mdnsTimeoutMs: ZEROCONF_TIMEOUT_MS, isCancelled });
+  if (located) {
+    return located;
+  }
+  if (cancelled()) {
+    return null;
+  }
+
+  // 2. mDNS hostname: no scan needed when the network resolves it.
   const mdnsHost = `${MDNS_HOST}:${port}`;
   if (await probeSunscan(mdnsHost, MDNS_TIMEOUT_MS)) {
     return { url: mdnsHost, method: 'mdns' };
@@ -107,7 +127,7 @@ export async function discoverSunscan({ port = DEFAULT_SUNSCAN_PORT, onProgress,
     return null;
   }
 
-  // 2. Sweep the phone's own /24 subnet.
+  // 3. Sweep the phone's own /24 subnet.
   let ip;
   try {
     ip = await Network.getIpAddressAsync();
