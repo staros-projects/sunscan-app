@@ -2,8 +2,9 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
-import Ionicons from '@expo/vector-icons/Ionicons';
-import md5 from 'md5';
+import Ionicons from '@expo/vector-icons/Ionicons'
+import IconButton from '../components/IconButton';
+import PressableScale from '../components/PressableScale';
 
 // Set up NativeWind for styling
 NativeWindStyleSheet.setOutput({
@@ -12,6 +13,7 @@ NativeWindStyleSheet.setOutput({
 
 import { Image } from 'expo-image';
 import AppContext from '../components/AppContext';
+import useScanProcess from '../utils/useScanProcess';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -58,28 +60,29 @@ export default function PictureScreen({ route, navigation }) {
   // Function to download the current image
   const download = async () => {
     setMessage(t('common:downloading')+'...');
-
-      const success =await downloadSunscanImage(currentImage[1], 'jpeg')
- 
-      if (success) {
-        setMessage(t('common:downloaded')+' !');
-      setTimeout(() => setMessage(''), 1500);
-      }
-      else {
-        setMessage('');
-      }
+    const success = await downloadSunscanImage(currentImage[1], 'jpeg');
+    if (success) {
+      setMessage(t('common:downloaded')+' !');
+    } else {
+      setMessage(t('common:downloadError'));
+    }
+    setTimeout(() => setMessage(''), 2000);
   }
 
-  const [isStarted, setIsStarted] = useState(false);
   const [dopcont, setDopCont] = useState(true);
   const [autocrop, setAutoCrop] = useState(true);
-  const [scanStatus, setScanStatus] = useState(scan?.status);
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState("");
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [tag, setTag] = useState("");
-  const [subscribe, unsubscribe] = useContext(WebSocketContext)
   const [avalaiblePlanispheres, setAvalaiblePlanispheres] = useState([]);
+
+  const { isStarted, percent, step, errorKey, startProcess, refreshStatus } = useScanProcess(scan, {
+    onCompleted: () => {
+      setDisplayProcessScan(false);
+      getScanDetails(scan);
+    },
+  });
 
   // Function to fetch scans from the API
   async function getScanDetails(scan) {
@@ -128,7 +131,7 @@ export default function PictureScreen({ route, navigation }) {
   }
 
   // Function to process the scan
-  async function processScan(options) {
+  function processScan(options) {
     const {
       dopplerShift,
       continuumShift,
@@ -142,47 +145,22 @@ export default function PictureScreen({ route, navigation }) {
       processDoppler
     } = options;
 
-    try {
-      const response = await fetch(`http://${myContext.apiURL}/sunscan/scan/process/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filename: scan.ser,
-          dopcont: true,
-          autocrop: true,
-          autocrop_size: 1100,
-          noisereduction: noiseReduction,
-          doppler_shift: dopplerShift,
-          continuum_shift: continuumShift,
-          cont_sharpen_level: continuumSharpenLevel,
-          surface_sharpen_level: surfaceSharpenLevel,
-          pro_sharpen_level: protusSharpenLevel,
-          offset,
-          observer: myContext.showWatermark ? myContext.observer : " ",
-          advanced: advancedMode,
-          doppler_color: dopplerColor,
-          process_doppler: processDoppler
-        }),
-      });
-
-      const json = await response.json();
-      setIsStarted(true);
-
-      const key = md5(scan.ser);
-      console.log("subscribe to", "scan_process_" + key);
-
-      subscribe("scan_process_" + key, (message) => {
-        setIsStarted(false);
-        setDisplayProcessScan(false);
-        setScanStatus(message[1]);
-        unsubscribe("scan_process_" + key);
-        getScanDetails(scan);
-      });
-    } catch (error) {
-      console.error("Error during scan processing:", error);
-    }
+    startProcess({
+      dopcont: true,
+      autocrop: true,
+      autocrop_size: 1100,
+      noisereduction: noiseReduction,
+      doppler_shift: dopplerShift,
+      continuum_shift: continuumShift,
+      cont_sharpen_level: continuumSharpenLevel,
+      surface_sharpen_level: surfaceSharpenLevel,
+      pro_sharpen_level: protusSharpenLevel,
+      offset,
+      observer: myContext.showWatermark ? myContext.observer : " ",
+      advanced: advancedMode,
+      doppler_color: dopplerColor,
+      process_doppler: processDoppler
+    });
   }
 
 
@@ -191,11 +169,14 @@ export default function PictureScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       setMessage('');
-      setIsStarted(false);
       setImages([]);
       setcurrentImage([]);
       if (scan) {
        getScanDetails(scan);
+       // The screen may be opened while the box is already busy with this scan,
+       // for instance after the app was killed: the websocket alone would only
+       // tell us on its next reconnection.
+       refreshStatus();
       }
 
     }, [scan]));
@@ -320,7 +301,7 @@ export default function PictureScreen({ route, navigation }) {
     <View className="flex flex-col bg-black">
         {/* Back button */}
         <View className="absolute left-0 z-50 p-4">
-          <Pressable className="" onPress={() => navigation.navigate('List')}><Ionicons name="chevron-back" size={28} color="white" /></Pressable>
+          <IconButton name="chevron-back" size={24} onPress={() => navigation.navigate('List')} />
         </View>
       
       {/* Message display */}
@@ -338,21 +319,27 @@ export default function PictureScreen({ route, navigation }) {
               <View className="w-5/6" style={{ height: height }}>
 
               {/* Action buttons */}
-              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col" >
-                <Pressable className="" onPress={() => {setDisplayInfo(!displayInfo)}}><Ionicons name="information-circle-outline" size={28} color="white" /></Pressable>
-                {images.length > 1 && <Pressable className="" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])}><Ionicons name="expand" size={28} color="white" /></Pressable>}  
-                {(images.length > 1 || myContext.debug) && <Pressable className="" onPress={() => {setDisplayProcessScan(!displayProcessScan)}}><Ionicons name="construct" size={28} color="white" /></Pressable>}
-                {/* {images.length > 1 && <Pressable className="" onPress={() => openShareDialogAsync()}><Ionicons name="share-social" size={28} color="white" /></Pressable>} */}
-                {images.length > 1 && <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>}  
-                <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
-              </View>}
+              {/* The column itself always renders so the line tag stays reachable
+                  offline; only the SUNSCAN-dependent actions are conditional.
+                  Conditions are repeated per button rather than wrapped in a
+                  fragment, which would break NativeWind's space-y-* spacing. */}
+              <View className="absolute right-0 z-50" style={{height:'100%', marginRight:12, justifyContent:'center', alignItems:'center', gap:10}}>
+                {myContext.sunscanIsConnected && <IconButton name="information-circle-outline" onPress={() => {setDisplayInfo(!displayInfo)}} />}
+                {myContext.sunscanIsConnected && images.length > 1 && <IconButton name="expand" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])} />}
+                {myContext.sunscanIsConnected && (images.length > 1 || myContext.debug) && <IconButton name="construct" onPress={() => {setDisplayProcessScan(!displayProcessScan)}} />}
+                {myContext.sunscanIsConnected && images.length > 1 && <IconButton name="download" onPress={() => download()} />}
+                {myContext.sunscanIsConnected && <IconButton name="trash" onPress={deleteButtonAlert} />}
+                <LineSelector tag={tag} path={scan.path} />
+              </View>
 
                 {currentPlanisphere && <View className="absolute left-0 bottom-0 justify-end  m-4 align-center z-50 flex space-y-4 flex-col">
-                  <Pressable className="" onPress={() => myContext.setDisplayFullScreen3d(currentPlanisphere)}><MaterialIcons name="3d-rotation" size={34} color="white" /></Pressable>
+                  <IconButton IconSet={MaterialIcons} name="3d-rotation" size={26} onPress={() => myContext.setDisplayFullScreen3d(currentPlanisphere)} />
                 </View>}
               
                     {/* Image zoom component */}
+                    {/* key : remonte le Zoomable (et ses gesture handlers) au changement d'image et à l'ouverture/fermeture d'un overlay plein écran */}
                     <Zoomable
+                    key={`${currentImage[1]}-${myContext.displayFullScreen3d === '' && myContext.displayFullScreenImage === ''}`}
                     isSingleTapEnabled
                     isDoubleTapEnabled
                   >
@@ -365,7 +352,7 @@ export default function PictureScreen({ route, navigation }) {
                 </Zoomable>
                  {/* Image name display */}
                  {/* <Text className="absolute z-50 bottom-0 text-white text-center mb-2 ml-2" style={{ fontSize: 10 }}>{currentImage[0]}</Text>  */}
-                 <View className="absolute z-40 pt-4" style={{right:0, bottom:10}}><View style={{width:200}}><LineSelector tag={tag} path={scan.path}  /></View></View>
+                 
               </View>
               {/* Thumbnail scrollview */}
               <View style={{ width:74 }} className="mx-auto bg-transparent align-center   text-center flex  " >
@@ -373,11 +360,11 @@ export default function PictureScreen({ route, navigation }) {
                 {images && images.map((i) => {
                   return (
                     <View key={i[1]}  className=" ">
-                      <Pressable onPress={() => setcurrentImage(i)}>
-                        <View className={currentImage[1] == i[1] ? "flex flex-col justify-center items-center z-10 border border-white mt-1 rounded-lg bg-black":"bg-black rounded-lg flex flex-col justify-center items-center z-10 border border-zinc-800 mt-1"}>
+                      <PressableScale scaleTo={0.92} onPress={() => setcurrentImage(i)}>
+                        <View className="flex flex-col justify-center items-center z-10 overflow-hidden" style={currentImage[1] == i[1] ? {borderWidth:2, borderColor:'#ffffff', backgroundColor:'#000', borderRadius:12, marginTop:6} : {borderWidth:1, borderColor:'rgba(255,255,255,0.10)', backgroundColor:'#000', borderRadius:12, marginTop:6}}>
                           <Image
                             style={{ height: 70, width:70 }}
-                            className="z-0 rounded-lg"
+                            className="z-0"
                             source={i[1]}
                             contentFit="contain"
                             transition={200}
@@ -386,7 +373,7 @@ export default function PictureScreen({ route, navigation }) {
                         </View>
 
 
-                      </Pressable>
+                      </PressableScale>
                     </View>)
                 })
 
@@ -401,7 +388,7 @@ export default function PictureScreen({ route, navigation }) {
      
 
             {/* Process scan and scan info components */}
-            <ProcessScan processMethod={processScan} isStarted={isStarted} setIsStarted={setIsStarted}  isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
+            <ProcessScan processMethod={processScan} isStarted={isStarted} percent={percent} step={step} errorKey={errorKey} isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
             
 
 

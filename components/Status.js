@@ -1,12 +1,37 @@
 import { View, Pressable, Text, Alert } from 'react-native';
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  cancelAnimation,
+  Easing,
+} from 'react-native-reanimated';
+import PulseDot from './PulseDot';
 import Loader from './Loader';
 import AppContext from './AppContext';
 import Ionicons from '@expo/vector-icons/Ionicons'
 import Fontisto from '@expo/vector-icons/Fontisto'
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import firmareIsUpToDate from '../utils/Helpers';
+import firmareIsUpToDate, { setSunScanTime } from '../utils/Helpers';
+import PressableScale from './PressableScale';
+import { colors, panelStyle, roundButton, warningChip, PANEL_WIDTH } from './theme';
+
+// Below this, the panel nudges the user to clean up. ScanScreen keeps its own,
+// harder limit (1.2 GB) where it actually refuses to start a scan.
+const LOW_STORAGE_GB = 5;
+// Offline mode has no device to query : show the warning with a plausible
+// figure, so the state can be seen without waiting for a full SD card.
+const DEMO_FREE = '3.4G';
+// Tighter than the default round button : it sits beside a line of text
+const REFRESH_BUTTON = { width: 24, height: 24, borderRadius: 12 };
+
+// One fixed box for the connect / disconnect / loading states, wide enough to
+// hold the longest translated label ("Déconnecter la caméra") on a single line,
+// so the panel keeps the same shape whichever state it is in.
+const CONNECT_BUTTON = { width: 186, height: 48 };
 
 
 
@@ -53,7 +78,26 @@ export default function Status({isFocused})  {
   const [refresh, setRefresh] = useState(false);
   const [stats, setStats] = useState(null);
   const myContext = useContext(AppContext);
-  
+
+  // Refresh button spins while stats are being fetched.
+  const spin = useSharedValue(0);
+  useEffect(() => {
+    if (refresh) {
+      spin.value = 0;
+      spin.value = withRepeat(withTiming(1, {duration: 800, easing: Easing.linear}), -1, false);
+    } else {
+      cancelAnimation(spin);
+      // Finish the turn forward : winding back to 0 read as a rewind.
+      spin.value = withTiming(Math.ceil(spin.value), {duration: 250, easing: Easing.out(Easing.cubic)});
+    }
+    return () => cancelAnimation(spin);
+  }, [refresh]);
+  // The rotation carries the round surface, not the glyph : an icon Text box is
+  // taller than its glyph, so spinning it alone pivots off centre and wobbles.
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{rotate: `${spin.value * 360}deg`}],
+  }));
+
   // Function to update camera status
   async function updateCamera(type) {
     setIsLoading(true);
@@ -72,7 +116,7 @@ export default function Status({isFocused})  {
   // Function to connect the camera
   async function connectCamera() {
     updateCamera(myContext.camera+"/connect")
-    setSunScanTime()
+    setSunScanTime(myContext.apiURL)
   }
 
   // Function to disconnect the camera
@@ -82,6 +126,7 @@ export default function Status({isFocused})  {
 
   // Function to fetch and update stats
   async function getStats() {
+    setRefresh(true);
     fetchDataWithTimeout('http://'+myContext.apiURL+"/sunscan/stats")
       .then(json => {
         if(json) {
@@ -95,33 +140,9 @@ export default function Status({isFocused})  {
           checkFirmware();
         }
       })
+      .finally(() => setRefresh(false))
 
   }
-
-  // Function to set SunScan time with timezone
-  async function setSunScanTime() {
-    const current_ts = Math.floor(Date.now() / 1000);
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Get current timezone
-    
-    fetch('http://'+myContext.apiURL+"/sunscan/set-time/",  {
-      method: "POST", 
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        unixtime: current_ts.toString(),
-        timezone: timezone
-      }),
-    })
-    .then(response => response.json())
-    .then(json => {
-      console.log('set time ok', current_ts, 'timezone:', timezone);
-    })
-    .catch(error => {
-      console.error(error);
-    });
-  }
-
 
   // Function to get camera status
   async function getCameraStatus() {
@@ -148,17 +169,28 @@ export default function Status({isFocused})  {
         getStats();
   }, [isFocused, myContext.backendApiVersion, myContext.sunscanIsConnected]));
 
+  // free_raw is a byte count, like the threshold ScanScreen uses
+  const lowStorage = myContext.demo || (stats && parseFloat(stats.free_raw) / 1e9 < LOW_STORAGE_GB);
+  // in demo the warning is forced, so the figure has to match it
+  const freeLabel = myContext.demo ? DEMO_FREE : stats?.free;
+
   // Render the component
   return (
-    <View className="rounded-lg bg-zinc-700/80 p-4 flex flex-row space-x-4 items-center align-center"  >
-      {/* Status information */}
-      <View className="">
+    <View className="rounded-2xl bg-zinc-700/80 px-4 py-3 flex flex-row space-x-4 items-center align-center" style={[panelStyle, { minWidth: PANEL_WIDTH }]}  >
+      {/* Status information. Takes the slack of the panel so the connection
+          button below pins to the right edge instead of floating wherever the
+          longest line of text happens to end. */}
+      <View className="flex-1">
         {/* SunScan status and refresh button */}
         <View className="flex flex-row space-x-1 items-center mb-1">
-            <Pressable onPress={getStats}><Text className="text-white font-bold ">SUNSCAN</Text></Pressable>
-            <Pressable onPress={getStats}>{refresh ? <Ionicons name="ellipsis-horizontal" size={14} color="white" />:<Ionicons name="refresh-sharp" size={14} color="white" />}</Pressable> 
+            <Pressable onPress={getStats}><Text className="text-white font-bold" style={{letterSpacing:1.5}}>SUNSCAN</Text></Pressable>
+            <PressableScale onPress={getStats} hitSlop={10} scaleTo={0.88}>
+              <Animated.View style={[roundButton, REFRESH_BUTTON, spinStyle]}>
+                <Ionicons name="refresh-sharp" size={15} color="white" style={{ lineHeight: 15, includeFontPadding: false }} />
+              </Animated.View>
+            </PressableScale>
             {stats && myContext.sunscanIsConnected && <View className="mx-2 flex flex-row space-x-1 items-center">
-              {stats?.battery_power_plugged && <Ionicons name="battery-charging" size={18} color="white" />}
+              {!!stats?.battery_power_plugged && <Ionicons name="battery-charging" size={18} color="white" />}
               {!stats?.battery_power_plugged && stats?.battery < 10 && <Fontisto name="battery-empty" size={18} color="white"  />}
               {!stats?.battery_power_plugged && stats?.battery >= 10 && stats?.battery <45 && <Fontisto name="battery-quarter" size={18} color="white"  />}
               {!stats?.battery_power_plugged && stats?.battery >= 45 &&  stats?.battery <75 && <Fontisto name="battery-half" size={18} color="white"  />}
@@ -167,21 +199,47 @@ export default function Status({isFocused})  {
               <Text className="text-white text-xs">{stats?.battery.toFixed(0)}%</Text>
              
               </View>}
-              { myContext.sunscanIsConnected ? (<View className="flex flex-row space-x-2 items-center"><Ionicons name="wifi" size={18} color="white"  /><View className="bg-emerald-600 h-3 w-3 rounded-full  text-xs text-white text-center"></View></View>): 
-                (<View className="flex flex-row items-center space-x-2"><View className="bg-red-600  rounded-full  h-3 w-3 text-xs text-white text-center"></View></View>)}
+              {/* Explicit gap: the pulse halo expands to ~1.9x the dot, so a tighter
+                  spacing was eaten by it and the dot looked glued to the wifi icon. */}
+              { myContext.sunscanIsConnected ? (<View className="flex flex-row items-center" style={{gap:14}}><Ionicons name="wifi" size={18} color="white"  /><PulseDot color="#10b981" pulsing /></View>):
+                (<View className="flex flex-row items-center space-x-2"><PulseDot color="#ef4444" /></View>)}
                
             </View>
-            {stats && <Text className="text-slate-400 text-xs">{t('common:storage')} : {stats?.free} {t('common:freeStorage')}</Text>}
+            {(stats || myContext.demo) && (lowStorage ? (
+              <View className="mt-1 px-2 py-1 flex flex-col" style={[warningChip, { maxWidth: 260 }]}>
+                <View className="flex flex-row items-center space-x-1">
+                  <Ionicons name="warning-outline" size={13} color={colors.warning} />
+                  <Text className="text-amber-300 text-xs font-bold">{t('common:storage')} : {freeLabel} {t('common:freeStorage')}</Text>
+                </View>
+                <Text className="text-amber-200/80 text-xs">{t('common:storageCleanupHint')}</Text>
+              </View>
+            ) : (
+              <Text className="text-slate-400 text-xs">{t('common:storage')} : {stats?.free} {t('common:freeStorage')}</Text>
+            ))}
 
             {myContext.debug && <Text className="text-slate-400 text-xs mt-1">{t('common:ipAddress')} : {myContext?.apiURL}</Text>}
             {myContext.debug && <Text className="text-slate-400 text-xs">{t('common:backendApiVersion')} : v{stats?.backend_api_version}</Text>}
           </View>
 
-          {/* Camera connection button */}
-          {(isLoading || !myContext.camera)  && <View className="bg-zinc-600 p-2 rounded-md h-12 text-white text-center flex justify-center items-center" ><Loader type="white" /></View>}
-          {myContext.camera && !isLoading ? (!myContext.cameraIsConnected ? 
-          (<Pressable className="bg-zinc-600 p-2 rounded-md h-12 text-white text-center flex flex-row items-center space-x-2" disabled={isLoading} onPress={connectCamera} ><Ionicons name="power" size={14} color="white"  /><Text className="mx-auto text-white text-xs ">{t('common:connectCamera')}</Text></Pressable>) :
-          (<Pressable className="bg-zinc-600 p-2 rounded-md h-12 text-white text-center flex flex-row items-center space-x-2" disabled={isLoading} onPress={disconnectCamera} ><Ionicons name="power" size={18} color="white"  /><Text className="mx-auto text-white text-xs">{t('common:disconnectCamera')}</Text></Pressable>)):('')}
+          {/* Camera connection button. The three states (loading, connect,
+              disconnect) share one box so the panel does not reflow as the
+              camera comes up, and the icon keeps one size across them. */}
+          {(isLoading || !myContext.camera) &&
+            <View className="bg-zinc-600 border border-white/10 rounded-xl px-3 flex flex-row justify-center items-center" style={CONNECT_BUTTON}>
+              <Loader type="white" />
+            </View>}
+          {!!myContext.camera && !isLoading && (
+            <PressableScale
+              className="bg-zinc-600 border border-white/10 rounded-xl px-3 flex flex-row justify-center items-center"
+              style={CONNECT_BUTTON}
+              disabled={isLoading}
+              onPress={myContext.cameraIsConnected ? disconnectCamera : connectCamera}>
+              <Ionicons name="power" size={16} color="white" />
+              <Text className="text-white text-xs ml-2" numberOfLines={1}>
+                {t(myContext.cameraIsConnected ? 'common:disconnectCamera' : 'common:connectCamera')}
+              </Text>
+            </PressableScale>
+          )}
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import ListScreen from './screens/ListScreen';
 import PictureScreen from './screens/PictureScreen';
 import ScanScreen from './screens/ScanScreen';
 
- 
+
 NativeWindStyleSheet.setOutput({
   default: "native",
 });
@@ -31,19 +31,51 @@ import i18next from 'i18next';
 import Animated from 'react-native-reanimated';
 import StackedPictureScreen from './screens/StackedPictureScreen';
 import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
-import { set } from 'lodash';
 
 // ...
 
 const createMyNavigator = createNavigatorFactory(TabNavigator);
 const My = createMyNavigator();
 
-export default function App() {
-  const defaultApiURL_hotspot = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '10.42.0.1:8000';
+// Default URL when the SUNSCAN runs in hotspot mode (it creates its own wifi network)
+const DEFAULT_HOTSPOT_API_URL = process.env.EXPO_PUBLIC_SUNSCAN_API_URL || '10.42.0.1:8000';
 
+const STORAGE_KEYS = {
+  language: 'SUNSCAN_APP::LANGUAGE',
+  observer: 'SUNSCAN_APP::OBSERVER',
+  dopplerColor: 'SUNSCAN_APP::DOPPLER_COLOR',
+  processDoppler: 'SUNSCAN_APP::PROCESS_DOPPLER',
+  location: 'SUNSCAN_APP::LOCATION',
+  demo: 'SUNSCAN_APP::DEMO',
+  tooltip: 'SUNSCAN_APP::TOOLTIP',
+  debug: 'SUNSCAN_APP::DEBUG',
+  watermark: 'SUNSCAN_APP::WATERMARK',
+  stackingOptions: 'SUNSCAN_APP::STACKING_OPTIONS',
+  screenOrientation: 'SUNSCAN_APP::SCREEN_ORIENTATION',
+  hotSpotMode: 'SUNSCAN_APP::HOTSPOT_MODE',
+  customApiURL: 'SUNSCAN_APP::CUSTOM_API_URL',
+};
+
+const DEFAULT_STACKING_OPTIONS = {patchSize:32, stepSize:10, intensityThreshold:0};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+});
+
+Animated.addWhitelistedNativeProps({ text: true });
+
+export default function App() {
   const [sunscanIsConnected, setSunscanIsConnected] = useState(false);
   const [cameraIsConnected, setCameraIsConnected] = useState(false);
   const [hotSpotModeVal, setHotSpotMode] = useState(true);
+  const [customApiURLVal, setCustomApiURL] = useState("");
   const [showWatermark, setShowWatermark] = useState(true);
   const [debugVal, setDebug] = useState(false);
   const [demoVal, setDemo] = useState(false);
@@ -51,45 +83,24 @@ export default function App() {
   const [camera, setCamera] = useState("");
   const [observerVal, setObserver] = useState("");
   const [locationData, setLocationData] = useState({});
-  const [apiURLVal, setApiURL] = useState(defaultApiURL_hotspot);
   const [backendApiVersion, setBackendApiVersion] = useState("");
   const [displayFullScreenImage, setDisplayFullScreenImage] = useState("");
   const [displayFullScreen3d, setDisplayFullScreen3d] = useState("");
   const [freeStorage, setFreeStorage] = useState(0);
-  const [stackingOptions, setStackingOptions] = useState({patchSize:32, stepSize:10, intensityThreshold:0});
+  const [stackingOptions, setStackingOptions] = useState(DEFAULT_STACKING_OPTIONS);
   const [dopplerColor, setDopplerColor] = useState(1);
   const [processDoppler, setProcessDoppler] = useState(false);
   const [screenOrientationVal, setScreenOrientation] = useState('AUTO'); // Par défaut: Auto
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  const toggleShowWaterMark = () => {
-    setShowWatermark(!showWatermark);
-  };
+  // Effective API URL: hotspot mode uses the default SUNSCAN wifi address,
+  // otherwise the user-defined IP (same network as the phone)
+  const apiURLVal = hotSpotModeVal ? DEFAULT_HOTSPOT_API_URL : (customApiURLVal || DEFAULT_HOTSPOT_API_URL);
 
-  const toggleDemo = () => {
-    setDemo(!demoVal);
-  };
-  const toggleTooltip = () => {
-    setTooltip(!tooltipVal);
-  };
-  const toggleDebug= () => {
-    setDebug(!debugVal);
-  };
-
-  useEffect(()=>{
-    const loadLanguage = async ()=>{
-      try{
-        const storedLanguage = await AsyncStorage.getItem('SUNSCAN_APP::LANGUAGE');
-        if (storedLanguage) {
-          console.log('language', storedLanguage)
-          i18next.changeLanguage(storedLanguage);
-        }
-      }catch(e){
-        console.log(e)
-      }
-    
-    }
-    loadLanguage()
-    },[])
+  const toggleShowWaterMark = useCallback(() => setShowWatermark(v => !v), []);
+  const toggleDemo = useCallback(() => setDemo(v => !v), []);
+  const toggleTooltip = useCallback(() => setTooltip(v => !v), []);
+  const toggleDebug = useCallback(() => setDebug(v => !v), []);
 
   // Gestion de l'orientation de l'écran
   useEffect(() => {
@@ -110,88 +121,111 @@ export default function App() {
     lockOrientation();
   }, [screenOrientationVal]);
 
+  // Load all persisted settings in a single storage round-trip
   useEffect(() => {
-    AsyncStorage.getItem('SUNSCAN_APP::OBSERVER').then((observer) => {
-      if (observer) {
-        setObserver(observer);
+    const loadSettings = async () => {
+      try {
+        const entries = await AsyncStorage.multiGet(Object.values(STORAGE_KEYS));
+        const stored = Object.fromEntries(entries);
+
+        const language = stored[STORAGE_KEYS.language];
+        if (language) {
+          i18next.changeLanguage(language);
+        }
+        const observer = stored[STORAGE_KEYS.observer];
+        if (observer) {
+          setObserver(observer);
+        }
+        const dopplerC = stored[STORAGE_KEYS.dopplerColor];
+        if (dopplerC) {
+          setDopplerColor(dopplerC);
+        }
+        const processD = stored[STORAGE_KEYS.processDoppler];
+        if (processD) {
+          setProcessDoppler(processD == '1');
+        }
+        const location = stored[STORAGE_KEYS.location];
+        if (location) {
+          setLocationData(JSON.parse(location));
+        }
+        const demo = stored[STORAGE_KEYS.demo];
+        if (demo) {
+          setDemo(demo == '1');
+        }
+        const tooltip = stored[STORAGE_KEYS.tooltip];
+        if (tooltip) {
+          setTooltip(tooltip == '1');
+        }
+        const debug = stored[STORAGE_KEYS.debug];
+        if (debug) {
+          setDebug(debug == '1');
+        }
+        const watermark = stored[STORAGE_KEYS.watermark];
+        if (watermark) {
+          setShowWatermark(watermark == '1');
+        }
+        const stackingOpts = stored[STORAGE_KEYS.stackingOptions];
+        if (stackingOpts) {
+          setStackingOptions(JSON.parse(stackingOpts));
+        }
+        const orientation = stored[STORAGE_KEYS.screenOrientation];
+        if (orientation) {
+          setScreenOrientation(orientation);
+        }
+        const hotSpot = stored[STORAGE_KEYS.hotSpotMode];
+        if (hotSpot) {
+          setHotSpotMode(hotSpot == '1');
+        }
+        const customApiURL = stored[STORAGE_KEYS.customApiURL];
+        if (customApiURL) {
+          setCustomApiURL(customApiURL);
+        }
+      } catch (e) {
+        console.log('Error loading settings', e);
       }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::DOPPLER_COLOR').then((c) => {
-      if (c) {
-        setDopplerColor(c);
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::PROCESS_DOPPLER').then((c) => {
-      if (c) {
-        setProcessDoppler(c == '1');
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::LOCATION').then((location) => {
-      if (location) {
-        setLocationData(JSON.parse(location));
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::DEMO').then((d) => {
-      if(d)  {
-        setDemo(d == '1');
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::TOOLTIP').then((d) => {
-      if(d)  {
-        setTooltip(d == '1');
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::DEBUG').then((d) => {
-      if(d)  {
-        setDebug(d == '1');
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::WATERMARK').then((watermark) => {
-      if(watermark)  {
-        setShowWatermark(watermark == '1');
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::STACKING_OPTIONS').then((stackingOptions) => {
-      if(stackingOptions)  {
-        setStackingOptions(JSON.parse(stackingOptions));
-      }
-    });
-    AsyncStorage.getItem('SUNSCAN_APP::SCREEN_ORIENTATION').then((orientation) => {
-      if(orientation)  {
-        setScreenOrientation(orientation);
-      }
-    });
+      setSettingsLoaded(true);
+    };
+    loadSettings();
   }, []);
 
+  // Persist settings in a single batched write (only once initial load is done,
+  // to avoid overwriting stored values with defaults)
   useEffect(() => {
-    if (observerVal !== "") {
-      AsyncStorage.setItem('SUNSCAN_APP::OBSERVER', `${observerVal}`);
+    if (!settingsLoaded) {
+      return;
     }
-   
-    AsyncStorage.setItem('SUNSCAN_APP::LOCATION', JSON.stringify(locationData));
-    AsyncStorage.setItem('SUNSCAN_APP::DEMO', `${demoVal?'1':'0'}`);
-    AsyncStorage.setItem('SUNSCAN_APP::TOOLTIP', `${tooltipVal?'1':'0'}`);
-    AsyncStorage.setItem('SUNSCAN_APP::DEBUG', `${debugVal?'1':'0'}`);
-    AsyncStorage.setItem('SUNSCAN_APP::WATERMARK', `${showWatermark?'1':'0'}`);
-    AsyncStorage.setItem('SUNSCAN_APP::STACKING_OPTIONS', JSON.stringify(stackingOptions));
-    AsyncStorage.setItem('SUNSCAN_APP::DOPPLER_COLOR', `${dopplerColor}`);
-    AsyncStorage.setItem('SUNSCAN_APP::PROCESS_DOPPLER', `${processDoppler?'1':'0'}`);
-    AsyncStorage.setItem('SUNSCAN_APP::SCREEN_ORIENTATION', screenOrientationVal);
+    const pairs = [
+      [STORAGE_KEYS.location, JSON.stringify(locationData)],
+      [STORAGE_KEYS.demo, demoVal?'1':'0'],
+      [STORAGE_KEYS.tooltip, tooltipVal?'1':'0'],
+      [STORAGE_KEYS.debug, debugVal?'1':'0'],
+      [STORAGE_KEYS.watermark, showWatermark?'1':'0'],
+      [STORAGE_KEYS.stackingOptions, JSON.stringify(stackingOptions)],
+      [STORAGE_KEYS.dopplerColor, `${dopplerColor}`],
+      [STORAGE_KEYS.processDoppler, processDoppler?'1':'0'],
+      [STORAGE_KEYS.screenOrientation, screenOrientationVal],
+      [STORAGE_KEYS.hotSpotMode, hotSpotModeVal?'1':'0'],
+      [STORAGE_KEYS.customApiURL, customApiURLVal],
+    ];
+    if (observerVal !== "") {
+      pairs.push([STORAGE_KEYS.observer, `${observerVal}`]);
+    }
+    AsyncStorage.multiSet(pairs).catch((e) => console.log('Error saving settings', e));
+  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
 
-    
-  }, [observerVal, hotSpotModeVal, apiURLVal, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal]);
-  
-  const userSettings = {
-    sunscanIsConnected:sunscanIsConnected,
+  // Memoized so consumers only re-render when a value actually changes
+  const userSettings = useMemo(() => ({
+    sunscanIsConnected,
     setSunscanIsConnected,
-    cameraIsConnected, cameraIsConnected,
+    cameraIsConnected,
     setCameraIsConnected,
-    camera, 
+    camera,
     setCamera,
     demo:demoVal,
     debug:debugVal,
     tooltip:tooltipVal,
     hotSpotMode:hotSpotModeVal,
+    setHotSpotMode,
     observer:observerVal,
     locationData,
     setLocationData,
@@ -206,8 +240,10 @@ export default function App() {
     toggleShowWaterMark,
     toggleDebug,
     toggleDemo,
-    toggleTooltip, 
+    toggleTooltip,
     apiURL:apiURLVal,
+    customApiURL:customApiURLVal,
+    setCustomApiURL,
     displayFullScreenImage,
     setDisplayFullScreenImage,
     displayFullScreen3d,
@@ -218,31 +254,24 @@ export default function App() {
     setStackingOptions,
     screenOrientation: screenOrientationVal,
     setScreenOrientation
-  };
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#000',
-    },
-    safeArea: {
-      flex: 1,
-      backgroundColor: '#000',
-    },
-  });
-
-  Animated.addWhitelistedNativeProps({ text: true });
+  }), [
+    sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, tooltipVal,
+    hotSpotModeVal, observerVal, locationData, showWatermark, dopplerColor,
+    processDoppler, backendApiVersion, apiURLVal, customApiURLVal,
+    displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
+    screenOrientationVal, toggleShowWaterMark, toggleDebug, toggleDemo, toggleTooltip
+  ]);
 
   return (
     <GestureHandlerRootView style={styles.container}>
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
-          
+
         <NavigationContainer>
-            <My.Navigator  
+            <My.Navigator
                 screenOptions={{
-                    headerShown: false, 
+                    headerShown: false,
                       }}>
               <My.Screen
                 name="Home"
@@ -278,5 +307,5 @@ export default function App() {
     </GestureHandlerRootView>
   );
 
-  
+
 }

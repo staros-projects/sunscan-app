@@ -1,11 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 
-import { Platform } from 'react-native';
-
 import * as MediaLibrary from 'expo-media-library';
 
 
-export const backend_current_version = '1.4.4';
+export const backend_current_version = '2.0.0';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date
@@ -15,76 +13,84 @@ export default function  firmareIsUpToDate(myContext) {
 }
 
 
-async function saveAndroidFile(source, type) {
-    console.log('Downloading for Android:', source, type);
-
+// Push the phone clock and timezone to the SUNSCAN. Shared by every place that
+// connects the camera, so a scan is never timestamped from the epoch.
+export async function setSunScanTime(apiURL) {
     try {
-        // 1. Télécharger le fichier dans le cache
-        const fileName = `sunscan-image-${Date.now()}.${type}`;
-        const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.downloadAsync(source, filePath);
-        console.log('File downloaded at:', filePath);
-
-        // 2. Demander la permission MEDIA_LIBRARY (juste pour sauvegarder, pas pour lire)
-        const { status } = await MediaLibrary.requestPermissionsAsync(false); // false = writeOnly
-        if (status !== 'granted') {
-            console.log('Permission denied');
-            return false;
-        }
-
-        // 3. Créer l'asset (sauvegarde l'image dans la galerie)
-        const asset = await MediaLibrary.createAssetAsync(filePath);
-        console.log('Asset created:', asset.uri);
-
-        // 4. Optionnel : créer/ajouter à un album "SUNSCAN"
-        try {
-            const album = await MediaLibrary.getAlbumAsync('SUNSCAN');
-            if (album) {
-                await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-            } else {
-                await MediaLibrary.createAlbumAsync('SUNSCAN', asset, false);
-            }
-            console.log('Asset added to SUNSCAN album');
-        } catch (albumError) {
-            console.log('Could not add to album:', albumError.message);
-            // L'image est quand même sauvegardée dans la galerie principale
-        }
-
-        // 5. Nettoyer le cache
-        await FileSystem.deleteAsync(filePath, { idempotent: true });
-
-        return true;
-
+        const response = await fetch('http://' + apiURL + '/sunscan/set-time/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                unixtime: Math.floor(Date.now() / 1000).toString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }),
+        });
+        return await response.json();
     } catch (error) {
-        console.error('Error saving file on Android:', error);
-        console.error('Error details:', error.message);
-        return false;
+        console.error(error);
     }
 }
 
-async function saveIosFile(source, type) {
-    const permissionResponse = await MediaLibrary.requestPermissionsAsync();
-    if (permissionResponse.status !== 'granted') return false;
 
-    try {
-        const fileName = `sunscan-image-${Date.now()}.${type}`;
-        const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.downloadAsync(source, filePath);
+const SUNSCAN_ALBUM = 'SUNSCAN';
 
-        const asset = await MediaLibrary.createAssetAsync(filePath);
-        let album = await MediaLibrary.getAlbumAsync('Download');
-        if (!album) {
-            await MediaLibrary.createAlbumAsync('Download', asset, false);
-        } else {
-            await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        }
+// Request media library access only if not already granted
+// (avoids re-prompting and handles the "denied forever" case cleanly)
+async function ensureMediaPermission() {
+    const current = await MediaLibrary.getPermissionsAsync();
+    if (current.granted) {
         return true;
-    } catch (error) {
-        console.error('Error saving file on iOS:', error);
+    }
+    if (!current.canAskAgain) {
+        console.log('Media library permission denied permanently');
         return false;
     }
+    const requested = await MediaLibrary.requestPermissionsAsync();
+    return requested.granted;
 }
 
 export async function downloadSunscanImage(source, type) {
-    return Platform.OS === 'android' ? await saveAndroidFile(source, type) : await saveIosFile(source, type);
+    if (!source) {
+        console.log('downloadSunscanImage: no source provided');
+        return false;
+    }
+
+    if (!(await ensureMediaPermission())) {
+        return false;
+    }
+
+    const filePath = `${FileSystem.cacheDirectory}sunscan-image-${Date.now()}.${type}`;
+    try {
+        // downloadAsync ne lève pas d'erreur sur un statut HTTP 4xx/5xx :
+        // sans ce contrôle, le corps de la page d'erreur serait enregistré comme image
+        const result = await FileSystem.downloadAsync(source, filePath);
+        if (result.status !== 200) {
+            throw new Error(`Download failed with HTTP status ${result.status}`);
+        }
+
+        // Sauvegarde dans la galerie
+        const asset = await MediaLibrary.createAssetAsync(result.uri);
+
+        // L'ajout à l'album SUNSCAN est optionnel : à ce stade l'image est
+        // déjà dans la galerie, un échec ici ne doit pas faire échouer la sauvegarde
+        // (ex : accès "limité" sur iOS, permissions granulaires Android 13+)
+        try {
+            const album = await MediaLibrary.getAlbumAsync(SUNSCAN_ALBUM);
+            if (album) {
+                await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+            } else {
+                await MediaLibrary.createAlbumAsync(SUNSCAN_ALBUM, asset, false);
+            }
+        } catch (albumError) {
+            console.log('Could not add to album:', albumError.message);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error saving image:', error.message);
+        return false;
+    } finally {
+        // Nettoyage du fichier temporaire, y compris en cas d'échec
+        FileSystem.deleteAsync(filePath, { idempotent: true }).catch(() => {});
+    }
 }

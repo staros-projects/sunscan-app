@@ -1,7 +1,7 @@
 import { Modal, View, Text, Pressable, StyleSheet, Switch, TextInput, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Loader from '../components/Loader';
+import SunscanLoader from './SunscanLoader';
 import { t } from 'i18next';
 import react, { useContext } from 'react';
 import ReactNativeSegmentedControlTab from 'react-native-segmented-control-tab';
@@ -9,9 +9,14 @@ import { ScrollView } from 'react-native-gesture-handler';
 import CustomNumericInput from './CustomNumericInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppContext from './AppContext';
+import PressableScale from './PressableScale';
+import ProcessingSteps from './ProcessingSteps';
+import { modalBackdrop, modalCard, roundButton } from './theme';
+import { errorTranslationKey } from '../utils/useScanProcess';
+
 
 // Component for processing scans
-export default function ProcessScan({ processMethod, isStarted, setIsStarted, isVisible, onClose }) {
+export default function ProcessScan({ processMethod, isStarted, percent = null, step = null, errorKey = null, isVisible, onClose }) {
 
   const [noiseReduction, setNoiseReduction] = react.useState(false);
   const [continuumSharpenLevel, setContinuumSharpenLevel] = react.useState(2);
@@ -40,30 +45,21 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
   const handleProcess = () => {
     const options = buildProcessOptions();
+    // `isStarted` is owned by the caller's useScanProcess and flips on its own.
     processMethod(options);
-    setIsStarted(true);
   };
 
   // Styles
   const styles = StyleSheet.create({
-    centeredView: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginTop: 0,
-    },
+    centeredView: modalBackdrop,
     modalView: {
+      ...modalCard,
       margin: 20,
-      width: "60%",
-      backgroundColor: 'rgba(80,80,80,0.9)',
-      borderRadius: 20,
-      padding: 10,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
+      width: "62%",
+      maxHeight: '88%',
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 10,
     },
     title: {
       color: '#fff',
@@ -73,21 +69,24 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
 
   const stylesTab = StyleSheet.create({
     tabsContainerStyle: {
-      borderColor: '#fff',
+      borderColor: '#52525b',
     },
     tabStyle: {
-      backgroundColor: 'rgb(63 63 70)',
-      borderColor: '#888888',
+      backgroundColor: 'rgb(39 39 42)',
+      borderColor: '#52525b',
     },
     tabTextStyle: {
-      color: '#ffffff',
+      color: '#a1a1aa',
       fontSize: 12,
     },
+    // Emerald rather than a white block: same accent as every other selected
+    // state in the app, and far less glaring on a dark surface.
     activeTabStyle: {
-      backgroundColor: '#fff',
+      backgroundColor: '#059669',
+      borderColor: '#059669',
     },
     activeTabTextStyle: {
-      color: '#000'
+      color: '#fff'
     },
   });
 
@@ -99,56 +98,57 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
       <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
         <View style={styles.centeredView}>
           <View style={styles.modalView} className="flex flex-col">
-            {/* Close button */}
-            <View className="absolute top-0 right-0 z-50 mx-4 mt-4">
-              <Pressable onPress={onClose}>
-                <MaterialIcons name="close" color="#fff" size={22} />
-              </Pressable>
+            {/* Header: title on the left, close button on the right */}
+            <View className="flex flex-row items-center justify-between w-full pb-3" style={{borderBottomWidth:StyleSheet.hairlineWidth, borderBottomColor:'rgba(255,255,255,0.10)'}}>
+              <Text className="text-white font-bold" style={{fontSize:15}}>{t('common:advancedProcessing')}</Text>
+              <PressableScale scaleTo={0.88} onPress={onClose} style={roundButton}>
+                <MaterialIcons name="close" color="#fff" size={18} />
+              </PressableScale>
             </View>
-
-            {/* Title */}
-            <Text className="mt-1 text-white font-bold">{t('common:advancedProcessing')}</Text>
 
             <ScrollView className="w-full">
               {!isStarted ? (
-                <View>
-                  <View className="flex flex-row items-center">
-                    <Text className="text-white text-xs">{t('common:doppler')}</Text>
-                    <Switch
-                      trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
-                      thumbColor="#fff"
-                      value={context.processDoppler}
-                      onValueChange={context.setProcessDoppler}
-                      style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 4,
-                      }}
-                    />
-                  </View>
+                <View className="pt-3">
+                  {/* Toggles grouped in a card, label left / switch right */}
+                  <View className="rounded-xl bg-zinc-800 px-3 mb-3" style={{borderWidth:StyleSheet.hairlineWidth, borderColor:'rgba(255,255,255,0.08)'}}>
+                    <View className="flex flex-row items-center justify-between w-full py-2">
+                      <Text className="text-white text-xs">{t('common:doppler')}</Text>
+                      <Switch
+                        trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
+                        thumbColor="#fff"
+                        value={context.processDoppler}
+                        onValueChange={context.setProcessDoppler}
+                        style={{
+                          marginVertical: Platform.OS === 'android' ? -6 : 4,
+                        }}
+                      />
+                    </View>
 
-                  <View className="flex flex-row items-center">
-                    <Text className="text-white text-xs">{t('common:helium')}</Text>
-                    <Switch
-                      trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
-                      thumbColor="#fff"
-                      value={advancedMode === 'heI'}
-                      onValueChange={() => setAdvancedMode(advancedMode === 'heI' ? '' : 'heI')}
-                      style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 4,
-                      }}
-                    />
-                  </View>
+                    <View className="flex flex-row items-center justify-between w-full py-2" style={{borderTopWidth:StyleSheet.hairlineWidth, borderTopColor:'rgba(255,255,255,0.08)'}}>
+                      <Text className="text-white text-xs">{t('common:helium')}</Text>
+                      <Switch
+                        trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
+                        thumbColor="#fff"
+                        value={advancedMode === 'heI'}
+                        onValueChange={() => setAdvancedMode(advancedMode === 'heI' ? '' : 'heI')}
+                        style={{
+                          marginVertical: Platform.OS === 'android' ? -6 : 4,
+                        }}
+                      />
+                    </View>
 
-                  <View className="flex flex-row items-center">
-                    <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
-                    <Switch
-                      trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
-                      thumbColor="#fff"
-                      value={displayOptions}
-                      onValueChange={() => setDisplayOptions(!displayOptions)}
-                      style={{
-                        marginVertical: Platform.OS === 'android' ? -6 : 4,
-                      }}
-                    />
+                    <View className="flex flex-row items-center justify-between w-full py-2" style={{borderTopWidth:StyleSheet.hairlineWidth, borderTopColor:'rgba(255,255,255,0.08)'}}>
+                      <Text className="text-white text-xs">{t('common:advancedProcessingOptions')}</Text>
+                      <Switch
+                        trackColor={{ false: '#767577', true: 'rgb(5 150 105)' }}
+                        thumbColor="#fff"
+                        value={displayOptions}
+                        onValueChange={() => setDisplayOptions(!displayOptions)}
+                        style={{
+                          marginVertical: Platform.OS === 'android' ? -6 : 4,
+                        }}
+                      />
+                    </View>
                   </View>
 
                   {displayOptions && (
@@ -226,21 +226,30 @@ export default function ProcessScan({ processMethod, isStarted, setIsStarted, is
                     </View>
                   )}
 
-                  <Pressable
-                    className="w-40 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex flex-row justify-center items-center space-x-2"
+                  {/* What went wrong last time, so the user is not sent back to
+                      the same settings with no idea why they failed. */}
+                  {errorKey !== null && (
+                    <View className="rounded-xl bg-zinc-800 px-3 py-2 mb-2 flex flex-row items-center space-x-2" style={{borderWidth:StyleSheet.hairlineWidth, borderColor:'rgba(245,158,11,0.4)'}}>
+                      <Ionicons name="warning-outline" size={16} color="#f59e0b" />
+                      <Text className="text-amber-500 flex-1" style={{fontSize:11}}>{t(errorTranslationKey(errorKey))}</Text>
+                    </View>
+                  )}
+
+                  {/* Primary action: emerald, so it reads as the way out of the dialog */}
+                  <PressableScale
+                    className="w-full bg-emerald-600 rounded-xl h-12 flex flex-row justify-center items-center space-x-2 mb-1"
                     onPress={handleProcess}
                   >
                     <Ionicons name="caret-forward-outline" size={18} color="white" />
-                    <Text className="text-white text-xs">{t('common:startProcessing')}</Text>
-                  </Pressable>
+                    <Text className="text-white font-bold" style={{fontSize:13}}>{t('common:startProcessing')}</Text>
+                  </PressableScale>
                 </View>
               ) : (
-                <View className="mt-4 bg-zinc-800 p-2 rounded-md h-12 text-white text-center flex justify-center items-center">
-                  <Loader type="white" />
+                <View className="mt-2 flex flex-col justify-center items-center w-full">
+                  <SunscanLoader size={72} />
+                  <ProcessingSteps percent={percent} step={step} />
                 </View>
               )}
-
-              <Text className="text-xs my-2 text-gray-200 italic">{t('common:pleaseWait')}</Text>
             </ScrollView>
           </View>
         </View>

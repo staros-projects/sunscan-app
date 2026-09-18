@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "1.4.4",
+        version: "2.0.0",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -22,7 +22,12 @@ export default ({ config }) => {
           requireFullScreen: true,
           bundleIdentifier: "com.staros.sunscan-app",
           infoPlist: {
-            ITSAppUsesNonExemptEncryption: false
+            ITSAppUsesNonExemptEncryption: false,
+            // Required to reach a SUNSCAN sitting on the same wifi network as
+            // the phone (non-hotspot mode) and to scan for it automatically.
+            NSLocalNetworkUsageDescription:
+              "Allow $(PRODUCT_NAME) to find your SUNSCAN on your local network.",
+            NSBonjourServices: ["_http._tcp"]
           }
         },
         android: {
@@ -35,7 +40,9 @@ export default ({ config }) => {
           permissions: [
             "INTERNET",
             "RECEIVE_BOOT_COMPLETED",
-            "ACCESS_NETWORK_STATE"
+            "ACCESS_NETWORK_STATE",
+            // Needed to read the phone's own IP and derive the subnet to scan
+            "ACCESS_WIFI_STATE"
           ],
           blockedPermissions: [
             "android.permission.READ_MEDIA_IMAGES",

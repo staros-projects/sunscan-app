@@ -11,9 +11,15 @@ NativeWindStyleSheet.setOutput({
 
 import Infos from '../components/Infos';
 import Status from '../components/Status';
+import Reveal from '../components/Reveal';
+import { useIsFocused } from '@react-navigation/native';
 
 // Main HomeScreen component
 export default function HomeScreen({navigation}) {
+  // Reactive focus flag: navigation.isFocused() below is a one-off read, fine for
+  // the refetch effects, but the reveal needs to re-run on every focus change.
+  const isFocused = useIsFocused();
+
   return (
     // Main container with dark background
     <View className="flex flex-col bg-zinc-900 h-full">
@@ -24,9 +30,9 @@ export default function HomeScreen({navigation}) {
           {/* Inner content container */}
           <View className="p-4 grow flex flex-col justify-center items-center">
             {/* Status component */}
-            <View className="p-2"><Status isFocused={navigation.isFocused()}/></View>
+            <Reveal active={isFocused} delay={120} style={{padding:8}}><Status isFocused={navigation.isFocused()}/></Reveal>
             {/* Infos component */}
-            <View className="p-2"><Infos isFocused={navigation.isFocused()}/></View>
+            <Reveal active={isFocused} delay={340} style={{padding:8}}><Infos isFocused={navigation.isFocused()}/></Reveal>
           </View> 
         </View>
       </ImageBackground>

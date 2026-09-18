@@ -31,9 +31,108 @@ import { Canvas } from '@react-three/fiber';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useSharedValue } from 'react-native-reanimated';
+import Animated, { useSharedValue, useDerivedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import SmoothCamera from './SmoothCamera';
 
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Sidebar tabs, in display order
+const TABS = [
+  { name: 'Home', Icon: HomeSVG },
+  { name: 'Scan', Icon: IrisSVG },
+  { name: 'List', Icon: GallerySVG },
+  { name: 'Settings', Icon: SettingsSVG },
+];
+
+// Sidebar tab styles.
+//
+// The active indicator and the icon highlight stay mounted with a fixed
+// background and borderRadius; only their opacity and scale are animated. That
+// also sidesteps an Android quirk where a view that already has a borderRadius
+// loses its rounded corners when its background colour is repainted after mount
+// (the highlight turned into a square as soon as you switched tabs).
+const tabStyles = StyleSheet.create({
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 4,
+  },
+  indicatorSlot: {
+    width: 3,
+    height: 24,
+    marginRight: 5,
+  },
+  indicatorBar: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 2,
+    backgroundColor: '#ffffff',
+  },
+  icon: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconHighlight: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  iconLayer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+// One sidebar tab. The active/inactive change is driven by a single 0->1
+// progress value so the highlight, the indicator bar and the icon colour all
+// move together; the icon "colour change" is really a cross-fade between a grey
+// and a white copy, since an SVG fill cannot be animated on the UI thread.
+function TabItem({Icon, active, onPress}) {
+  const progress = useDerivedValue(
+    () => withTiming(active ? 1 : 0, {duration: 200}),
+    [active]
+  );
+  const scale = useSharedValue(1);
+
+  const itemStyle = useAnimatedStyle(() => ({
+    transform: [{scale: scale.value}],
+  }));
+  const indicatorStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{scaleY: 0.4 + progress.value * 0.6}],
+  }));
+  const highlightStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{scale: 0.75 + progress.value * 0.25}],
+  }));
+  const activeIconStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => { scale.value = withSpring(0.88, {damping: 20, stiffness: 400, mass: 0.5}); }}
+      onPressOut={() => { scale.value = withSpring(1, {damping: 20, stiffness: 400, mass: 0.5}); }}
+      style={[tabStyles.item, itemStyle]}
+    >
+      {/* Active indicator: rounded accent bar instead of a square border */}
+      <View style={tabStyles.indicatorSlot}>
+        <Animated.View style={[tabStyles.indicatorBar, indicatorStyle]} />
+      </View>
+      <View style={tabStyles.icon}>
+        <Animated.View style={[tabStyles.iconHighlight, highlightStyle]} pointerEvents="none" />
+        <Icon color="#71717a" size={26} width={26} height={26} />
+        <Animated.View style={[tabStyles.iconLayer, activeIconStyle]} pointerEvents="none">
+          <Icon color="#ffffff" size={26} width={26} height={26} />
+        </Animated.View>
+      </View>
+    </AnimatedPressable>
+  );
+}
 
 // Main TabNavigator component
 export default function TabNavigator({
@@ -70,7 +169,7 @@ export default function TabNavigator({
     },
     image: {
       flex: 1,
-     
+
       backgroundColor: 'transparent',
     },
   });
@@ -88,8 +187,10 @@ const cameraRef = React.useRef();
                             <View style={{ flex: 1 }}>
                                                     
     
+              {/* pointerEvents none : le Canvas R3F installe un PanResponder qui capture toutes les touches, inutile ici (gyroscope + boutons) et en conflit avec gesture-handler sur iOS */}
+              <View style={{ flex: 1 }} pointerEvents="none">
               <Canvas>
-                
+
                 <ambientLight intensity={0.1} />
 
                 {/* On passe zoomScale comme prop à SunSphere */}
@@ -99,6 +200,7 @@ const cameraRef = React.useRef();
                 />
                  <SmoothCamera ref={cameraRef} initialZoom={150} />
               </Canvas>
+              </View>
       
 {/* Boutons Zoom */}
   <View className="absolute bottom-10 right-5 flex flex-row gap-3" style={{zIndex:102, elevation:102, paddingRight:insets.right}}>
@@ -136,31 +238,15 @@ const cameraRef = React.useRef();
                 </View>}
         <View className="flex-1 flex flex-row bg-black" style={{zIndex:99, elevation:99, backgroundColor: '#000'}}>
                 {/* Sidebar navigation */}
-                <View  className="  flex-0  bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:0}} >
-                {/* Home tab */}
-                <View  className={screenName == "Home" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
-                    <Pressable onPress={() =>navigation.navigate('Home') } className="flex flex-col justify-center items-center w-12">
-                    <HomeSVG color="white" size="32"  />
-                    </Pressable>
-                </View>
-                {/* Scan tab */}
-                <View className={screenName == "Scan" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
-                    <Pressable onPress={() =>navigation.navigate('Scan') } className="flex flex-col justify-center items-center w-12">
-                    <IrisSVG color="white" size="32"  />
-                    </Pressable>
-                </View>
-                {/* List tab */}
-                <View className={screenName == "List" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
-                <Pressable onPress={() =>navigation.navigate('List') } className="flex flex-col justify-center items-center w-12">
-                <GallerySVG color="white" size="32"  />
-                    </Pressable>
-                </View>
-                {/* Settings tab */}
-                <View className={screenName == "Settings" ? "border-l-white border-2 pl-1":"border-l-black border-2 pl-1"}>
-                <Pressable onPress={() =>navigation.navigate('Settings') } className="flex flex-col justify-center items-center w-12">
-                <SettingsSVG color="white" size="32"  />
-                    </Pressable>
-                </View>
+                <View  className="  flex-0  bg-black  py-2 flex flex-col justify-evenly align-center items-center" style={{zIndex:99, elevation:99, backgroundColor: '#000', paddingLeft:insets.left, paddingRight:0, borderRightWidth:StyleSheet.hairlineWidth, borderRightColor:'rgba(255,255,255,0.12)'}} >
+                {TABS.map(({name, Icon}) => (
+                  <TabItem
+                    key={name}
+                    Icon={Icon}
+                    active={screenName === name}
+                    onPress={() => navigation.navigate(name)}
+                  />
+                ))}
                 </View>
             {/* Content area */}
             <View  className="grow">

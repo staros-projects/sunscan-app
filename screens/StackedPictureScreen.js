@@ -2,7 +2,9 @@ import React, { useCallback, useContext, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons'
+import IconButton from '../components/IconButton';
+import PressableScale from '../components/PressableScale';
 import md5 from 'md5';
 
 // Set up NativeWind for styling
@@ -12,6 +14,7 @@ NativeWindStyleSheet.setOutput({
 
 import { Image } from 'expo-image';
 import AppContext from '../components/AppContext';
+import WebSocketContext from '../utils/WSContext';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -50,16 +53,14 @@ export default function StackedPictureScreen({  route, navigation }) {
 
   // Function to download the current image
   const download = async () => {
-   setMessage(t('common:downloading')+'...');
-      const success =await downloadSunscanImage(currentImage, 'jpeg')
- 
-      if (success) {
-        setMessage(t('common:downloaded')+' !');
-      setTimeout(() => setMessage(''), 1500);
-      }
-      else {
-        setMessage('');
-      }
+    setMessage(t('common:downloading')+'...');
+    const success = await downloadSunscanImage(currentImage, 'jpeg');
+    if (success) {
+      setMessage(t('common:downloaded')+' !');
+    } else {
+      setMessage(t('common:downloadError'));
+    }
+    setTimeout(() => setMessage(''), 2000);
   }
 
   const [isStarted, setIsStarted] = useState(false);
@@ -166,7 +167,7 @@ export default function StackedPictureScreen({  route, navigation }) {
     <View className="flex flex-col bg-black">
         {/* Back button */}
         <View className="absolute left-0 z-50 p-4">
-          <Pressable className="" onPress={() => navigation.navigate('List')}><Ionicons name="chevron-back" size={28} color="white" /></Pressable>
+          <IconButton name="chevron-back" size={24} onPress={() => navigation.navigate('List')} />
         </View>
       
       {/* Message display */}
@@ -181,10 +182,10 @@ export default function StackedPictureScreen({  route, navigation }) {
               <View className="w-5/6  h-screen" >
 
               {/* Action buttons */}
-              {myContext.sunscanIsConnected && <View className="absolute right-0 justify-center align-center h-full z-50 flex space-y-4 flex-col">
-                {images.length > 1 && <Pressable className="" onPress={() => myContext.setDisplayFullScreenImage(currentImage)}><Ionicons name="expand" size={28} color="white" /></Pressable>}  
-                {images.length > 1 && <Pressable className="" onPress={() => download()}><Ionicons name="download" size={28} color="white" /></Pressable>}  
-                <Pressable className="" onPress={deleteButtonAlert}><Ionicons name="trash" size={28} color="white" /></Pressable>
+              {myContext.sunscanIsConnected && <View className="absolute right-0 z-50" style={{height:'100%', marginRight:12, justifyContent:'center', alignItems:'center', gap:10}}>
+                {images.length > 1 && <IconButton name="expand" onPress={() => myContext.setDisplayFullScreenImage(currentImage)} />}  
+                {images.length > 1 && <IconButton name="download" onPress={() => download()} />}  
+                <IconButton name="trash" onPress={deleteButtonAlert} />
               </View>}
 
                     {/* Image zoom component */}
@@ -209,11 +210,11 @@ export default function StackedPictureScreen({  route, navigation }) {
                   console.log(i)
                   return (
                     <View key={i}  className=" ">
-                      <Pressable onPress={() => setcurrentImage(i)}>
-                        <View className={currentImage == i ? "flex flex-col justify-center items-center z-10 border border-white mt-1 rounded-lg":" rounded-lg flex flex-col justify-center items-center z-10 border border-zinc-800 mt-1"}>
+                      <PressableScale scaleTo={0.92} onPress={() => setcurrentImage(i)}>
+                        <View className="flex flex-col justify-center items-center z-10 overflow-hidden" style={currentImage == i ? {borderWidth:2, borderColor:'#ffffff', backgroundColor:'#000', borderRadius:12, marginTop:6} : {borderWidth:1, borderColor:'rgba(255,255,255,0.10)', backgroundColor:'#000', borderRadius:12, marginTop:6}}>
                           <Image
                             style={{ height: 70, width:70 }}
-                            className="z-0 rounded-lg"
+                            className="z-0"
                             source={i}
                             transition={200}
                             contentFit="contain"
@@ -222,7 +223,7 @@ export default function StackedPictureScreen({  route, navigation }) {
                         </View>
 
 
-                      </Pressable>
+                      </PressableScale>
                     </View>)
                 })
 

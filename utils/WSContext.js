@@ -1,6 +1,5 @@
-import ReconnectingWebSocket from "react-native-reconnecting-websocket";
-import AppContext from "../components/AppContext";
+import { createContext } from 'react';
 
-import { useContext, useEffect, createContext, useRef } from 'react';
+const WebSocketContext = createContext();
 
-export default WebSocketContext = createContext();
+export default WebSocketContext;

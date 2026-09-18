@@ -4,11 +4,13 @@ import Loader from './Loader';
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import AppContext from './AppContext';
+import WebSocketContext from '../utils/WSContext';
 
 import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import md5 from 'md5';
 import { useTranslation } from 'react-i18next';
+import PressableScale from './PressableScale';
 
 // Main Card component for displaying scan information
 export default function AnimatedCard({squareSize, scan, selected, multiSelectMode,  onLongPress}) {
@@ -24,10 +26,11 @@ export default function AnimatedCard({squareSize, scan, selected, multiSelectMod
 
   
   // Date formatting options
+  // No weekday and a short month: the label sits under a small thumbnail, and
+  // the weekday repeated across every tile of the grid was noise rather than info.
   let options = {
-    weekday: "long",
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "numeric",
@@ -41,12 +44,12 @@ export default function AnimatedCard({squareSize, scan, selected, multiSelectMod
 
   // Render the Card component
   return (
-      <View className="border-none border-white rounded-lg bg-black flex flex-col justify-center items-center" style={{borderWidth:selected ? 2 : 0}}>
+      <View className="rounded-xl bg-black flex flex-col justify-center items-center" style={{borderWidth:selected ? 2 : 1, borderColor:selected ? '#10b981' : 'rgba(255,255,255,0.08)'}}>
            
-            <View  className="mx-auto w-full">
+            <View  className="mx-auto w-full overflow-hidden rounded-t-xl">
               <View className="absolute top-0 p-2 right-0 z-20">
-                {selected ? <Ionicons name="checkmark-circle" size={30} color="white" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgb(55 65 81)" onPress={onLongPress} />:<View></View>)}</View>
-                  <Pressable style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.path) : navigation.navigate('AnimatedPicture',{scan:scan})}  >
+                {selected ? <Ionicons name="checkmark-circle" size={30} color="#10b981" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgba(255,255,255,0.75)" onPress={onLongPress} />:<View></View>)}</View>
+                  <PressableScale scaleTo={0.96} style={{height:squareSize}} className="mx-auto w-full rounded-lg grow flex items-center justify-center flex-none z-10" onLongPress={onLongPress} onPress={() => multiSelectMode? onLongPress(scan.path) : navigation.navigate('AnimatedPicture',{scan:scan})}  >
 
                 
                   <View sytle={{height:squareSize}} className="w-full">
@@ -60,13 +63,13 @@ export default function AnimatedCard({squareSize, scan, selected, multiSelectMod
                         contentFit="cover"
                     />
                   </View>
-                </Pressable>
-               
+                </PressableScale>
+
               </View>
             {/* Footer with date and options */}
-            <View  className="bg-zinc-900 w-full rounded-b-lg py-3 flex flex-row items-center">     
-                <Pressable className="w-full" onLongPress={onLongPress} onPress={() => multiSelectMode ? onLongPress(scan.path) : navigation.navigate('StackedPicture',{scan:scan})}>
-                  <Text  className="text-white text-xs mx-auto" style={{fontSize:10}}>{scanDate}</Text>
+            <View  className="bg-zinc-900 w-full rounded-b-xl py-2.5 flex flex-row items-center" style={{borderTopWidth:StyleSheet.hairlineWidth, borderTopColor:'rgba(255,255,255,0.08)'}}>     
+                <Pressable onLongPress={onLongPress} onPress={() => multiSelectMode ? onLongPress(scan.path) : navigation.navigate('AnimatedPicture',{scan:scan})} style={({pressed}) => [{width:'100%'}, pressed && {opacity:0.6}]}>
+                  <Text  className="text-zinc-300 mx-auto" style={{fontSize:11}}>{scanDate}</Text>
                 </Pressable>
               </View>
           </View>
