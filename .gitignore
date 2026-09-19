@@ -150,3 +150,6 @@ web-build/
 eas_ml.json
 app_ml.json
 build*
+
+# Claude working files, kept locally only
+Claude outputs/
