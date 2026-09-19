@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, View, ImageBackground } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -13,12 +13,17 @@ import Infos from '../components/Infos';
 import Status from '../components/Status';
 import Reveal from '../components/Reveal';
 import { useIsFocused } from '@react-navigation/native';
+import AppContext from '../components/AppContext';
 
 // Main HomeScreen component
 export default function HomeScreen({navigation}) {
   // Reactive focus flag: navigation.isFocused() below is a one-off read, fine for
   // the refetch effects, but the reveal needs to re-run on every focus change.
   const isFocused = useIsFocused();
+  // Home is focused from the start, under the launch splash: hold the reveal
+  // until the splash is gone so it is actually seen
+  const { splashDone } = useContext(AppContext);
+  const revealed = isFocused && splashDone;
 
   return (
     // Main container with dark background
@@ -30,9 +35,9 @@ export default function HomeScreen({navigation}) {
           {/* Inner content container */}
           <View className="p-4 grow flex flex-col justify-center items-center">
             {/* Status component */}
-            <Reveal active={isFocused} delay={120} style={{padding:8}}><Status isFocused={navigation.isFocused()}/></Reveal>
+            <Reveal active={revealed} delay={120} style={{padding:8}}><Status isFocused={navigation.isFocused()}/></Reveal>
             {/* Infos component */}
-            <Reveal active={isFocused} delay={340} style={{padding:8}}><Infos isFocused={navigation.isFocused()}/></Reveal>
+            <Reveal active={revealed} delay={340} style={{padding:8}}><Infos isFocused={navigation.isFocused()}/></Reveal>
           </View> 
         </View>
       </ImageBackground>

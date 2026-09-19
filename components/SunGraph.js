@@ -11,6 +11,8 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
+import AppContext from "./AppContext";
+
 // --- Geometry -------------------------------------------------------------
 // The curve is computed instead of being a hand-tuned bezier, so the arc is
 // symmetric, the horizon crossings land exactly on the sunrise / sunset ticks
@@ -65,6 +67,8 @@ function SunGraph({ sunTimes, now }) {
   const progress = React.useRef(new Animated.Value(0)).current;
   const fadeIn = React.useRef(new Animated.Value(0)).current;
   const halo = React.useRef(new Animated.Value(1)).current;
+  // The course is only played once the launch splash is gone, not behind it
+  const { splashDone } = React.useContext(AppContext);
 
   const [sunT, setSunT] = React.useState(0);
   const [isDay, setIsDay] = React.useState(true);
@@ -90,6 +94,7 @@ function SunGraph({ sunTimes, now }) {
     setIsDay(target.day);
     progress.setValue(0);
     fadeIn.setValue(0);
+    if (!splashDone) return;
     Animated.parallel([
       Animated.timing(progress, {
         toValue: target.t,
@@ -106,7 +111,7 @@ function SunGraph({ sunTimes, now }) {
         useNativeDriver: false,
       }),
     ]).start();
-  }, [target]);
+  }, [target, splashDone]);
 
   React.useEffect(() => {
     const id = progress.addListener(({ value }) => setSunT(value));

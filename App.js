@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { SystemBars } from 'react-native-edge-to-edge';
 import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
@@ -350,7 +350,10 @@ export default function App() {
               />
               <My.Screen name="Settings" component={SettingsScreen} />
             </My.Navigator>
-            <StatusBar hidden={true}  />
+            {/* Both bars, not just the status bar: edge-to-edge re-applies its
+                own state on every resume, and without navigationBar it brought
+                the nav bar back (leaving a black band at the bottom) */}
+            <SystemBars hidden={{ statusBar: true, navigationBar: true }} />
           </NavigationContainer>
           </OverlayProvider>
           </JobProgressProvider>

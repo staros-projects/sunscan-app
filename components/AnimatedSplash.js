@@ -61,7 +61,8 @@ const INSETS = initialWindowMetrics?.insets ?? { top: 0, right: 0, bottom: 0, le
  * the wordmark settles in and the whole thing fades into the app.
  *
  * It starts exactly where the native splash leaves off (same mark, same size,
- * same place) and only hides the native splash once it is on screen. It stays
+ * same place), only hides the native splash once it is on screen, and only
+ * starts the intro once the native splash is gone. It stays
  * up until `ready` and the animation are both done, then unmounts itself and
  * calls `onDone`.
  */
@@ -70,7 +71,10 @@ export default function AnimatedSplash({ ready, onDone }) {
   const reduceMotion = useReducedMotion();
   const [visible, setVisible] = useState(true);
   const [introDone, setIntroDone] = useState(false);
+  // True once the native splash is gone: the intro must not play behind it
+  const [handedOff, setHandedOff] = useState(false);
   const exiting = useRef(false);
+  const hiding = useRef(false);
 
   const dim = useSharedValue(0);      // 0 = lit as on the native splash, 1 = dimmed
   const sweep = useSharedValue(0);    // slit position across the mark, 0..1
@@ -78,10 +82,20 @@ export default function AnimatedSplash({ ready, onDone }) {
   const exit = useSharedValue(0);
 
   const onLayout = useCallback(() => {
-    SplashScreen.hideAsync().catch(() => {});
+    if (hiding.current) {
+      return;
+    }
+    hiding.current = true;
+    SplashScreen.hideAsync()
+      .catch(() => {})
+      // Give the native splash a frame to actually leave the screen
+      .finally(() => requestAnimationFrame(() => setHandedOff(true)));
   }, []);
 
   useEffect(() => {
+    if (!handedOff) {
+      return;
+    }
     if (reduceMotion) {
       sweep.value = 1;
       wordmark.value = 1;
@@ -99,7 +113,7 @@ export default function AnimatedSplash({ ready, onDone }) {
     );
     const timer = setTimeout(() => setIntroDone(true), MIN_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [reduceMotion]);
+  }, [handedOff, reduceMotion]);
 
   useEffect(() => {
     if (!ready || !introDone || exiting.current) {
