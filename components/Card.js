@@ -1,4 +1,4 @@
-import { View, StyleSheet, Pressable, Text, Button, Animated, Easing, Alert } from 'react-native';
+import { View, StyleSheet, Pressable, Text, Button, Animated, Easing, Alert, Linking } from 'react-native';
 
 import SunscanLoader from './SunscanLoader';
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -12,6 +12,9 @@ import PressableScale from './PressableScale';
 import ProcessingSteps from './ProcessingSteps';
 import { linesDict } from './LineSelector';
 import useScanProcess, { errorTranslationKey } from '../utils/useScanProcess';
+
+// Radius of the card, shared by the clip and the frame drawn over it.
+const CARD_RADIUS = 12;
 
 // Main Card component for displaying scan information
 export default function Card({squareSize, scan, selected, multiSelectMode, onLongPress}) {
@@ -69,9 +72,9 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
 
   // Render the Card component
   return (
-      <View className="rounded-xl bg-black flex flex-col justify-center items-center" style={{borderWidth:selected ? 2 : 1, borderColor:selected ? '#10b981' : 'rgba(255,255,255,0.08)'}}>
+      <View className="bg-black flex flex-col justify-center items-center" style={{borderRadius:CARD_RADIUS, overflow:'hidden'}}>
 
-            <View  className="mx-auto w-full overflow-hidden rounded-t-xl">
+            <View  className="mx-auto w-full">
               <View className="absolute top-0 p-2 right-0 z-20">
                 {selected ? <Ionicons name="checkmark-circle" size={30} color="#10b981" onPress={onLongPress} />:(multiSelectMode ? <Ionicons name="checkmark-circle-outline" size={30} color="rgba(255,255,255,0.75)" onPress={onLongPress} />:<View></View>)}</View>
               { scanStatus == "completed" ? 
@@ -80,7 +83,7 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
                   <View sytle={{height:squareSize}} className="w-full">
                     <Image
                         style={{width:'100%', height:'100%'}}
-                        className="rounded-t-lg w-full "
+                        className="w-full"
                         source={imgPath}
                         cacheKey={2}
                         ref={imgPreview}
@@ -117,10 +120,26 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
                 }
               </View>
             {/* Footer with date and options */}
-            <View  className="bg-zinc-900 w-full rounded-b-xl py-2.5 flex flex-row items-center" style={{borderTopWidth:StyleSheet.hairlineWidth, borderTopColor:'rgba(255,255,255,0.08)'}}>
+            <View  className="bg-zinc-900 w-full py-2.5 flex flex-row items-center" style={{borderTopWidth:StyleSheet.hairlineWidth, borderTopColor:'rgba(255,255,255,0.08)'}}>
                 <Pressable onLongPress={onLongPress} onPress={() => multiSelectMode ? onLongPress(scan.ser) : navigation.navigate('Picture',{scan:scan})} style={({pressed}) => [{width:'100%'}, pressed && {opacity:0.6}]}>
                   <Text  className="text-zinc-300 mx-auto" style={{fontSize:11}}>{scanDate}</Text>
                 </Pressable>
+                {/* Sent to SpectroSolHub: the last upload of this scan succeeded.
+                    Green once published, grey for a draft (as it was at upload
+                    time: a draft published later from the site stays grey).
+                    A tap opens the observation. */}
+                {scan.hub_status === 'sent' ? (
+                  <Pressable
+                    hitSlop={10}
+                    disabled={multiSelectMode || !scan.spectrosolhub?.url}
+                    onPress={() => Linking.openURL(scan.spectrosolhub.url).catch(() => {})}
+                    style={{position:'absolute', right:8}}>
+                    <Ionicons
+                      name={scan.spectrosolhub?.published === false ? 'cloud-outline' : 'cloud-done-outline'}
+                      size={14}
+                      color={scan.spectrosolhub?.published === false ? '#a1a1aa' : '#10b981'} />
+                  </Pressable>
+                ) : null}
               </View>
               {/* Spectral line badge: a small colour-coded pill inside the frame.
                   It used to be a 35-50px bookmark hanging off the top edge, which
@@ -130,6 +149,12 @@ export default function Card({squareSize, scan, selected, multiSelectMode, onLon
                   <Text className="text-white" style={{fontSize:10, fontWeight:'600'}}>{line.short}</Text>
                 </View>
               ) : null}
+              {/* Frame drawn over the content rather than as the card's own
+                  border: the card clips everything to one radius, and the frame
+                  follows that exact curve. A border on the card left the image
+                  corners, rounded with their own radius inside it, visibly off
+                  the green ring, and its width change shifted the layout. */}
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, {zIndex:50, borderRadius:CARD_RADIUS, borderWidth:selected ? 2 : 1, borderColor:selected ? '#10b981' : 'rgba(255,255,255,0.08)'}]} />
           </View>
   );
 }

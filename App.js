@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import * as ScreenOrientation from 'expo-screen-orientation';
+import * as SplashScreen from 'expo-splash-screen';
 
 import HomeScreen from './screens/HomeScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -20,8 +21,10 @@ import {
   createNavigatorFactory,
 } from '@react-navigation/native';
 import TabNavigator from './components/TabNavigator';
+import { OverlayProvider } from './components/OverlayHost';
 import AppContext from './components/AppContext';
 import WebSocketProvider  from './utils/WSProvider';
+import { JobProgressProvider } from './utils/useJobProgress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
@@ -32,6 +35,11 @@ import Animated from 'react-native-reanimated';
 import StackedPictureScreen from './screens/StackedPictureScreen';
 import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
 import { HOTSPOT_API_URL } from './utils/SunscanNetwork';
+import { useHubAccountState } from './utils/SpectroSolHub';
+import AnimatedSplash from './components/AnimatedSplash';
+
+// Keep the native splash up until AnimatedSplash is on screen to take over
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // ...
 
@@ -56,6 +64,7 @@ const STORAGE_KEYS = {
   tooltip: 'SUNSCAN_APP::TOOLTIP',
   debug: 'SUNSCAN_APP::DEBUG',
   watermark: 'SUNSCAN_APP::WATERMARK',
+  autoStop: 'SUNSCAN_APP::AUTO_STOP',
   stackingOptions: 'SUNSCAN_APP::STACKING_OPTIONS',
   screenOrientation: 'SUNSCAN_APP::SCREEN_ORIENTATION',
   hotSpotMode: 'SUNSCAN_APP::HOTSPOT_MODE',
@@ -88,6 +97,7 @@ export default function App() {
   // address it last had there (fallback when mDNS finds nothing).
   const [sunscanDevice, setSunscanDevice] = useState({});
   const [showWatermark, setShowWatermark] = useState(true);
+  const [autoStop, setAutoStop] = useState(true);
   const [debugVal, setDebug] = useState(false);
   const [demoVal, setDemo] = useState(false);
   const [tooltipVal, setTooltip] = useState(false);
@@ -108,7 +118,12 @@ export default function App() {
   // otherwise the user-defined IP (same network as the phone)
   const apiURLVal = hotSpotModeVal ? DEFAULT_HOTSPOT_API_URL : (customApiURLVal || DEV_API_URL || DEFAULT_HOTSPOT_API_URL);
 
+  // SpectroSolHub account of the SUNSCAN, probed on every connection. The
+  // feature stays hidden against a backend without the hub routes.
+  const { hubSupported, hubAccount, setHubAccount, refreshHubAccount } = useHubAccountState(apiURLVal, sunscanIsConnected);
+
   const toggleShowWaterMark = useCallback(() => setShowWatermark(v => !v), []);
+  const toggleAutoStop = useCallback(() => setAutoStop(v => !v), []);
   const toggleDemo = useCallback(() => setDemo(v => !v), []);
   const toggleTooltip = useCallback(() => setTooltip(v => !v), []);
   const toggleDebug = useCallback(() => setDebug(v => !v), []);
@@ -175,6 +190,10 @@ export default function App() {
         if (watermark) {
           setShowWatermark(watermark == '1');
         }
+        const autoStopStored = stored[STORAGE_KEYS.autoStop];
+        if (autoStopStored) {
+          setAutoStop(autoStopStored == '1');
+        }
         const stackingOpts = stored[STORAGE_KEYS.stackingOptions];
         if (stackingOpts) {
           setStackingOptions(JSON.parse(stackingOpts));
@@ -215,6 +234,7 @@ export default function App() {
       [STORAGE_KEYS.tooltip, tooltipVal?'1':'0'],
       [STORAGE_KEYS.debug, debugVal?'1':'0'],
       [STORAGE_KEYS.watermark, showWatermark?'1':'0'],
+      [STORAGE_KEYS.autoStop, autoStop?'1':'0'],
       [STORAGE_KEYS.stackingOptions, JSON.stringify(stackingOptions)],
       [STORAGE_KEYS.dopplerColor, `${dopplerColor}`],
       [STORAGE_KEYS.processDoppler, processDoppler?'1':'0'],
@@ -227,7 +247,10 @@ export default function App() {
       pairs.push([STORAGE_KEYS.observer, `${observerVal}`]);
     }
     AsyncStorage.multiSet(pairs).catch((e) => console.log('Error saving settings', e));
-  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
+  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, autoStop, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
+
+  // Pop-ins raised at start-up (firmware offer...) wait for the splash to be gone
+  const [splashDone, setSplashDone] = useState(false);
 
   // Memoized so consumers only re-render when a value actually changes
   const userSettings = useMemo(() => ({
@@ -246,6 +269,7 @@ export default function App() {
     locationData,
     setLocationData,
     showWatermark:showWatermark,
+    autoStop,
     dopplerColor,
     setDopplerColor,
     processDoppler,
@@ -254,6 +278,7 @@ export default function App() {
     setBackendApiVersion,
     setObserver,
     toggleShowWaterMark,
+    toggleAutoStop,
     toggleDebug,
     toggleDemo,
     toggleTooltip,
@@ -271,13 +296,19 @@ export default function App() {
     stackingOptions,
     setStackingOptions,
     screenOrientation: screenOrientationVal,
-    setScreenOrientation
+    setScreenOrientation,
+    hubSupported,
+    hubAccount,
+    setHubAccount,
+    refreshHubAccount,
+    splashDone,
   }), [
     sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, tooltipVal,
-    hotSpotModeVal, observerVal, locationData, showWatermark, dopplerColor,
+    hotSpotModeVal, observerVal, locationData, showWatermark, autoStop, dopplerColor,
     processDoppler, backendApiVersion, apiURLVal, customApiURLVal, sunscanDevice,
     displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
-    screenOrientationVal, toggleShowWaterMark, toggleDebug, toggleDemo, toggleTooltip
+    screenOrientationVal, toggleShowWaterMark, toggleAutoStop, toggleDebug, toggleDemo, toggleTooltip,
+    hubSupported, hubAccount, refreshHubAccount, splashDone
   ]);
 
   return (
@@ -285,7 +316,9 @@ export default function App() {
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
+       <JobProgressProvider>
 
+        <OverlayProvider>
         <NavigationContainer>
             <My.Navigator
                 screenOptions={{
@@ -319,9 +352,12 @@ export default function App() {
             </My.Navigator>
             <StatusBar hidden={true}  />
           </NavigationContainer>
+          </OverlayProvider>
+          </JobProgressProvider>
           </SafeAreaProvider>
        </WebSocketProvider>
     </AppContext.Provider>
+    <AnimatedSplash ready={settingsLoaded} onDone={() => setSplashDone(true)} />
     </GestureHandlerRootView>
   );
 

@@ -33,6 +33,7 @@ const STEP_LABELS = {
   image_prominences: 'processStepImageProminences',
   image_doppler: 'processStepImageDoppler',
   image_helium: 'processStepImageHelium',
+  image_hepsilon: 'processStepImageHepsilon',
   done: 'processStepDone',
 };
 

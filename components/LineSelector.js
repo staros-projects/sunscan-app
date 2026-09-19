@@ -46,7 +46,7 @@ const labelFontSize = (label) => {
   return 9;
 };
 
-const LineSelector = ({ path, tag}) => {
+const LineSelector = ({ path, tag, onTagged }) => {
 
     const [selectedValue, setSelectedValue] = React.useState('');
     const lineSelectorComponent = React.useRef(null);
@@ -87,6 +87,7 @@ const LineSelector = ({ path, tag}) => {
     }).then(response => response.json())
       .then(json => {
         //console.log(json)
+        onTagged?.(value.key);
       })
       .catch(error => {
         console.error(error);

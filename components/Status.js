@@ -1,4 +1,4 @@
-import { View, Pressable, Text, Alert } from 'react-native';
+import { View, Pressable, Text } from 'react-native';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import Animated, {
   useSharedValue,
@@ -17,6 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import firmareIsUpToDate, { setSunScanTime } from '../utils/Helpers';
 import PressableScale from './PressableScale';
+import FirmwareUpdateModal from './FirmwareUpdateModal';
 import { colors, panelStyle, roundButton, warningChip, PANEL_WIDTH } from './theme';
 
 // Below this, the panel nudges the user to clean up. ScanScreen keeps its own,
@@ -32,6 +33,10 @@ const REFRESH_BUTTON = { width: 24, height: 24, borderRadius: 12 };
 // hold the longest translated label ("Déconnecter la caméra") on a single line,
 // so the panel keeps the same shape whichever state it is in.
 const CONNECT_BUTTON = { width: 186, height: 48 };
+
+// The firmware offer comes up once per app session : the stats are read again
+// on every focus, and "Later" must not bring it straight back.
+let firmwareOffered = false;
 
 
 
@@ -77,6 +82,9 @@ export default function Status({isFocused})  {
   const [isLoading, setIsLoading] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [stats, setStats] = useState(null);
+  // Outdated firmware detected : the offer shows once the splash is gone, not
+  // behind it (the stats come back while the splash is still animating).
+  const [firmwarePending, setFirmwarePending] = useState(false);
   const myContext = useContext(AppContext);
 
   // Refresh button spins while stats are being fetched.
@@ -137,7 +145,7 @@ export default function Status({isFocused})  {
           myContext.setSunscanIsConnected(true);
           myContext.setBackendApiVersion(json.backend_api_version);
           getCameraStatus();
-          checkFirmware();
+          checkFirmware(json.backend_api_version);
         }
       })
       .finally(() => setRefresh(false))
@@ -156,10 +164,12 @@ export default function Status({isFocused})  {
     });
   }
 
-  const checkFirmware = () => {
-    if(myContext.sunscanIsConnected && !firmareIsUpToDate(myContext)) {
-      Alert.alert(t('common:warning'), t('common:firmwareIsOutdated'), [
-        { text: 'OK', onPress: async () => {}}]);
+  // Read from the answer itself : the context still holds the previous version
+  // until the next render.
+  const checkFirmware = (version) => {
+    if(!firmwareOffered && !firmareIsUpToDate({ backendApiVersion: version })) {
+      firmwareOffered = true;
+      setFirmwarePending(true);
     }
   }
 
@@ -240,6 +250,7 @@ export default function Status({isFocused})  {
               </Text>
             </PressableScale>
           )}
+          <FirmwareUpdateModal isVisible={firmwarePending && myContext.splashDone} onClose={() => setFirmwarePending(false)} />
     </View>
   );
 }

@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 
 
-export const backend_current_version = '2.0.0';
+export const backend_current_version = '2.1.2';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date
@@ -29,6 +29,36 @@ export async function setSunScanTime(apiURL) {
     } catch (error) {
         console.error(error);
     }
+}
+
+
+// Tag a scan, a stack or an animation with a line: the scans route takes the
+// path of any of them, and replaces the previous tag (it cannot remove one).
+// Resolves to true once the backend accepted it.
+export async function tagItem(apiURL, path, tag) {
+    try {
+        const response = await fetch('http://' + apiURL + '/sunscan/scan/tag/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: path, tag }),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error(error);
+        return false;
+    }
+}
+
+
+// Date shown for a stack or an animation: the observation, when the backend
+// knows it (an ISO string in UTC), rather than the creation of the item
+// (Unix seconds), which can come hours or days after the scans.
+export function itemDate(item) {
+    const observed = item?.observation_date ? new Date(item.observation_date) : null;
+    if (observed && !isNaN(observed)) {
+        return observed;
+    }
+    return new Date(item?.creation_date * 1000);
 }
 
 

@@ -1,4 +1,4 @@
-import  {  useContext,  useState, useCallback, useEffect } from 'react';
+import  {  useContext,  useState, useCallback, useEffect, useRef } from 'react';
 import { View,FlatList, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
 import Animated, { FadeInDown, FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -17,8 +17,11 @@ import IrisSVG from '../components/svg/IrisSVG';
 import StackedCard from '../components/StackedCard';
 import AnimatedCard from '../components/AnimatedCard';
 import AnimationOptionsModal from '../components/AnimationOptionsModal';
-import StackingModal from '../components/StackingModal';
+import useJobs from '../utils/useJobProgress';
 import PressableScale from '../components/PressableScale';
+import GalleryFilters, { NO_FILTERS, filtersQuery, hasActiveFilter } from '../components/GalleryFilters';
+import ModalLineSelector from '../components/ModalLineSelector';
+import { tagItem } from '../utils/Helpers';
 
 import { Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,6 +74,22 @@ export default function ListScreen({navigation}) {
   const [displayNewStackededItemNotif, setDisplayNewStackedItemNotif] = useState(false);
   const [displayNewAnimatedItemNotif, setDisplayNewAnimatedItemNotif] = useState(false);
   const [massEditMode, setMassEditMode] = useState(false);
+  // Filters of the current tab, see GalleryFilters. Stacks have the line and
+  // SpectroSolHub ones, animations the line only; the filters are cleared on a
+  // tab change.
+  const [filters, setFilters] = useState(NO_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
+  // Per-value counts ({tags, statuses, days}) returned with the scans. Stays
+  // null against a backend that cannot filter, and the filter button is then
+  // not shown.
+  const [facets, setFacets] = useState(null);
+  // Line picker for the selected stacks or animations, and whether their
+  // tagging is under way
+  const [lineModalVisible, setLineModalVisible] = useState(false);
+  const [isTagging, setIsTagging] = useState(false);
+  // Filters change faster than the box answers: only the latest request may
+  // update the list, or a slow answer for the previous filter would land last.
+  const requestId = useRef(0);
 
   const myContext = useContext(AppContext);
   const isFocused = navigation.isFocused();
@@ -78,9 +97,27 @@ export default function ListScreen({navigation}) {
   // Function to fetch scans from the API
   async function getScans(page, forceRefresh=false) {
     setIsLoading(true);
-    console.log('http://'+myContext.apiURL+`/sunscan/${currentView}?page=${page}&size=${size}`)
-    fetch('http://'+myContext.apiURL+`/sunscan/${currentView}?page=${page}&size=${size}`).then(response => response.json())
+    const filter = filtersQuery(filters);
+    const url = 'http://'+myContext.apiURL+`/sunscan/${currentView}?page=${page}&size=${size}${filter}`;
+    console.log(url)
+    const id = ++requestId.current;
+    fetch(url).then(response => response.json())
     .then(json => {
+      if (id != requestId.current) {
+        return;
+      }
+      if (currentView == 'scans') {
+        setFacets(json.tags ? {tags: json.tags, statuses: json.statuses, days: json.days, hub_statuses: json.hub_statuses} : null);
+      } else if (currentView == 'stacked') {
+        // Stacks: line and SpectroSolHub counts, from a backend that sends
+        // them (no line before the one that tags stacks). There is no date or
+        // status filter on stacks.
+        setFacets(json.tags || json.hub_statuses ? {tags: json.tags, hub_statuses: json.hub_statuses} : null);
+      } else if (currentView == 'animated') {
+        // Animations: the line only. They are not sent to the hub for now, so
+        // its counts would only ever say "not sent".
+        setFacets(json.tags ? {tags: json.tags} : null);
+      }
       if (scans.length == 0 || forceRefresh || (json.scans.length > 0 && json.scans[0].path != scans[0].path)) {
         setPage(page);
         if (page == 1) {
@@ -98,7 +135,9 @@ export default function ListScreen({navigation}) {
     })
     .catch(error => {
       console.error(error);
-      setIsLoading(false);
+      if (id == requestId.current) {
+        setIsLoading(false);
+      }
     });
   }
 
@@ -113,7 +152,7 @@ export default function ListScreen({navigation}) {
     useCallback(() => { 
         setSelectedItems([]);
         getScans(1);
-    },[isFocused, currentView])
+    },[isFocused, currentView, filters])
   );
 
 
@@ -131,8 +170,31 @@ export default function ListScreen({navigation}) {
   // Initialize translation hook
   const { t, i18n } = useTranslation();
 
+  // A stacking takes about 1 GB of RAM on the Pi and the backend does not stop
+  // a second one: one job at a time.
+  const { isRunning: jobIsRunning, start: startJob, completed: completedJob } = useJobs();
+  useEffect(() => {
+    if (!completedJob) {
+      return;
+    }
+    if (!completedJob.resumed) {
+      setSelectedItems([]);
+    }
+    const view = completedJob.kind == 'stack' ? 'stacked' : 'animated';
+    if (view == currentView) {
+      getScans(1, true);
+    } else if (completedJob.kind == 'stack') {
+      setDisplayNewStackedItemNotif(true);
+    } else {
+      setDisplayNewAnimatedItemNotif(true);
+    }
+  }, [completedJob]);
+
   const stackScans = () => {
     console.log('stack');
+    if (jobIsRunning) {
+      return;
+    }
     if(myContext.cameraIsConnected) {
       Alert.alert(t('common:warning'), t('common:disconnectCameraBeforeStacking'), [
         { text: 'OK', onPress: async () => {}}]);
@@ -144,40 +206,31 @@ export default function ListScreen({navigation}) {
       return;
     }
     console.log(selectedItems)
-    // The count is captured here: the selection is cleared on success, and the
-    // pop-in still has to say how many frames it is working on.
-    setStackingCount(selectedItems.length);
-    setStackingError(false);
-    setModalVisible(true);
-    fetch('http://'+myContext.apiURL+"/sunscan/process/stack/",  {
-      method: "POST", 
-      headers: {
-        'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({paths:selectedItems.map(i => i+'/scan.ser'), observer:myContext.showWatermark?myContext.observer:' ', "patch_size":myContext.stackingOptions.patchSize, "step_size":myContext.stackingOptions.stepSize, "intensity_threshold":myContext.stackingOptions.intensityThreshold}),
-    }).then(response => response.json())
-    .then(json => {
-      setDisplayNewStackedItemNotif(true);
-      // Cleared on the real end of the job, not when an estimated timer ran out
-      setSelectedItems([]);
-      setModalVisible(false);
-    })
-    .catch(error => {
-      // Without this the pop-in stayed up for ever on a dropped connection
-      console.error('stacking failed:', error);
-      setStackingError(true);
-    })
+    startJob('stack', {
+      paths: selectedItems.map(i => i+'/scan.ser'),
+      observer: myContext.showWatermark?myContext.observer:' ',
+      patch_size: myContext.stackingOptions.patchSize,
+      step_size: myContext.stackingOptions.stepSize,
+      intensity_threshold: myContext.stackingOptions.intensityThreshold,
+    }, selectedItems.length);
   }
 
-   // Alert for confirming scan deletion
-   const deleteButtonAlert = () =>
-    Alert.alert(t('common:warning'), t('common:deleteGenericConfirm'), [
+   // Alert for confirming scan deletion. "Sent" reads as "backed up", which it
+   // is not: only the chosen JPEGs went to SpectroSolHub, the SER, the FITS and
+   // the 16 bit PNG are lost for good. Selected pages that are not loaded are
+   // only known through the filter.
+   const deleteButtonAlert = () => {
+    const sentSelected = filters.hub == 'sent'
+      || scans.some(s => s.hub_status == 'sent' && selectedItems.includes(s.path));
+    const sentMessage = currentView == 'scans' ? t('common:hubDeleteSentManyConfirm') : t('common:hubDeleteSentItemsConfirm');
+    Alert.alert(t('common:warning'), sentSelected ? sentMessage : t('common:deleteGenericConfirm'), [
       {
         text: 'Annuler',
         style: 'cancel',
       },
       { text: 'OK', onPress: () => deleteScans() },
     ]);
+   };
 
   const deleteScans = () => {
     console.log('delete scans');
@@ -196,11 +249,31 @@ export default function ListScreen({navigation}) {
 
   }
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [stackingCount, setStackingCount] = useState(0);
-  const [stackingError, setStackingError] = useState(false);
+  // Line of the selected stacks or animations, mostly to catch up on those
+  // made before the backend recorded it (it was only written in the
+  // watermark). One call per item, one after the other: the Pi serves the
+  // gallery at the same time.
+  const tagSelection = async (key) => {
+    setLineModalVisible(false);
+    setIsTagging(true);
+    let failed = 0;
+    for (const path of selectedItems) {
+      if (!(await tagItem(myContext.apiURL, path, key))) {
+        failed++;
+      }
+    }
+    setIsTagging(false);
+    setSelectedItems([]);
+    getScans(1, true);
+    if (failed) {
+      Alert.alert(t('common:warning'), t('common:tagManyFailed', { count: failed }));
+    }
+  }
 
   const showAnimationOptionsModal = () => {
+    if (jobIsRunning) {
+      return;
+    }
     if(selectedItems.length <2) {
       Alert.alert(t('common:warning'), t('common:selectAtLeastOneItem'), [
         { text: 'OK', onPress: async () => {}}]);
@@ -220,23 +293,16 @@ export default function ListScreen({navigation}) {
 
      console.log('sorted', sortedPaths);
 
-    await fetch('http://'+myContext.apiURL+"/sunscan/process/animate/",  {
-      method: "POST", 
-      headers: {
-        'Content-Type': 'application/json'
-    },
-      body: JSON.stringify({
-        paths:sortedPaths,
-        watermark:myContext.showWatermark,
-        observer:myContext.showWatermark?myContext.observer:' ',
-        ...options
-      }),
-    }).then(response => response.json())
-    .then(json => {
-      setDisplayNewAnimatedItemNotif(true);
-      setSelectedItems([]);
-      console.log(json)
-    })
+    // The progress pop-in takes over from the options one. Opened while the
+    // latter is still fading out, iOS would not show it.
+    setAnimationOptionsModalVisible(false);
+    await new Promise(resolve => setTimeout(resolve, 350));
+    startJob('animation', {
+      paths: sortedPaths,
+      watermark: myContext.showWatermark,
+      observer: myContext.showWatermark?myContext.observer:' ',
+      ...options
+    }, sortedPaths.length);
   }
 
 
@@ -249,7 +315,31 @@ const updateCurrentView = (view) => {
   setScans([]);
   setTotal(0);
   setSelectedItems([]);
+  // The filters of one tab mean nothing on another
+  setFilters(NO_FILTERS);
+  setFacets(null);
   setCurrentView(view);
+}
+
+const updateFilters = (value) => {
+  setScans([]);
+  setTotal(0);
+  setSelectedItems([]);
+  setFilters(value);
+}
+
+// Only the loaded pages are known here, so the whole filtered series is asked
+// for in one page as large as the filtered total.
+const allSelected = total > 0 && selectedItems.length == total;
+const toggleSelectAll = () => {
+  if (allSelected) {
+    setSelectedItems([]);
+    return;
+  }
+  fetch('http://'+myContext.apiURL+`/sunscan/${currentView}?page=1&size=${total}${filtersQuery(filters)}`)
+    .then(response => response.json())
+    .then(json => setSelectedItems(json.scans.map(scan => scan.path)))
+    .catch(error => console.error(error));
 }
 
 useEffect(() => {
@@ -272,6 +362,7 @@ useEffect(() => {
         <Text className="text-white text-xs mr-4">{selectedItems.length} {t('common:scanSelected')}</Text>
         {currentView == 'scans' && <View className="flex flex-row">
           <PressableScale className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={stackScans}><Ionicons name="logo-stackoverflow" size={20} color="white" /><Text className="text-white"> {t('common:stack')}</Text></PressableScale></View>}
+        {currentView != 'scans' && <PressableScale className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" disabled={isTagging} onPress={() => setLineModalVisible(true)}><Ionicons name="pricetag-outline" size={20} color="white" /><Text className="text-white"> {isTagging ? t('common:tagging') : t('common:line')}</Text></PressableScale>}
          {currentView != 'animated' && <PressableScale className="bg-zinc-600 p-2 rounded-lg flex flex-row items-center space-x-2 mr-2" onPress={showAnimationOptionsModal}><Ionicons name="film-outline" size={20} color="white" /><Text className="text-white"> {t('common:animate')}</Text></PressableScale>}
         <PressableScale className="bg-red-600 p-2 rounded-lg flex flex-row items-center space-x-2" onPress={deleteButtonAlert}><Ionicons name="trash" size={20} color="white" /><Text className="text-white"> {t('common:delete')}</Text></PressableScale>
         <PressableScale className="bg-zinc-700 p-2 rounded-xl flex flex-row items-center space-x-2" onPress={()=>{setSelectedItems([])}}><Ionicons name="close" size={20} color="white" /></PressableScale>
@@ -299,13 +390,30 @@ useEffect(() => {
           {displayNewAnimatedItemNotif && <View className="flex justify-center items-center bg-red-600 absolute rounded-full w-4 h-4" style={{top:-2, right:-4}}><Text className="text-white" style={{fontSize:11}}>1</Text></View>}
         </PressableScale>
 
+        {facets && <PressableScale className="absolute right-0 p-3" onPress={()=>{setShowFilters(!showFilters)}} style={{marginRight:44 + insets.right}}>
+          <Ionicons name={hasActiveFilter(filters) ? "funnel" : "funnel-outline"} size={18} color={hasActiveFilter(filters) ? "#10b981" : (showFilters ? "white" : "#71717a")} />
+        </PressableScale>}
+
         <PressableScale className="absolute right-0 p-3 mr-2" onPress={()=>{setMassEditMode(true);}} style={{paddingRight:insets.right}}>
           <Ionicons name="build-outline" size={20} color={massEditMode ? "white":"#71717a"}  />
         </PressableScale>
       </View>
 
-      <View className="flex flex-col pb-10" style={{paddingRight:insets.right}}>
-        <View className="px-2">
+      {facets && showFilters && <GalleryFilters
+        facets={facets}
+        filters={filters}
+        onChange={updateFilters}
+        total={total}
+        allSelected={allSelected}
+        onToggleSelectAll={toggleSelectAll}
+      />}
+
+      {/* The list takes what the header and the filter panel leave, rather
+          than its own content height offset by a fixed padding: that padding
+          matched the header alone, and with the filters open the last rows
+          ended up below the screen, out of reach. */}
+      <View className="flex flex-col" style={{flex:1, paddingRight:insets.right}}>
+        <View className="px-2" style={{flex:1}}>
           {scans.length ? <FlatList
             data={scans}
             numColumns={3}
@@ -325,7 +433,8 @@ useEffect(() => {
               }
             }
             }
-            contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}
+            // Room under the last row for the selection bar, which floats over the list
+            contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingBottom: massEditMode ? 72 : 16}}
             keyExtractor={(item, index) => item.path.toString()}
             columnWrapperStyle={{ flex: 1, justifyContent: "center" }}
             ListHeaderComponent={<View className="mt-2"></View>}
@@ -343,12 +452,13 @@ useEffect(() => {
         </View>
       </View>
 
-      <StackingModal
-        visible={modalVisible}
-        frameCount={stackingCount}
-        error={stackingError}
-        onClose={() => { setStackingError(false); setModalVisible(false); }}
-      />
+      {lineModalVisible && <ModalLineSelector
+        visible={lineModalVisible}
+        title={t('common:lineModalTitleMany')}
+        message={t('common:lineModalMessageMany', { count: selectedItems.length })}
+        onSelect={tagSelection}
+        onSkip={() => setLineModalVisible(false)}
+      />}
         <AnimationOptionsModal
         visible={animationOptionsModalVisible}
         itemCount={selectedItems.length}

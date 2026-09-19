@@ -15,13 +15,16 @@ NativeWindStyleSheet.setOutput({
 import { Image } from 'expo-image';
 import AppContext from '../components/AppContext';
 import WebSocketContext from '../utils/WSContext';
+import useDetailActions from '../utils/useDetailActions';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { useTranslation } from 'react-i18next';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
-import { downloadSunscanImage } from '../utils/Helpers';
+import { downloadSunscanImage, itemDate, tagItem } from '../utils/Helpers';
+import { linesDict } from '../components/LineSelector';
+import ModalLineSelector from '../components/ModalLineSelector';
 
 export default function AnimatedPictureScreen({  route, navigation }) {
 
@@ -46,7 +49,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
     hour: "numeric",
     minute: "numeric",
   };
-  let scanDate = new Date(scan?.creation_date * 1000).toLocaleDateString("fr-FR", options);
+  let scanDate = itemDate(scan).toLocaleDateString("fr-FR", options);
   scanDate = scanDate.charAt(0).toUpperCase() + scanDate.slice(1);
 
   // Function to download the current image
@@ -72,6 +75,7 @@ export default function AnimatedPictureScreen({  route, navigation }) {
     useCallback(() => {
       setMessage('');
       if (scan) {
+        setTag(scan.tag ?? '');
         setImages([]);
         const images  = [];
         scan.images.map((i) => {
@@ -155,6 +159,32 @@ export default function AnimatedPictureScreen({  route, navigation }) {
       });
   }
   const insets = useSafeAreaInsets();
+
+  // Line of the animation, changed from the menu with the chip grid of a scan.
+  // Empty on one made before the backend recorded it: the watermark of the
+  // image usually tells the user which line it was.
+  const [tag, setTag] = React.useState(scan?.tag ?? '');
+  const [lineModalVisible, setLineModalVisible] = React.useState(false);
+  const currentLine = tag ? linesDict.find(l => l.key === tag) : null;
+  const tagThis = async (key) => {
+    setLineModalVisible(false);
+    if (await tagItem(myContext.apiURL, scan.path, key)) {
+      setTag(key);
+    }
+  };
+  const lineItem = myContext.sunscanIsConnected && { key: 'line', icon: 'pricetag-outline', color: currentLine?.color,
+    label: currentLine?.short ? t('common:menuLine', { line: `${currentLine.short} · ${currentLine.wl}` }) : t('common:menuChooseLine'),
+    onPress: () => setLineModalVisible(true) };
+
+  // Secondary actions, grouped behind a "more" button like on a scan. No
+  // SpectroSolHub upload for animations for now: GIFs were never tried on the
+  // hub, and a refusal would leave an empty draft on the account.
+  const menuItems = [
+    lineItem,
+    myContext.sunscanIsConnected && images.length > 0 && { key: 'download', icon: 'download-outline', label: t('common:download'), onPress: download },
+    myContext.sunscanIsConnected && { key: 'delete', icon: 'trash-outline', label: t('common:delete'), destructive: true, onPress: deleteButtonAlert },
+  ];
+  const { moreButtonRef, openMenu } = useDetailActions({ items: menuItems, navigation });
   // Render the component
   return (
     scan &&
@@ -177,11 +207,13 @@ export default function AnimatedPictureScreen({  route, navigation }) {
               <View className="w-5/6 h-screen " >
 
               {/* Action buttons */}
-              {myContext.sunscanIsConnected && <View className="absolute right-0 z-50" style={{height:'100%', marginRight:12, justifyContent:'center', alignItems:'center', gap:10}}>
-                {images.length > 1 && <IconButton name="expand" onPress={() => myContext.setDisplayFullScreenImage(currentImage)} />}  
-                {images.length > 1 && <IconButton name="download" onPress={() => download()} />}  
-                <IconButton name="trash" onPress={deleteButtonAlert} />
-              </View>}
+              <View className="absolute right-0 z-50" style={{height:'100%', marginRight:12, justifyContent:'center', alignItems:'center', gap:10}}>
+                {myContext.sunscanIsConnected && images.length > 1 && <IconButton name="expand" onPress={() => myContext.setDisplayFullScreenImage(currentImage)} />}
+                {/* Line, download and delete */}
+                {menuItems.some(Boolean) && <View ref={moreButtonRef} collapsable={false}>
+                  <IconButton name="ellipsis-horizontal" onPress={openMenu} />
+                </View>}
+              </View>
 
                     {/* Image zoom component */}
                     <Zoomable
@@ -238,6 +270,15 @@ export default function AnimatedPictureScreen({  route, navigation }) {
            
 
 
+
+            {lineModalVisible && <ModalLineSelector
+              visible={lineModalVisible}
+              title={t('common:lineModalTitleAnimation')}
+              message={t('common:lineModalMessageAnimation')}
+              selected={tag}
+              onSelect={tagThis}
+              onSkip={() => setLineModalVisible(false)}
+            />}
 
         </SafeAreaProvider>
 

@@ -6,21 +6,11 @@
 // built : nothing more than what the real processing does, minus the
 // geometric corrections and at a few frames per second instead of the full
 // camera rate. Good enough to see the disk come in and leave.
-//
-// The same data tells when the disk has fully crossed : it was seen, then
-// every new column went back to sky level for a while.
 
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import WebSocketContext from './WSContext';
 
-// A column counts as "on the disk" above this fraction of the brightest seen
-const DISK_LEVEL = 0.35;
-// Consecutive sky columns after the disk before calling the crossing done.
-// At about two preview frames per second this is a few seconds of sky.
-const SKY_COLUMNS_TO_END = 8;
-// Minimum disk-over-sky excess, in 16-bit camera units (~12 ADU at 12 bits)
-const MIN_DISK_CONTRAST = 200;
 // Columns reserved before the scan duration is known
 const DEFAULT_CAPACITY = 240;
 
@@ -91,15 +81,11 @@ function toBase64(bytes) {
 export default function useScanPreview({ recording, scanDurationS }) {
   const [subscribe, unsubscribe] = useContext(WebSocketContext);
   const [uri, setUri] = useState(null);
-  const [diskPassed, setDiskPassed] = useState(false);
-  const [hasData, setHasData] = useState(false);
 
   const columnsRef = useRef([]);
   const startedAtRef = useRef(0);
   const peakRef = useRef(0);
   const floorRef = useRef(Infinity);
-  const sawDiskRef = useRef(false);
-  const skyRunRef = useRef(0);
   const durationRef = useRef(scanDurationS);
   useEffect(() => { durationRef.current = scanDurationS; }, [scanDurationS]);
 
@@ -149,27 +135,6 @@ export default function useScanPreview({ recording, scanDurationS }) {
     peakRef.current = Math.max(peakRef.current, max);
     floorRef.current = Math.min(floorRef.current, min);
 
-    // End of crossing : disk seen, then sky for a while. Relative levels only
-    // mean something once the disk has shown up at all, hence the contrast
-    // check : a scan started on sky must not count noise as the disk.
-    const floor = floorRef.current;
-    const peak = peakRef.current;
-    // Values are 16-bit : the black level of the sensor sits in the floor, so
-    // the contrast is asked relative to it plus a margin above the noise.
-    const contrasted = peak - floor > 0.3 * floor + MIN_DISK_CONTRAST;
-    const onDisk = contrasted && max > floor + DISK_LEVEL * (peak - floor);
-    if (onDisk) {
-      sawDiskRef.current = true;
-      skyRunRef.current = 0;
-      // A false end (sky noise before the disk, a cloud) is taken back as soon
-      // as the disk shows up again, which also cancels the auto stop.
-      setDiskPassed(false);
-    } else if (sawDiskRef.current) {
-      skyRunRef.current += 1;
-      if (skyRunRef.current >= SKY_COLUMNS_TO_END) setDiskPassed(true);
-    }
-
-    setHasData(true);
     render();
   }, [render]);
 
@@ -180,15 +145,11 @@ export default function useScanPreview({ recording, scanDurationS }) {
     startedAtRef.current = Date.now();
     peakRef.current = 0;
     floorRef.current = Infinity;
-    sawDiskRef.current = false;
-    skyRunRef.current = 0;
     setUri(null);
-    setHasData(false);
-    setDiskPassed(false);
 
     subscribe('scanline', onScanline);
     return () => unsubscribe('scanline', onScanline);
   }, [recording, subscribe, unsubscribe, onScanline]);
 
-  return { uri, hasData, diskPassed };
+  return { uri };
 }

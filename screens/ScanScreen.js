@@ -39,6 +39,9 @@ import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import ModalLineSelector from '../components/ModalLineSelector';
+import ModalExposureInput from '../components/ModalExposureInput';
+import ExposureTip from '../components/ExposureTip';
+import { useOverlay } from '../components/OverlayHost';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressableScale from '../components/PressableScale';
@@ -62,6 +65,13 @@ import { useSharedValue } from 'react-native-reanimated';
 const FULL_FRAME_WIDTH = 402;
 const FULL_FRAME_HEIGHT = 200;
 const AUTO_EXPOSURE_STORAGE_KEY = 'SUNSCAN_APP::AUTO_EXPOSURE';
+// Set once the EXP walkthrough has been dismissed : it is only shown once
+const EXP_TIP_STORAGE_KEY = 'SUNSCAN_APP::EXP_TIP_SEEN';
+
+// Exposures the camera accepts, in ms : the three slider ranges taken end to
+// end. What is typed by hand is held inside them.
+const MANUAL_EXP_MIN_MS = 0.1;
+const MANUAL_EXP_MAX_MS = 30000;
 
 // Grace period between the estimated end of the crossing and the auto stop
 const AUTO_STOP_DELAY_S = 30;
@@ -297,6 +307,41 @@ export default function ScanScreen({navigation}) {
     };
     // Shown when record is pressed outside cropped mode, to point at the crop button
     const [cropHintVisible, setCropHintVisible] = useState(false);
+
+    // Exposure typed in rather than slid to. In cropped mode nothing sets the
+    // exposure automatically and the slider is far too coarse to land on a
+    // given value : this is how an exposure found once is set again exactly.
+    const [expInputVisible, setExpInputVisible] = useState(false);
+    const applyManualExposure = (exposureMs) => {
+      setExpInputVisible(false);
+      const clamped = Math.min(MANUAL_EXP_MAX_MS, Math.max(MANUAL_EXP_MIN_MS, exposureMs));
+      // The slider follows : its range has to hold the new exposure, or the
+      // thumb would sit against a bound showing something else than the camera.
+      setExpMode(exposureModeFor(clamped));
+      setExptime(clamped);
+    };
+
+    // Walkthrough of the EXP tile, whose two gestures nothing on it shows.
+    // null while the stored flag is read, so it cannot flash up on a device
+    // where it has already been dismissed.
+    const [expTipSeen, setExpTipSeen] = useState(null);
+    const [expTipTarget, setExpTipTarget] = useState(null);
+    const expTileRef = useRef(null);
+    useEffect(() => {
+      AsyncStorage.getItem(EXP_TIP_STORAGE_KEY)
+        .then((stored) => setExpTipSeen(stored === 'true'))
+        .catch(() => setExpTipSeen(false));
+    }, []);
+    // In debug mode it comes back on every opening of the settings panel, to
+    // try it out without clearing the app data : this only keeps it from
+    // coming straight back while the panel stays open.
+    const [expTipShownThisPanel, setExpTipShownThisPanel] = useState(false);
+    const closeExpTip = useCallback(() => {
+      setExpTipTarget(null);
+      setExpTipSeen(true);
+      setExpTipShownThisPanel(true);
+      AsyncStorage.setItem(EXP_TIP_STORAGE_KEY, 'true').catch(() => {});
+    }, []);
 
     // Also enabled while recording, even with the panel hidden : the scan
     // duration it estimates sizes the disk preview and drives the auto stop.
@@ -566,14 +611,11 @@ export default function ScanScreen({navigation}) {
 
     useEffect(() => () => clearInterval(timerIdRef.current), []);
 
-    // Auto stop : once the disk is judged to have crossed, the scan is stopped
-    // on its own if nobody did it within AUTO_STOP_DELAY_S. The preview is the
-    // judge when the backend streams it, since it sees the disk leave ; the
-    // ephemeris estimate is only the fallback.
+    // Auto stop : once the ephemeris duration of the crossing has elapsed, the
+    // scan is stopped on its own if nobody did it within AUTO_STOP_DELAY_S.
+    // Nothing tells for sure that the disk has left, hence the margin.
     const elapsedS = parseFloat(time) || 0;
-    const scanLooksDone = rec && (preview.hasData
-      ? preview.diskPassed
-      : Number.isFinite(scanDurationS) && elapsedS >= scanDurationS);
+    const scanLooksDone = rec && Number.isFinite(scanDurationS) && elapsedS >= scanDurationS;
     const [autoStopCancelled, setAutoStopCancelled] = useState(false);
     const [autoStopIn, setAutoStopIn] = useState(null);
     const updateRecRef = useRef(updateRec);
@@ -585,7 +627,7 @@ export default function ScanScreen({navigation}) {
 
     useEffect(() => {
       // A stop already on its way must not be fired a second time
-      if (!scanLooksDone || autoStopCancelled || isRecPending) {
+      if (!myContext.autoStop || !scanLooksDone || autoStopCancelled || isRecPending) {
         setAutoStopIn(null);
         return undefined;
       }
@@ -602,7 +644,7 @@ export default function ScanScreen({navigation}) {
         }
       }, 1000);
       return () => clearInterval(id);
-    }, [scanLooksDone, autoStopCancelled, isRecPending]);
+    }, [myContext.autoStop, scanLooksDone, autoStopCancelled, isRecPending]);
 
     // Function to update Y-axis crop position
     async function updatePosYCrop(type) {
@@ -701,12 +743,52 @@ const insets = useSafeAreaInsets();
   updateControls();
 }, [expTime, gain, maxThreshold]);
 
+  // The EXP walkthrough comes up the first time the settings panel opens in
+  // cropped mode, where typing the exposure in is offered. Measured once the
+  // panel has been laid out : the window has to land on the tile.
+  const optionsPanelShown = !rec && !displaySpectrum && displayOptions
+    && !!(myContext.cameraIsConnected || myContext.demo);
+  useEffect(() => {
+    if (!optionsPanelShown) {
+      setExpTipShownThisPanel(false);
+    }
+  }, [optionsPanelShown]);
+  const expTipDue = myContext.debug ? !expTipShownThisPanel : expTipSeen === false;
+  useEffect(() => {
+    if (!expTipDue || !crop || !optionsPanelShown || !isFocused) {
+      return;
+    }
+    const id = setTimeout(() => {
+      expTileRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) {
+          setExpTipTarget({ x, y, width, height });
+        }
+      });
+    }, 400);
+    return () => clearTimeout(id);
+  }, [expTipDue, crop, optionsPanelShown, isFocused]);
+  const expTipVisible = expTipTarget != null && crop && optionsPanelShown && isFocused;
+  useOverlay(React.useMemo(
+    () => expTipVisible ? <ExposureTip target={expTipTarget} onClose={closeExpTip} /> : null,
+    [expTipVisible, expTipTarget, closeExpTip]
+  ));
+
 
     return (
     
      <SafeAreaView className="bg-zinc-800" style={{flex:1}}>
       {/* Modal to select spectral line */}
       {modalLineSelectorVisible && <ModalLineSelector visible={modalLineSelectorVisible} onSelect={setTagOnScan} onSkip={() => setModalLineSelectorVisible(false)} />}
+      {/* Exposure typed in rather than slid to, cropped mode */}
+      {expInputVisible && <ModalExposureInput
+        visible={expInputVisible}
+        value={expTime}
+        min={MANUAL_EXP_MIN_MS}
+        max={MANUAL_EXP_MAX_MS}
+        onCancel={() => setExpInputVisible(false)}
+        onSubmit={applyManualExposure}
+      />}
+
       <View className="flex flex-col " style={{flex:1}}>
   
             {/* Main container for displaying the camera feed or spectrum */}
@@ -984,10 +1066,12 @@ const insets = useSafeAreaInsets();
 
                   <View className="flex flex-row justify-evenly align-center items-center w-1/4"  >
 
-                      {/* Exposure time control */}
-                      <PressableScale onLongPress={()=>toggleExpMode()} onPress={()=>setSettings('exp')} className={settings == 'exp' ? "flex flex-col justify-between items-center w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center w-10 pb-1 border-b border-transparent"}>
+                      {/* Exposure time control. In cropped mode, a tap on the
+                          tile already selected types the exposure in : the first
+                          tap still only brings the slider back from the gain. */}
+                      <PressableScale onLongPress={()=>toggleExpMode()} onPress={()=>{ if (crop && settings == 'exp') { setExpInputVisible(true); } else { setSettings('exp'); } }} className={settings == 'exp' ? "flex flex-col justify-between items-center w-10 pb-1 border-b border-white":"flex flex-col justify-between items-center w-10 pb-1 border-b border-transparent"}>
 
-                            <View>
+                            <View ref={expTileRef} collapsable={false}>
                            {autoExpOn && <View style={{right:-8,top:-8}} className="z-10 absolute self-start bg-emerald-500 rounded-full flex flex-row h-4 w-4 justify-center items-center"><Text style={{fontSize:8}} className="text-white text-center">A</Text></View>}
                            {!autoExpOn && expMode > 0  && <View style={{right:-8,top:-8}} className={settings == 'exp' ? "z-10 absolute self-start bg-red-600 rounded-full font-center flex flex-row h-4 w-4 justify-center items-center":"z-10 absolute self-start rounded-lg font-center flex flex-row h-4 w-4 justify-center items-center bg-zinc-500"} ><Text style={{fontSize:8}} className="text-white text-center ">{expMode == 1 ? 'SE':'LE'}</Text></View>}
                            <Text style={{fontSize:13}} className={settings == 'exp' ? "color-white font-bold":"color-zinc-400"}>EXP</Text>
@@ -1015,8 +1099,11 @@ const insets = useSafeAreaInsets();
                   {isFocused && (settings == 'exp' ? <Slider
                     style={{flexGrow:10, height: 30}}
                     className=""
-                    minimumValue={expMode == 0 ? 20: expMode == 1 ? 0.1:200}
-                    maximumValue={expMode == 0? 160: expMode == 1 ? 20:30000}
+                    // Widened to hold a typed exposure that falls between two
+                    // ranges (160 - 200 ms) : the thumb then shows the exposure
+                    // in force instead of sitting pinned against a bound.
+                    minimumValue={Math.min(expTime, expMode == 0 ? 20: expMode == 1 ? 0.1:200)}
+                    maximumValue={Math.max(expTime, expMode == 0? 160: expMode == 1 ? 20:30000)}
                     value={expTime}
                     disabled={autoExpOn}
                     thumbTintColor={autoExpOn ? "#10b981" : "white"}

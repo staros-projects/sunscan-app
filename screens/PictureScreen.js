@@ -1,5 +1,5 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, useWindowDimensions } from 'react-native';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, Pressable, StyleSheet, Text, TouchableHighlight, View, ScrollView, Switch, Alert, TextInput, SafeAreaView, useWindowDimensions, Linking } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeWindStyleSheet } from "nativewind";
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -14,6 +14,9 @@ NativeWindStyleSheet.setOutput({
 import { Image } from 'expo-image';
 import AppContext from '../components/AppContext';
 import useScanProcess from '../utils/useScanProcess';
+import { useHubUpload } from '../utils/SpectroSolHub';
+import HubUploadModal from '../components/HubUploadModal';
+import useDetailActions from '../utils/useDetailActions';
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -21,7 +24,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import ScanInfo from '../components/ScanInfo';
 import ProcessScan from '../components/ProcessScan';
 import { useTranslation } from 'react-i18next';
-import LineSelector from '../components/LineSelector';
+import { linesDict } from '../components/LineSelector';
+import ModalLineSelector from '../components/ModalLineSelector';
 import { Zoomable } from '@likashefqet/react-native-image-zoom';
 import { downloadSunscanImage } from '../utils/Helpers';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -39,6 +43,9 @@ export default function PictureScreen({ route, navigation }) {
   const [message, setMessage] = React.useState("");
   const [displayInfo, setDisplayInfo] = React.useState(false);
   const [displayProcessScan, setDisplayProcessScan] = React.useState(false);
+  const [displayHubUpload, setDisplayHubUpload] = React.useState(false);
+  // Last successful SpectroSolHub upload of this scan (null if never sent)
+  const [hubInfo, setHubInfo] = React.useState(null);
   const [images, setImages] = React.useState([]);
   const myContext = useContext(AppContext);
   const scan = route.params?.scan
@@ -84,6 +91,12 @@ export default function PictureScreen({ route, navigation }) {
     },
   });
 
+  // Owned here rather than by the panel, so closing it does not stop
+  // following an upload, and the button can show one is running.
+  const hubUpload = useHubUpload(scan, {
+    onCompleted: () => getScanDetails(scan),
+  });
+
   // Function to fetch scans from the API
   async function getScanDetails(scan) {
     
@@ -109,6 +122,7 @@ export default function PictureScreen({ route, navigation }) {
       }
 
       setTag(json.tag)
+      setHubInfo(json.spectrosolhub ?? null);
 
       setIsLoading(false);
     })
@@ -177,6 +191,8 @@ export default function PictureScreen({ route, navigation }) {
        // for instance after the app was killed: the websocket alone would only
        // tell us on its next reconnection.
        refreshStatus();
+       // Same for an upload to SpectroSolHub still under way.
+       hubUpload.resume();
       }
 
     }, [scan]));
@@ -226,9 +242,25 @@ export default function PictureScreen({ route, navigation }) {
     },
   });
 
+  // Hε sits in the red wing of Ca II H, and the backend extracts it while
+  // processing a scan tagged caIIH. A scan tagged after it was processed only
+  // gets its Hε images from a new run, so offer one rather than let the user
+  // look for them.
+  const onTagged = (newTag) => {
+    const previousTag = tag;
+    setTag(newTag);
+    if (newTag !== 'caIIH' || previousTag === 'caIIH' || !images.length) return;
+    Alert.alert(t('common:hepsilonReprocessTitle'), t('common:hepsilonReprocessMessage'), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: t('common:hepsilonReprocessAction'), onPress: () => setDisplayProcessScan(true) },
+    ]);
+  };
+
   // Alert for confirming scan deletion
+  // A scan sent to the hub reads as "backed up", but only some of its JPEGs
+  // went: the SER, the FITS and the 16 bit PNG are lost with it.
   const deleteButtonAlert = () =>
-    Alert.alert(t('common:warning'), t('common:deleteConfirm'), [
+    Alert.alert(t('common:warning'), hubInfo ? t('common:hubDeleteSentConfirm') : t('common:deleteConfirm'), [
       {
         text: 'Annuler',
         style: 'cancel',
@@ -273,6 +305,46 @@ export default function PictureScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
 
   const [currentPlanisphere, setCurrentPlanisphere] = useState(""); 
+
+  // Line of the scan, changed from the menu. Tagging used to have its own
+  // round button in the column; it now opens the same chip grid as the end of
+  // a scan.
+  const [lineModalVisible, setLineModalVisible] = useState(false);
+  const currentLine = tag ? linesDict.find(l => l.key === tag) : null;
+  const tagScan = (key) => {
+    setLineModalVisible(false);
+    fetch('http://' + myContext.apiURL + "/sunscan/scan/tag/", {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: scan.path, tag: key }),
+    }).then(response => response.json())
+      .then(() => onTagged(key))
+      .catch(error => console.error(error));
+  };
+
+  const menuItems = [
+    { key: 'line', icon: 'pricetag-outline', color: currentLine?.color,
+      label: currentLine?.short ? t('common:menuLine', { line: `${currentLine.short} · ${currentLine.wl}` }) : t('common:menuChooseLine'),
+      onPress: () => setLineModalVisible(true) },
+    !!currentPlanisphere && { key: '3d', icon: '3d-rotation', IconSet: MaterialIcons, label: t('common:menuView3d'), onPress: () => myContext.setDisplayFullScreen3d(currentPlanisphere) },
+  ];
+  // Everything else needs the SUNSCAN
+  if (myContext.sunscanIsConnected) menuItems.push(
+    { key: 'info', icon: 'information-circle-outline', label: t('common:scanDetails'), onPress: () => setDisplayInfo(true) },
+    (images.length > 1 || myContext.debug) && { key: 'process', icon: 'construct-outline', label: t('common:advancedProcessing'), onPress: () => setDisplayProcessScan(true) },
+    images.length > 1 && { key: 'download', icon: 'download-outline', label: t('common:download'), onPress: download },
+    // The observation of the last successful upload, published or draft
+    hubInfo?.url && { key: 'hub', icon: 'open-outline', label: t('common:hubViewOnHub'), color: '#10b981', onPress: () => Linking.openURL(hubInfo.url).catch(() => {}) },
+    { key: 'delete', icon: 'trash-outline', label: t('common:delete'), destructive: true, onPress: deleteButtonAlert },
+  );
+  // Secondary actions, grouped behind a "more" button, and the cloud button
+  const { moreButtonRef, openMenu, hubButtonRef, onHubPress, hubIcon } = useDetailActions({
+    items: menuItems,
+    hubUpload,
+    hubInfo,
+    onHubOpen: () => setDisplayHubUpload(true),
+    navigation,
+  });
 
   useEffect(() => {
     if (!currentImage || !currentImage.length) return;
@@ -324,17 +396,17 @@ export default function PictureScreen({ route, navigation }) {
                   Conditions are repeated per button rather than wrapped in a
                   fragment, which would break NativeWind's space-y-* spacing. */}
               <View className="absolute right-0 z-50" style={{height:'100%', marginRight:12, justifyContent:'center', alignItems:'center', gap:10}}>
-                {myContext.sunscanIsConnected && <IconButton name="information-circle-outline" onPress={() => {setDisplayInfo(!displayInfo)}} />}
                 {myContext.sunscanIsConnected && images.length > 1 && <IconButton name="expand" onPress={() => myContext.setDisplayFullScreenImage(currentImage[1])} />}
-                {myContext.sunscanIsConnected && (images.length > 1 || myContext.debug) && <IconButton name="construct" onPress={() => {setDisplayProcessScan(!displayProcessScan)}} />}
-                {myContext.sunscanIsConnected && images.length > 1 && <IconButton name="download" onPress={() => download()} />}
-                {myContext.sunscanIsConnected && <IconButton name="trash" onPress={deleteButtonAlert} />}
-                <LineSelector tag={tag} path={scan.path} />
+                {myContext.sunscanIsConnected && myContext.hubSupported && images.length > 0 && <View ref={hubButtonRef} collapsable={false}>
+                  <IconButton name={hubIcon.name} color={hubIcon.color} onPress={onHubPress} />
+                </View>}
+                {/* Line, 3D view, info, processing, download and delete. Shown
+                    offline too: the line stays reachable, like its old button. */}
+                <View ref={moreButtonRef} collapsable={false}>
+                  <IconButton name="ellipsis-horizontal" onPress={openMenu} />
+                </View>
               </View>
 
-                {currentPlanisphere && <View className="absolute left-0 bottom-0 justify-end  m-4 align-center z-50 flex space-y-4 flex-col">
-                  <IconButton IconSet={MaterialIcons} name="3d-rotation" size={26} onPress={() => myContext.setDisplayFullScreen3d(currentPlanisphere)} />
-                </View>}
               
                     {/* Image zoom component */}
                     {/* key : remonte le Zoomable (et ses gesture handlers) au changement d'image et à l'ouverture/fermeture d'un overlay plein écran */}
@@ -388,6 +460,28 @@ export default function PictureScreen({ route, navigation }) {
      
 
             {/* Process scan and scan info components */}
+            {lineModalVisible && <ModalLineSelector
+              visible={lineModalVisible}
+              title={t('common:lineModalTitle')}
+              message={t('common:lineModalMessage')}
+              selected={tag}
+              onSelect={tagScan}
+              onSkip={() => setLineModalVisible(false)}
+            />}
+
+            <HubUploadModal
+              scan={scan}
+              upload={hubUpload}
+              isVisible={displayHubUpload}
+              onClose={() => {
+                setDisplayHubUpload(false);
+                // A success is recorded in the scan (green cloud); a failure
+                // stays on screen until retried, with its draft link.
+                if (hubUpload.status === 'completed') hubUpload.reset();
+              }}
+              onOpenWifiSettings={() => { setDisplayHubUpload(false); navigation.navigate('Settings'); }}
+            />
+
             <ProcessScan processMethod={processScan} isStarted={isStarted} percent={percent} step={step} errorKey={errorKey} isVisible={displayProcessScan} onClose={()=>setDisplayProcessScan(false)} />
             
 

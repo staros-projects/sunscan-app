@@ -13,7 +13,10 @@ import { modalBackdrop, modalCard, colors, roundButton } from './theme';
 // every chip keeps the same size whatever the length of its label.
 const CHIP_WIDTH = 104;
 
-const ModalLineSelector = ({ visible, onSelect, onSkip }) => {
+// Opened at the end of a scan with the defaults below, and from the picture
+// screen's menu to change the tag of a scan: `title` and `message` then replace
+// the end of scan wording, and `selected` outlines the current line.
+const ModalLineSelector = ({ visible, onSelect, onSkip, title, message, selected }) => {
   const { t } = useTranslation();
 
   // The empty "Select your line" placeholder belongs to the dropdown, not here,
@@ -48,8 +51,8 @@ const ModalLineSelector = ({ visible, onSelect, onSkip }) => {
                   giving no sign that the scan had actually been recorded. */}
               <View style={styles.header}>
                 <View style={styles.headerTitle}>
-                  <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-                  <Text style={styles.title}>{t('common:scanCompleteTitle')}</Text>
+                  <Ionicons name={title ? 'pricetag-outline' : 'checkmark-circle'} size={20} color={colors.accent} />
+                  <Text style={styles.title}>{title || t('common:scanCompleteTitle')}</Text>
                 </View>
                 {onSkip && (
                   <PressableScale style={styles.closeButton} onPress={onSkip} hitSlop={8}>
@@ -58,7 +61,7 @@ const ModalLineSelector = ({ visible, onSelect, onSkip }) => {
                 )}
               </View>
 
-              <Text style={styles.subtitle}>{t('common:selectLineMessage')}</Text>
+              <Text style={styles.subtitle}>{message || t('common:selectLineMessage')}</Text>
 
               {/* Scrollable so the picker survives a short window (small phone in
                   landscape) instead of pushing the chips off the card. */}
@@ -69,6 +72,7 @@ const ModalLineSelector = ({ visible, onSelect, onSkip }) => {
               >
                 {lines.map((item) => {
                   const isPending = pending === item.key;
+                  const isCurrent = !pending && selected === item.key;
                   return (
                     <PressableScale
                       key={item.key}
@@ -76,7 +80,8 @@ const ModalLineSelector = ({ visible, onSelect, onSkip }) => {
                       onPress={() => choose(item.key)}
                       style={[
                         styles.chip,
-                        { borderColor: isPending ? colors.accent : 'rgba(255,255,255,0.10)' },
+                        { borderColor: isPending || isCurrent ? colors.accent : 'rgba(255,255,255,0.10)' },
+                        isCurrent && { borderWidth: 1.5 },
                         isPending && { backgroundColor: 'rgba(16,185,129,0.18)' },
                       ]}
                     >

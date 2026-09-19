@@ -6,15 +6,10 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "2.0.1",
+        version: "2.1.2",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
-        splash: {
-          image: "./assets/splash.png",
-          resizeMode: "contain",
-          backgroundColor: "#000"
-        },
         assetBundlePatterns: ["**/*"],
         ios: {
           buildNumber: "41",
@@ -66,6 +61,17 @@ export default ({ config }) => {
         },
         owner: "staros",
         plugins: [
+          [
+            // Just the mark, centred: components/AnimatedSplash picks up from
+            // this exact frame. imageWidth must equal its SPLASH_MARK_WIDTH.
+            "expo-splash-screen",
+            {
+              image: "./assets/splash-icon.png",
+              imageWidth: 110,
+              resizeMode: "contain",
+              backgroundColor: "#000000"
+            }
+          ],
           [
             "expo-screen-orientation",
             {

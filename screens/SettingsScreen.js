@@ -8,7 +8,6 @@ import { NativeWindStyleSheet } from "nativewind";
 import * as Application from 'expo-application';
 import AppContext from '../components/AppContext';
 
-import { Asset, useAssets } from 'expo-asset';
 import { useTranslation } from 'react-i18next';
 import { t, use } from 'i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,21 +19,13 @@ import { discoverSunscan, normalizeApiURL } from '../utils/Discovery';
 import PressableScale from '../components/PressableScale';
 import WifiSetupModal from '../components/WifiSetupModal';
 import { forgetWifi, getNetworkStatus, switchToHotspot } from '../utils/SunscanNetwork';
+import HubLoginForm from '../components/HubLoginForm';
+import FirmwareUpdateModal from '../components/FirmwareUpdateModal';
+import { hubErrorKey, hubLogout } from '../utils/SpectroSolHub';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
 });
-
-// Firmware payload pushed to the SUNSCAN. Kept at module scope so the prefetch
-// (useAssets) and the upload (Asset.fromModule) refer to the very same asset.
-const FIRMWARE_ZIP = require('../assets/sunscan_backend_source.zip');
-
-// The SUNSCAN restarts its backend as soon as it has unpacked the archive, so
-// the HTTP response of /update is regularly lost. These bound the upload and
-// the "did it actually land?" probe that follows a dropped connection.
-const FIRMWARE_UPLOAD_TIMEOUT_MS = 120000;
-const FIRMWARE_PROBE_TIMEOUT_MS = 60000;
-const FIRMWARE_PROBE_INTERVAL_MS = 3000;
 
 // Define available languages
 const languages = [ // Language List
@@ -99,6 +90,15 @@ function FullRow({children}) {
   return <View className="px-4 py-3">{children}</View>;
 }
 
+const formatBytes = (bytes) => {
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  return `${Math.round(bytes / 1024 / 1024)} MB`;
+};
+
+// "used / cap", a cap of 0 meaning none is known.
+const quotaLine = (used, cap, format = String) =>
+  cap ? `${format(used)} / ${format(cap)}` : format(used);
+
 export default function SettingsScreen({navigation, isFocused}) {
 
   // Get the global variables & functions via context
@@ -116,121 +116,12 @@ export default function SettingsScreen({navigation, isFocused}) {
   const [wifiBusy, setWifiBusy] = useState(false);
 
 
-  // Prefetch the firmware update ZIP file so the upload does not have to wait
-  const [assetZipPath, error] = useAssets([FIRMWARE_ZIP]);
-  const [isUpdatingFirmware, setIsUpdatingFirmware] = useState(false);
+  const [firmwareModalVisible, setFirmwareModalVisible] = useState(false);
 
   // Initialize translation hook
   const { t, i18n } = useTranslation();
   const [lang, changeLang] = useState('en');
   const selectedLanguageCode = i18n.language;
-
-  // Ask the SUNSCAN which backend version it currently runs. Returns null when
-  // the device is unreachable, which during an update simply means "not back yet".
-  const readBackendVersion = async () => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FIRMWARE_PROBE_INTERVAL_MS);
-    try {
-      const response = await fetch('http://' + myContext.apiURL + '/sunscan/stats', {
-        signal: controller.signal,
-      });
-      const json = await response.json();
-      return json?.backend_api_version || null;
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-
-  // The device drops the connection while it restarts, so a network error on
-  // /update tells us nothing. Poll the stats endpoint until the backend answers
-  // again and report what version actually ended up installed.
-  const probeFirmwareAfterRestart = async () => {
-    const deadline = Date.now() + FIRMWARE_PROBE_TIMEOUT_MS;
-    while (Date.now() < deadline) {
-      const version = await readBackendVersion();
-      if (version) {
-        myContext.setBackendApiVersion(version);
-        return firmareIsUpToDate({ backendApiVersion: version });
-      }
-      await new Promise((resolve) => setTimeout(resolve, FIRMWARE_PROBE_INTERVAL_MS));
-    }
-    return false;
-  };
-
-  // Function to update firmware
-  const runFirmwareUpdate = async () => {
-    setIsUpdatingFirmware(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FIRMWARE_UPLOAD_TIMEOUT_MS);
-    try {
-      // useAssets may not have finished yet, and in a production build the
-      // asset only has a bundle URI until it is downloaded. Without a readable
-      // file:// URI the native layer fails the multipart part, which surfaces
-      // as the same generic "Network request failed" as a real network issue.
-      const asset = Asset.fromModule(FIRMWARE_ZIP);
-      if (!asset.localUri) {
-        await asset.downloadAsync();
-      }
-      const uri = asset.localUri || asset.uri;
-      if (!uri) {
-        Alert.alert(t('common:warning'), t('common:firmwareUpdateUnconfirmed'));
-        return;
-      }
-
-      // Create FormData and append the ZIP file.
-      // Content-Type is deliberately left unset: React Native builds the
-      // multipart body itself and needs to attach its own boundary.
-      const formData = new FormData();
-      formData.append('file', {
-        uri,
-        name: 'sunscan_backend_source.zip',
-        type: 'application/zip',
-      });
-
-      // Send the ZIP file to the FastAPI server
-      const response = await fetch('http://' + myContext.apiURL + '/update', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-
-      // Handle the response
-      if (response.ok) {
-        Alert.alert(t('common:success'), t('common:firmwarePostUpdateMessage'));
-      } else {
-        const detail = await response.text();
-        Alert.alert(t('common:warning'), detail || `HTTP ${response.status}`);
-      }
-    } catch (e) {
-      // fetch rejects with a generic "Network request failed" for every
-      // transport failure, including the backend closing the socket while it
-      // restarts on a successful update. Check the device before crying wolf.
-      console.log('firmware update request failed:', e?.message);
-      const updated = await probeFirmwareAfterRestart();
-      if (updated) {
-        Alert.alert(t('common:success'), t('common:firmwarePostUpdateMessage'));
-      } else {
-        Alert.alert(t('common:warning'), t('common:firmwareUpdateUnconfirmed'));
-      }
-    } finally {
-      clearTimeout(timer);
-      setIsUpdatingFirmware(false);
-    }
-  };
-
-  const updateFirmware = () => {
-    if (isUpdatingFirmware) {
-      return;
-    }
-    Alert.alert(t('common:warning'), t('common:updateFirmwareconfirm'), [
-      {
-        text: t('common:cancel'),
-        style: 'cancel',
-      },
-      { text: 'OK', onPress: runFirmwareUpdate }]);
-  }
 
   // Update apiInput when the stored custom IP changes
   useEffect(()=>{
@@ -357,6 +248,60 @@ export default function SettingsScreen({navigation, isFocused}) {
   };
 
   const hotspotName = netStatus?.hotspot?.ssid || 'sunscan';
+
+  // --- SpectroSolHub ---------------------------------------------------------
+
+  const { hubSupported, hubAccount, refreshHubAccount } = myContext;
+  const [hubChecking, setHubChecking] = useState(false);
+
+  // The token is checked with the hub here (up to 10 s), which also brings the
+  // quota; an expired one comes back disconnected and the form shows up.
+  useFocusEffect(
+    useCallback(() => {
+      if (!sunscanIsConnected || !hubSupported || !hubAccount?.connected) {
+        return;
+      }
+      let active = true;
+      setHubChecking(true);
+      refreshHubAccount({ verify: true }).finally(() => active && setHubChecking(false));
+      return () => { active = false; };
+    }, [sunscanIsConnected, hubSupported, hubAccount?.connected, refreshHubAccount]));
+
+  const logoutHub = () => {
+    Alert.alert(t('common:warning'), t('common:hubLogoutConfirm', { name: hubAccount?.username }), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: t('common:hubLogout'), style: 'destructive', onPress: async () => {
+        try {
+          await hubLogout(apiURL);
+        } catch (e) {
+          Alert.alert(t('common:warning'), t('common:wifiUnreachable'));
+        }
+        refreshHubAccount();
+      }}]);
+  };
+
+  const hubAccountHint = () => {
+    const lines = [t('common:hubConnectedAs', { username: hubAccount.username })];
+    if (hubChecking) {
+      lines.push(t('common:hubChecking'));
+    } else if (hubAccount.verified === false && hubAccount.error) {
+      lines.push(t(hubErrorKey(hubAccount.error)));
+    } else if (hubAccount.quota) {
+      const q = hubAccount.quota;
+      lines.push(t('common:hubQuota', {
+        storage: quotaLine(q.used_storage_bytes, q.storage_bytes, formatBytes),
+        images: quotaLine(q.used_image_count, q.image_count),
+      }));
+    }
+    if (netStatus?.mode === 'hotspot') {
+      lines.push(t('common:hubNeedsInternet'));
+    }
+    return (
+      <View>
+        {lines.map((line, i) => <Text key={i} className="text-zinc-500 mt-1" style={{fontSize:11}}>{line}</Text>)}
+      </View>
+    );
+  };
 
   // Both actions below drop the SUNSCAN back to its hotspot: the app follows,
   // and the user has to put the phone back on it.
@@ -616,6 +561,15 @@ export default function SettingsScreen({navigation, isFocused}) {
                 />
               </Row>
 
+              <Row label={t('common:autoStopScan')} hint={t('common:autoStopScanDescription')}>
+                <Switch
+                  trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                  thumbColor='#fff'
+                  value={myContext.autoStop}
+                  onValueChange={myContext.toggleAutoStop}
+                />
+              </Row>
+
             </Section>
 
             {/* ---- Connection ---- */}
@@ -722,6 +676,32 @@ export default function SettingsScreen({navigation, isFocused}) {
               onConnected={onWifiConnected}
               onManualIp={onWifiManualIp}
             />
+            <FirmwareUpdateModal isVisible={firmwareModalVisible} onClose={() => setFirmwareModalVisible(false)} />
+
+            {/* ---- SpectroSolHub: only backends with the hub routes ---- */}
+            {myContext.sunscanIsConnected && hubSupported && hubAccount &&
+              <Section title="SpectroSolHub">
+                {hubAccount.connected ?
+                  <Row label={t('common:hubAccount')} hint={hubAccountHint()}>
+                    <PressableScale className="bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-2 flex flex-row items-center" onPress={logoutHub}>
+                      <Ionicons name="log-out-outline" size={16} color="white" />
+                      <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:hubLogout')}</Text>
+                    </PressableScale>
+                  </Row>
+                  :
+                  <Row label={t('common:hubAccount')} hint={
+                    <View>
+                      <Text className="text-zinc-500 mt-1" style={{fontSize:11}}>{t('common:hubDescription')}</Text>
+                      {netStatus?.mode === 'hotspot' && <Text className="text-amber-500 mt-1" style={{fontSize:11}}>{t('common:hubNeedsInternet')}</Text>}
+                    </View>
+                  }>
+                    <View className="flex-1">
+                      <HubLoginForm />
+                    </View>
+                  </Row>
+                }
+              </Section>
+            }
 
             {/* ---- Device ---- */}
             <Section title={t('common:deviceSection')}>
@@ -757,11 +737,9 @@ export default function SettingsScreen({navigation, isFocused}) {
                   }
                 >
                   {!firmareIsUpToDate(myContext) || myContext.debug ?
-                    <PressableScale className={`${isUpdatingFirmware ? 'bg-red-900' : 'bg-red-600'} px-3 py-2 rounded-xl flex flex-row items-center space-x-2`} disabled={isUpdatingFirmware} onPress={updateFirmware}>
-                      {isUpdatingFirmware
-                        ? <ActivityIndicator size="small" color="white" />
-                        : <Ionicons name="refresh" size={18} color="white" />}
-                      <Text className="text-white">{isUpdatingFirmware ? t('common:firmwareUpdating') : t('common:update')}</Text>
+                    <PressableScale className="bg-emerald-600 px-3 py-2 rounded-xl flex flex-row items-center space-x-2" onPress={() => setFirmwareModalVisible(true)}>
+                      <Ionicons name="download-outline" size={18} color="white" />
+                      <Text className="text-white">{t('common:update')}</Text>
                     </PressableScale>
                     :
                     <View className="flex flex-row items-center space-x-2">
