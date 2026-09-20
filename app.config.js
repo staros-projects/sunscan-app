@@ -97,14 +97,14 @@ export default ({ config }) => {
               }
             }
           ],
-          [
-            "expo-navigation-bar",
-            {
-              position: "relative",
-              visibility: "hidden",
-              behavior: "inset-swipe"
-            }
-          ],
+          // The system bars are hidden from JS by <SystemBars/> in App.js, on
+          // top of an edge-to-edge window. expo-navigation-bar must not also
+          // configure them: its `position: "relative"` calls
+          // setDecorFitsSystemWindows(true) from the activity lifecycle, which
+          // insets the whole root view by the nav bar while edge-to-edge sets
+          // it back to false. Whichever ran last won, so the app came up every
+          // so often with a dead black band at the bottom of the screen, the
+          // gallery scroll cut short by that much, and it went away on reload.
           [
             "react-native-edge-to-edge"
           ],
