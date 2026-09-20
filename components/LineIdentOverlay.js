@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { selectLabels } from '../utils/SpectrumIdent';
 import { linesDict } from './LineSelector';
@@ -14,10 +14,6 @@ const FRAME_COLUMNS = 2028;
 const LABEL_HEIGHT = 11;
 const LABEL_WIDTH = 86;
 const TICK_WIDTH = 8;
-const FONT_SIZE = 8.5;
-const PADDING = 3;
-// Beyond that the labels are sharp enough and the font sizes get silly
-const MAX_SHARPEN = 4;
 // Room left between the tip of the ticks and the limb
 const LIMB_GAP = 3;
 const MAX_LABELS = 40;
@@ -50,140 +46,105 @@ function keyLineOf(feature) {
 /**
  * Names of the spectral lines, pinned on the live frame.
  *
- * Lives inside the Zoomable, as a sibling of the image and with the same box,
- * so it pans and zooms with the spectrum for free. Two things keep it readable
- * when zoomed :
+ * Drawn beside the Zoomable, not inside it, in the coordinates of the screen.
+ * Inside it the labels had to be scaled down by the zoom to keep their size,
+ * and iOS rasterises a scaled-down view at that reduced size before the zoom
+ * stretches it back : past 2x the names and even the ticks were mush. Out
+ * here they are plain views at screen resolution.
  *
- *   - every label is scaled by the inverse of the zoom, so the text keeps its
- *     size on screen. That runs on the UI thread off the shared value the
- *     Zoomable drives, and follows a pinch frame by frame. It is laid out
- *     `zoom` times bigger to match, so that iOS rasterises the names at the
- *     size the zoom is going to show them at (see `sharpen` below).
- *   - how many labels fit, and where the visible part of the frame starts, only
- *     matter once the gesture is over : those come as plain props (`zoom`,
- *     `visibleLeft`) that the screen refreshes when the interaction ends.
- *     Zooming in therefore reveals the fainter lines, like a map reveals the
- *     smaller towns.
+ * The price is that they cannot follow a gesture frame by frame : the
+ * Zoomable only tells where it stands once the gesture is over. So they fade
+ * out while the spectrum moves and come back where it stops. Zooming in still
+ * reveals the fainter lines, like a map reveals the smaller towns.
  *
  * @param features what identifyLines() returned
  * @param sampleCount length of the profile the features were measured on
- * @param width,height the box of the image, in layout points
- * @param zoomScale the Reanimated shared value handed to the Zoomable
- * @param zoom settled zoom factor
- * @param visibleLeft,visibleRight edges of what is on screen, in the image's
- *   own coordinates (beyond the image when there is room around it)
+ * @param frameWidth,frameHeight the box of the image, in layout points
+ * @param view where the Zoomable left its content : `scale`, `translateX`,
+ *   `translateY` as its getInfo() reports them, and the `width` and `height`
+ *   of its container, which this overlay shares
+ * @param visible false while the spectrum is moving
  * @param sunLeft column of the left limb of the Sun, in frame columns, or null
  *   to hang the labels off the left edge of the image
  */
 function LineIdentOverlay({
   features,
   sampleCount,
-  width,
-  height,
-  zoomScale,
-  zoom = 1,
-  visibleLeft = -LABEL_WIDTH,
-  visibleRight = Infinity,
+  frameWidth,
+  frameHeight,
+  view,
+  visible = true,
   sunLeft = null,
 }) {
   // Where "contain" draws the frame inside the box
   const frame = useMemo(() => {
     const aspect = FRAME_COLUMNS / Math.max(1, sampleCount);
-    const drawnHeight = Math.min(height, width / aspect);
+    const drawnHeight = Math.min(frameHeight, frameWidth / aspect);
     const drawnWidth = drawnHeight * aspect;
     return {
-      top: (height - drawnHeight) / 2,
+      top: (frameHeight - drawnHeight) / 2,
       height: drawnHeight,
-      left: (width - drawnWidth) / 2,
+      left: (frameWidth - drawnWidth) / 2,
       width: drawnWidth,
     };
-  }, [sampleCount, width, height]);
+  }, [sampleCount, frameWidth, frameHeight]);
+
+  const { scale, translateX, translateY, width, height } = view;
 
   const labels = useMemo(() => {
-    const pointsPerSample = (frame.height / Math.max(1, sampleCount)) * zoom;
+    const pointsPerSample = (frame.height / Math.max(1, sampleCount)) * scale;
     return selectLabels(features, {
       minGap: LABEL_HEIGHT / pointsPerSample,
       maxCount: MAX_LABELS,
       isKey: (feature) => keyLineOf(feature) != null,
     });
-  }, [features, sampleCount, frame.height, zoom]);
+  }, [features, sampleCount, frame.height, scale]);
 
-  // iOS draws a Text once, at the size it was laid out, and CoreAnimation
-  // stretches that bitmap when the Zoomable scales up : at 3x the names turn
-  // to mush, while their badge and their tick, drawn by the compositor rather
-  // than rasterised, stay sharp. So the labels are laid out `zoom` times
-  // bigger and shrunk back by as much : same size on screen, drawn with the
-  // pixels the zoom is about to ask for. Android redraws text through the
-  // canvas matrix and would do without it, but the geometry is the same.
-  const sharpen = Math.min(Math.max(1, zoom), MAX_SHARPEN);
-
-  const counterScale = useAnimatedStyle(
-    () => ({ transform: [{ scale: 1 / (sharpen * Math.max(1, zoomScale.value)) }] }),
-    [sharpen],
-  );
+  // The image box sits centred in the container, and the Zoomable scales its
+  // content about the centre of that container after translating it : a point
+  // of the box lands on screen at centre + translate + (point - box centre) x
+  // scale. The same mapping, inverted, is what the screen uses to tell which
+  // part of the frame is showing.
+  const toScreenX = (x) => width / 2 + translateX + (x - frameWidth / 2) * scale;
+  const toScreenY = (y) => height / 2 + translateY + (y - frameHeight / 2) * scale;
 
   // Labels hang just left of the solar limb, so they stay next to the lines
   // whatever the width of the Sun on the slit (left of the image when the limb
-  // is unknown). Everything scales with the zoom but the labels, hence the
-  // divisions. Once the zoom pushes that spot out of view the labels ride the
+  // is unknown). Once the zoom pushes that spot out of view they ride the
   // visible edge instead, over the spectrum on the left, pointing at the limb
   // beyond it on the right.
-  const limb = sunLeft == null
-    ? 0
-    : frame.left + (sunLeft / FRAME_COLUMNS) * frame.width - LIMB_GAP / zoom;
-  const anchor = Math.min(
-    Math.max(limb, visibleLeft + LABEL_WIDTH / zoom),
-    visibleRight,
+  const limb = sunLeft == null ? 0 : frame.left + (sunLeft / FRAME_COLUMNS) * frame.width;
+  const anchor = Math.min(Math.max(toScreenX(limb) - LIMB_GAP, LABEL_WIDTH), width);
+
+  const fade = useAnimatedStyle(
+    () => ({ opacity: withTiming(visible ? 1 : 0, { duration: visible ? 180 : 90 }) }),
+    [visible],
   );
 
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'visible' }]}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.overlay, fade]}>
       {labels.map((feature) => {
-        const y = frame.top + ((feature.position + 0.5) / sampleCount) * frame.height;
+        const y = toScreenY(frame.top + ((feature.position + 0.5) / sampleCount) * frame.height);
+        if (y < -LABEL_HEIGHT || y > height + LABEL_HEIGHT) {
+          return null;
+        }
         const key = keyLineOf(feature);
         const color = key ? key.color : (feature.telluric ? TELLURIC_COLOR : SOLAR_COLOR);
         return (
-          <Animated.View
+          <View
             key={feature.wavelengthA}
-            style={[
-              styles.label,
-              {
-                width: LABEL_WIDTH * sharpen,
-                height: LABEL_HEIGHT * sharpen,
-                right: width - anchor,
-                top: y - (LABEL_HEIGHT * sharpen) / 2,
-              },
-              counterScale,
-            ]}
+            style={[styles.label, { right: width - anchor, top: y - LABEL_HEIGHT / 2 }]}
           >
-            <View
-              style={[
-                styles.badge,
-                { paddingHorizontal: PADDING * sharpen, borderRadius: PADDING * sharpen },
-                key && { backgroundColor: color },
-              ]}
-            >
-              <Text
-                numberOfLines={1}
-                style={[
-                  { fontSize: FONT_SIZE * sharpen, lineHeight: LABEL_HEIGHT * sharpen },
-                  key ? styles.keyText : { color },
-                ]}
-              >
+            <View style={[styles.badge, key && { backgroundColor: color }]}>
+              <Text numberOfLines={1} style={[styles.text, key ? styles.keyText : { color }]}>
                 {feature.label} {feature.wavelengthA.toFixed(1)}
               </Text>
             </View>
-            <View
-              style={{
-                backgroundColor: color,
-                width: TICK_WIDTH * sharpen,
-                height: StyleSheet.hairlineWidth * 2 * sharpen,
-              }}
-            />
-          </Animated.View>
+            <View style={[styles.tick, { backgroundColor: color }]} />
+          </View>
         );
       })}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -193,23 +154,35 @@ function LineIdentOverlay({
 export default React.memo(LineIdentOverlay);
 
 const styles = StyleSheet.create({
+  overlay: {
+    overflow: 'hidden',
+  },
   label: {
     position: 'absolute',
+    width: LABEL_WIDTH,
+    height: LABEL_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    // The tick is the part that has to stay on the line while the label shrinks
-    transformOrigin: 'right center',
   },
   // The rounded background sits on a wrapper rather than on the Text itself :
-  // clipping a Text to a radius costs an offscreen pass on iOS, which is one
-  // more place for the glyphs to lose their pixels.
+  // clipping a Text to a radius costs an offscreen pass on iOS.
   badge: {
+    paddingHorizontal: 3,
+    borderRadius: 3,
     backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  text: {
+    fontSize: 8.5,
+    lineHeight: LABEL_HEIGHT,
   },
   // The tag colours are dark : they fill the badge, under white bold text
   keyText: {
     color: '#fff',
     fontWeight: '700',
+  },
+  tick: {
+    width: TICK_WIDTH,
+    height: StyleSheet.hairlineWidth * 2,
   },
 });

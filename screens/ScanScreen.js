@@ -58,12 +58,17 @@ import ScanPreview from '../components/ScanPreview';
 import useScanPreview from '../utils/useScanPreview';
 import useAutoExposure, { exposureModeFor } from '../utils/useAutoExposure';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSharedValue } from 'react-native-reanimated';
 
 // Box of the live image outside cropped mode, the only mode the line
 // identification runs in
 const FULL_FRAME_WIDTH = 402;
 const FULL_FRAME_HEIGHT = 200;
+
+// Whether the Zoomable has nothing left to ease back : zoomed in, if at all,
+// and no further off centre than the zoom allows
+const isZoomAtRest = ({ scale, translateX, translateY, width, height }) => scale >= 1
+  && Math.abs(translateX) <= (width * (scale - 1)) / 2 + 0.5
+  && Math.abs(translateY) <= (height * (scale - 1)) / 2 + 0.5;
 const AUTO_EXPOSURE_STORAGE_KEY = 'SUNSCAN_APP::AUTO_EXPOSURE';
 // Set once the EXP walkthrough has been dismissed : it is only shown once
 const EXP_TIP_STORAGE_KEY = 'SUNSCAN_APP::EXP_TIP_SEEN';
@@ -419,39 +424,68 @@ export default function ScanScreen({navigation}) {
       && !!myContext.cameraIsConnected;
     const ident = useLineIdent({ enabled: identActive, source: colorMode ? 'color' : 'mono', frame });
 
-    // The labels live inside the Zoomable and follow it on their own. What
-    // they cannot know is how far the zoom went and which part of the frame is
-    // left on screen : read once the gesture is over, and once more after the
-    // library has finished easing the image back inside its bounds.
+    // The labels are drawn beside the Zoomable, in screen space, from where it
+    // left its content : the library only reports that once a gesture is
+    // over, so they hide while the spectrum moves and come back where it
+    // stops. When that is depends on the gesture. A pan ends with a fling
+    // that stays inside the bounds, and the library only calls back once it
+    // is over. A pinch calls back at once and then eases the image back
+    // inside its bounds (300 ms, no callback) : read again after that. A
+    // double tap zooms in with no callback either, and zooms out through a
+    // reset that has one.
     const zoomRef = useRef(null);
-    const zoomScale = useSharedValue(1);
     const zoomTimerRef = useRef(null);
-    const [zoomView, setZoomView] = useState({ zoom: 1, visibleLeft: -FULL_FRAME_WIDTH, visibleRight: 2 * FULL_FRAME_WIDTH });
+    const zoomBusyRef = useRef(false);
+    const [zoomView, setZoomView] = useState(null);
+    const [zoomSettled, setZoomSettled] = useState(true);
 
-    const readZoomView = useCallback(() => {
+    // Read where the content stands ; show the labels there if the view is
+    // at rest (or when told it is), unless a new gesture has begun meanwhile.
+    // The container size comes from the library, except on layout, where it
+    // has not re-rendered with the new size yet : the event carries it.
+    const readZoomView = useCallback((atRest = false, container = null) => {
       const info = zoomRef.current?.getInfo?.();
       if (!info) {
         return;
       }
-      const { scale, translateX } = info.transformations;
-      const half = info.container.width / 2;
-      // Content abscissas showing at the edges of the screen, brought into
-      // the frame of the image, which sits centred in the container
-      const left = half - (half + translateX) / scale;
-      const right = half + (half - translateX) / scale;
-      const offset = (info.container.width - FULL_FRAME_WIDTH) / 2;
-      setZoomView({
-        zoom: Math.max(1, scale),
-        visibleLeft: left - offset,
-        visibleRight: right - offset,
-      });
+      const { width, height } = container ?? info.container;
+      const view = { ...info.transformations, width, height };
+      setZoomView(view);
+      if (!zoomBusyRef.current && (atRest || isZoomAtRest(view))) {
+        setZoomSettled(true);
+      }
     }, []);
 
-    const refreshZoomView = useCallback(() => {
-      readZoomView();
+    const readZoomViewLater = useCallback(() => {
       clearTimeout(zoomTimerRef.current);
-      zoomTimerRef.current = setTimeout(readZoomView, 400);
+      zoomTimerRef.current = setTimeout(() => readZoomView(true), 400);
     }, [readZoomView]);
+
+    const onZoomStart = useCallback(() => {
+      zoomBusyRef.current = true;
+      clearTimeout(zoomTimerRef.current);
+      setZoomSettled(false);
+    }, []);
+
+    const onZoomEnd = useCallback(() => {
+      zoomBusyRef.current = false;
+      readZoomView();
+      readZoomViewLater();
+    }, [readZoomView, readZoomViewLater]);
+
+    const onZoomDoubleTap = useCallback(() => {
+      setZoomSettled(false);
+      readZoomViewLater();
+    }, [readZoomViewLater]);
+
+    const onZoomRest = useCallback(() => readZoomView(true), [readZoomView]);
+
+    // The container is measured on layout ; until then there is nowhere to
+    // put the labels
+    const onZoomLayout = useCallback(
+      (event) => readZoomView(true, event.nativeEvent.layout),
+      [readZoomView],
+    );
 
     useEffect(() => () => clearTimeout(zoomTimerRef.current), []);
 
@@ -811,14 +845,15 @@ const insets = useSafeAreaInsets();
   
             {/* Main container for displaying the camera feed or spectrum */}
             <View className="absolute z-1 flex flex-col justify-center" style={{ right:0, left:0, top:0, width:"100%", height:"100%"}}>
-            {!displaySpectrum && (!modalLineSelectorVisible && frame && myContext.cameraIsConnected ? 
-            
+            {!displaySpectrum && (!modalLineSelectorVisible && frame && myContext.cameraIsConnected ?
+
                                     <Zoomable
                                     ref={zoomRef}
-                                    scale={zoomScale}
-                                    onInteractionEnd={refreshZoomView}
-                                    onDoubleTap={refreshZoomView}
-                                    onResetAnimationEnd={refreshZoomView}
+                                    onLayout={onZoomLayout}
+                                    onInteractionStart={onZoomStart}
+                                    onInteractionEnd={onZoomEnd}
+                                    onDoubleTap={onZoomDoubleTap}
+                                    onResetAnimationEnd={onZoomRest}
                                     isSingleTapEnabled
                                     isDoubleTapEnabled
                                         >
@@ -834,19 +869,6 @@ const insets = useSafeAreaInsets();
                 contentFit='contain'
                 className="border border-white mx-auto"
                 />
-                {/* Names of the spectral lines, pinned on the frame */}
-                {identActive && ident.status === 'locked' && ident.solution &&
-                  <LineIdentOverlay
-                    features={ident.features}
-                    sampleCount={ident.solution.count}
-                    width={FULL_FRAME_WIDTH}
-                    height={FULL_FRAME_HEIGHT}
-                    zoomScale={zoomScale}
-                    zoom={zoomView.zoom}
-                    visibleLeft={zoomView.visibleLeft}
-                    visibleRight={zoomView.visibleRight}
-                    sunLeft={ident.sunLeft}
-                  />}
                   </View>
                 </View>
                 </Zoomable>
@@ -854,6 +876,19 @@ const insets = useSafeAreaInsets();
                                       ? <View className="mx-auto"><Loader type="white" /></View>
                                       /* no feed to wait for : offer the connection instead of spinning forever */
                                       : <ConnectCameraPanel />)}
+                {/* Names of the spectral lines, laid over the feed in screen space :
+                    same box as the Zoomable above, which fills this container */}
+                {!displaySpectrum && !modalLineSelectorVisible && frame && identActive
+                  && ident.status === 'locked' && ident.solution && zoomView &&
+                  <LineIdentOverlay
+                    features={ident.features}
+                    sampleCount={ident.solution.count}
+                    frameWidth={FULL_FRAME_WIDTH}
+                    frameHeight={FULL_FRAME_HEIGHT}
+                    view={zoomView}
+                    visible={zoomSettled}
+                    sunLeft={ident.sunLeft}
+                  />}
 
                 {/* Spectrum display */}
                 {displaySpectrum && displaySpectrumType === "vertical"  && <Spectrum rawData={spectrumData} fwhm={fwhm} title={t('common:verticalProfileTitle')} subtitle={t('common:verticalProfile')} />}
