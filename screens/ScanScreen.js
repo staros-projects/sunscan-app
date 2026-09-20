@@ -126,8 +126,20 @@ export default function ScanScreen({navigation}) {
     // anything to say : there is no camera feed to look at.
     const [displayAssistant, setDisplayAssistant] = useState(!!myContext.demo);
     const assistantFeedRef = useRef(null);
+    // Read from the frame callback below, which runs at the frame rate : going
+    // through the context there would capture a stale value and re-render.
+    const cameraConnectedRef = useRef(myContext.cameraIsConnected);
+    cameraConnectedRef.current = myContext.cameraIsConnected;
 
-    // Effect hook for managing subscriptions and fetching camera status
+    // The camera state is read when the screen is entered, and nowhere else :
+    // it used to sit in the subscription effect below, which re-runs on every
+    // spectrum or assistant toggle, so each toggle fired another request at a
+    // Pi already busy streaming the feed.
+    useFocusEffect(
+      useCallback(() => { getCameraStatus(); }, [myContext.apiURL])
+    );
+
+    // Effect hook for managing subscriptions
     //console.log('render')
     useFocusEffect(
       useCallback(() => {
@@ -136,13 +148,16 @@ export default function ScanScreen({navigation}) {
           callback();
         }, 200); // 200ms, ce qui permet une mise à jour maximum toutes les 5 fois par seconde
     
-        // Appel à la fonction pour récupérer l'état de la caméra
-        getCameraStatus();
-    
         // Subscribe to 'camera' events
         subscribe('camera', (message) => {
           fcRef.current += 1;
           setFC(fcRef.current);
+          // A frame is the camera answering : a status request that failed must
+          // not leave the connection panel up over a feed that is coming in.
+          if (!cameraConnectedRef.current) {
+            cameraConnectedRef.current = true;
+            myContext.setCameraIsConnected(true);
+          }
           if (!displaySpectrum && !modalLineSelectorVisible) {
             debouncedUpdate(() => setFrame(message[3]));
           }
@@ -235,8 +250,10 @@ export default function ScanScreen({navigation}) {
         })
       })
       .catch(error => {
-        myContext.setCameraIsConnected(false)
-        console.error(error);
+        // The request failed, the backend said nothing : the camera may well be
+        // streaming. Marking it disconnected here hid the live feed until the
+        // screen was left and entered again.
+        console.warn('camera status unreachable', error);
       });
     }
 

@@ -14,6 +14,10 @@ const FRAME_COLUMNS = 2028;
 const LABEL_HEIGHT = 11;
 const LABEL_WIDTH = 86;
 const TICK_WIDTH = 8;
+const FONT_SIZE = 8.5;
+const PADDING = 3;
+// Beyond that the labels are sharp enough and the font sizes get silly
+const MAX_SHARPEN = 4;
 // Room left between the tip of the ticks and the limb
 const LIMB_GAP = 3;
 const MAX_LABELS = 40;
@@ -52,7 +56,9 @@ function keyLineOf(feature) {
  *
  *   - every label is scaled by the inverse of the zoom, so the text keeps its
  *     size on screen. That runs on the UI thread off the shared value the
- *     Zoomable drives, and follows a pinch frame by frame.
+ *     Zoomable drives, and follows a pinch frame by frame. It is laid out
+ *     `zoom` times bigger to match, so that iOS rasterises the names at the
+ *     size the zoom is going to show them at (see `sharpen` below).
  *   - how many labels fit, and where the visible part of the frame starts, only
  *     matter once the gesture is over : those come as plain props (`zoom`,
  *     `visibleLeft`) that the screen refreshes when the interaction ends.
@@ -102,9 +108,19 @@ export default function LineIdentOverlay({
     });
   }, [features, sampleCount, frame.height, zoom]);
 
-  const counterScale = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 / Math.max(1, zoomScale.value) }],
-  }));
+  // iOS draws a Text once, at the size it was laid out, and CoreAnimation
+  // stretches that bitmap when the Zoomable scales up : at 3x the names turn
+  // to mush, while their badge and their tick, drawn by the compositor rather
+  // than rasterised, stay sharp. So the labels are laid out `zoom` times
+  // bigger and shrunk back by as much : same size on screen, drawn with the
+  // pixels the zoom is about to ask for. Android redraws text through the
+  // canvas matrix and would do without it, but the geometry is the same.
+  const sharpen = Math.min(Math.max(1, zoom), MAX_SHARPEN);
+
+  const counterScale = useAnimatedStyle(
+    () => ({ transform: [{ scale: 1 / (sharpen * Math.max(1, zoomScale.value)) }] }),
+    [sharpen],
+  );
 
   // Labels hang just left of the solar limb, so they stay next to the lines
   // whatever the width of the Sun on the slit (left of the image when the limb
@@ -131,14 +147,39 @@ export default function LineIdentOverlay({
             key={feature.wavelengthA}
             style={[
               styles.label,
-              { right: width - anchor, top: y - LABEL_HEIGHT / 2 },
+              {
+                width: LABEL_WIDTH * sharpen,
+                height: LABEL_HEIGHT * sharpen,
+                right: width - anchor,
+                top: y - (LABEL_HEIGHT * sharpen) / 2,
+              },
               counterScale,
             ]}
           >
-            <Text numberOfLines={1} style={[styles.text, key ? [styles.keyText, { backgroundColor: color }] : { color }]}>
-              {feature.label} {feature.wavelengthA.toFixed(1)}
-            </Text>
-            <View style={[styles.tick, { backgroundColor: color }]} />
+            <View
+              style={[
+                styles.badge,
+                { paddingHorizontal: PADDING * sharpen, borderRadius: PADDING * sharpen },
+                key && { backgroundColor: color },
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={[
+                  { fontSize: FONT_SIZE * sharpen, lineHeight: LABEL_HEIGHT * sharpen },
+                  key ? styles.keyText : { color },
+                ]}
+              >
+                {feature.label} {feature.wavelengthA.toFixed(1)}
+              </Text>
+            </View>
+            <View
+              style={{
+                backgroundColor: color,
+                width: TICK_WIDTH * sharpen,
+                height: StyleSheet.hairlineWidth * 2 * sharpen,
+              }}
+            />
           </Animated.View>
         );
       })}
@@ -149,29 +190,21 @@ export default function LineIdentOverlay({
 const styles = StyleSheet.create({
   label: {
     position: 'absolute',
-    width: LABEL_WIDTH,
-    height: LABEL_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     // The tick is the part that has to stay on the line while the label shrinks
     transformOrigin: 'right center',
   },
-  text: {
-    fontSize: 8.5,
-    lineHeight: LABEL_HEIGHT,
-    paddingHorizontal: 3,
-    borderRadius: 3,
-    overflow: 'hidden',
+  // The rounded background sits on a wrapper rather than on the Text itself :
+  // clipping a Text to a radius costs an offscreen pass on iOS, which is one
+  // more place for the glyphs to lose their pixels.
+  badge: {
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   // The tag colours are dark : they fill the badge, under white bold text
   keyText: {
     color: '#fff',
     fontWeight: '700',
-  },
-  tick: {
-    width: TICK_WIDTH,
-    height: StyleSheet.hairlineWidth * 2,
   },
 });
