@@ -84,8 +84,10 @@ export default function ScanScreen({navigation}) {
 
     // State variables for managing the component
     const [frame, setFrame] = useState(null);
-    const [fc, setFC] = useState(0);
-    const fcRef = React.useRef(fc);
+    // Frame counter, kept in a ref only : it decimates the adu / focus /
+    // spectrum handlers below and is never rendered. It used to be state as
+    // well, which re-rendered the whole screen on every frame for nothing.
+    const fcRef = React.useRef(0);
     const [pixelStats, setPixelStats] = useState({r:0, g:0, b:0});
     const [sharpness, setSharpness] = useState(0);
     const webSocket = useRef(null);
@@ -151,7 +153,6 @@ export default function ScanScreen({navigation}) {
         // Subscribe to 'camera' events
         subscribe('camera', (message) => {
           fcRef.current += 1;
-          setFC(fcRef.current);
           // A frame is the camera answering : a status request that failed must
           // not leave the connection panel up over a feed that is coming in.
           if (!cameraConnectedRef.current) {

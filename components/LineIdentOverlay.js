@@ -75,7 +75,7 @@ function keyLineOf(feature) {
  * @param sunLeft column of the left limb of the Sun, in frame columns, or null
  *   to hang the labels off the left edge of the image
  */
-export default function LineIdentOverlay({
+function LineIdentOverlay({
   features,
   sampleCount,
   width,
@@ -186,6 +186,11 @@ export default function LineIdentOverlay({
     </View>
   );
 }
+
+// The labels only move when the identification finds a new solution or the
+// zoom settles, while the screen around them re-renders with the live feed :
+// the props are shallow-compared so those frames cost nothing here.
+export default React.memo(LineIdentOverlay);
 
 const styles = StyleSheet.create({
   label: {
