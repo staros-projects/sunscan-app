@@ -26,7 +26,7 @@ import AppContext from './components/AppContext';
 import WebSocketProvider  from './utils/WSProvider';
 import { JobProgressProvider } from './utils/useJobProgress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import RootFrame from './components/RootFrame';
 import { StyleSheet } from 'react-native';
 
 import './localization/i18n';
@@ -75,10 +75,6 @@ const STORAGE_KEYS = {
 const DEFAULT_STACKING_OPTIONS = {patchSize:32, stepSize:10, intensityThreshold:0};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
   safeArea: {
     flex: 1,
     backgroundColor: '#000',
@@ -312,7 +308,7 @@ export default function App() {
   ]);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <RootFrame debug={debugVal}>
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
@@ -361,7 +357,7 @@ export default function App() {
        </WebSocketProvider>
     </AppContext.Provider>
     <AnimatedSplash ready={settingsLoaded} onDone={() => setSplashDone(true)} />
-    </GestureHandlerRootView>
+    </RootFrame>
   );
 
 
