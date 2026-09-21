@@ -9,9 +9,12 @@ import {
   StyleSheet,
   TextInput,
   Switch,
-  ActivityIndicator, // Importer ActivityIndicator pour le loader
+  ActivityIndicator,
+  Platform, // Importer ActivityIndicator pour le loader
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import PressableScale from './PressableScale';
+import { modalBackdrop, modalCard } from './theme';
 
 const AnimationOptionsModal = ({
   visible,
@@ -19,7 +22,7 @@ const AnimationOptionsModal = ({
   onClose,
   onSubmit,
   defaultOptions = {
-    frame_duration: 120,
+    frame_duration: 160,
     display_datetime: true,
     resize_gif: true,
     bidirectional: true,
@@ -48,8 +51,9 @@ const AnimationOptionsModal = ({
       onClose();  // Fermer la modal
   };
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-    <SafeAreaView>
+    <>
     <Modal
       transparent={true}
       visible={visible}
@@ -60,6 +64,16 @@ const AnimationOptionsModal = ({
     >
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer} className="space-y-1">
+          {/* Header: itemCount was passed in but never shown, so the dialog gave
+              no clue how many scans were about to be animated. */}
+          <View style={styles.header}>
+            <View className="flex flex-row items-center space-x-2">
+              <Ionicons name="film-outline" size={18} color="#fff" />
+              <Text className="text-white font-bold" style={{fontSize:15}}>{t('common:animate')}</Text>
+            </View>
+            {itemCount > 0 && <Text className="text-zinc-400" style={{fontSize:12}}>{itemCount}</Text>}
+          </View>
+
           <View style={styles.optionRow}>
             <Text style={styles.optionLabel}>{t('common:frameDuration')} :</Text>
             <TextInput
@@ -80,6 +94,9 @@ const AnimationOptionsModal = ({
                trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
               onValueChange={setDisplayDatetime}
+               style={{
+                                      marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                    }}
             />
           </View>
 
@@ -88,6 +105,9 @@ const AnimationOptionsModal = ({
             <Switch 
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
+              style={{
+                                     marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                   }}
             value={resizeGif} onValueChange={setResizeGif} />
           </View>
 
@@ -96,6 +116,9 @@ const AnimationOptionsModal = ({
             <Switch 
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
+              style={{
+                                     marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                   }}
            value={bidirectional} onValueChange={setBidirectional} />
           </View>
 
@@ -105,20 +128,23 @@ const AnimationOptionsModal = ({
              trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
              thumbColor='#fff'
               value={addAverageFrame}
+               style={{
+                                      marginVertical: Platform.OS === 'android' ? -6 : 4,
+                                    }}
               onValueChange={setAddAverageFrame}
             />
           </View>
 
           <View style={styles.buttonRow}>
-            <Pressable
+            <PressableScale
               style={[styles.button, styles.cancelButton]}
               onPress={onClose}
               disabled={isLoading} // Désactiver pendant le chargement
             >
               <Text style={styles.buttonText}>{t('common:cancel')}</Text>
-            </Pressable>
+            </PressableScale>
 
-            <Pressable
+            <PressableScale
               style={[styles.button, isLoading ? styles.disabledButton : null]}
               onPress={handleSubmit}
               disabled={isLoading} // Désactiver pendant le chargement
@@ -128,27 +154,33 @@ const AnimationOptionsModal = ({
               ) : (
                 <Text style={styles.buttonText}>{t('common:animate')}</Text>
               )}
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
       </View>
-    </Modal></SafeAreaView>
+    </Modal></>
   );
 };
 
 const styles = StyleSheet.create({
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
+  modalBackground: modalBackdrop,
   modalContainer: {
+    ...modalCard,
     width: 400,
-    padding: 15,
-    backgroundColor: 'rgb(63 63 70)',
-    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 16,
     alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingBottom: 10,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.10)',
   },
   optionRow: {
     flexDirection: 'row',
@@ -166,37 +198,40 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 0,
-    width: 60,
+    borderColor: '#52525b',
+    backgroundColor: '#27272a',
+    borderRadius: 10,
+    paddingVertical: 5,
+    width: 64,
     textAlign: 'center',
     color: '#fff',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 14,
     width: '100%',
   },
   button: {
     flex: 1,
     backgroundColor: 'rgb(5 150 105)',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 11,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     marginHorizontal: 5,
   },
+  // Cancel is not destructive: a neutral button, not the red one it used to be
   cancelButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#3f3f46',
   },
   disabledButton: {
-    backgroundColor: '#888', // Couleur grisée pour désactiver le bouton
+    backgroundColor: '#52525b', // Couleur grisée pour désactiver le bouton
 
   },
   buttonText: {
     color: 'white',
-    fontWeight: 'normal',
+    fontWeight: '600',
   },
 });
 

@@ -7,6 +7,8 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+gitbook*
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -148,3 +150,6 @@ web-build/
 eas_ml.json
 app_ml.json
 build*
+
+# Claude working files, kept locally only
+Claude outputs/

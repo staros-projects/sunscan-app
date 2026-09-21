@@ -6,15 +6,10 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "1.4.2",
+        version: "2.1.4",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
-        splash: {
-          image: "./assets/splash.png",
-          resizeMode: "contain",
-          backgroundColor: "#000"
-        },
         assetBundlePatterns: ["**/*"],
         ios: {
           buildNumber: "41",
@@ -22,7 +17,14 @@ export default ({ config }) => {
           requireFullScreen: true,
           bundleIdentifier: "com.staros.sunscan-app",
           infoPlist: {
-            ITSAppUsesNonExemptEncryption: false
+            ITSAppUsesNonExemptEncryption: false,
+            // Required to reach a SUNSCAN sitting on the same wifi network as
+            // the phone (non-hotspot mode) and to scan for it automatically.
+            NSLocalNetworkUsageDescription:
+              "Allow $(PRODUCT_NAME) to find your SUNSCAN on your local network.",
+            // _sunscan._tcp is the service the backend announces once it has
+            // joined the home wifi: without it iOS 14+ browses nothing.
+            NSBonjourServices: ["_http._tcp", "_sunscan._tcp"]
           }
         },
         android: {
@@ -35,7 +37,11 @@ export default ({ config }) => {
           permissions: [
             "INTERNET",
             "RECEIVE_BOOT_COMPLETED",
-            "ACCESS_NETWORK_STATE"
+            "ACCESS_NETWORK_STATE",
+            // Needed to read the phone's own IP and derive the subnet to scan
+            "ACCESS_WIFI_STATE",
+            // mDNS discovery of the SUNSCAN (react-native-zeroconf takes the multicast lock)
+            "CHANGE_WIFI_MULTICAST_STATE"
           ],
           blockedPermissions: [
             "android.permission.READ_MEDIA_IMAGES",
@@ -56,6 +62,17 @@ export default ({ config }) => {
         owner: "staros",
         plugins: [
           [
+            // Just the mark, centred: components/AnimatedSplash picks up from
+            // this exact frame. imageWidth must equal its SPLASH_MARK_WIDTH.
+            "expo-splash-screen",
+            {
+              image: "./assets/splash-icon.png",
+              imageWidth: 110,
+              resizeMode: "contain",
+              backgroundColor: "#000000"
+            }
+          ],
+          [
             "expo-screen-orientation",
             {
               initialOrientation: "LANDSCAPE"
@@ -72,18 +89,22 @@ export default ({ config }) => {
             "expo-build-properties",
             {
               android: {
-                usesCleartextTraffic: true
+                usesCleartextTraffic: true,
+                // Google Play requires targeting Android 16 (API 36) for updates
+                compileSdkVersion: 36,
+                targetSdkVersion: 36,
+                buildToolsVersion: "36.0.0"
               }
             }
           ],
-          [
-            "expo-navigation-bar",
-            {
-              position: "relative",
-              visibility: "hidden",
-              behavior: "inset-swipe"
-            }
-          ],
+          // The system bars are hidden from JS by <SystemBars/> in App.js, on
+          // top of an edge-to-edge window. expo-navigation-bar must not also
+          // configure them: its `position: "relative"` calls
+          // setDecorFitsSystemWindows(true) from the activity lifecycle, which
+          // insets the whole root view by the nav bar while edge-to-edge sets
+          // it back to false, and whichever runs last wins. (The dead band at
+          // the bottom of the screen was first blamed on this : it was not
+          // the cause, see JobProgressModal.)
           [
             "react-native-edge-to-edge"
           ],

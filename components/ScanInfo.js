@@ -1,11 +1,13 @@
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import AppContext from './AppContext';
 import { ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { modalBackdrop, modalCard, roundButton } from './theme';
+import PressableScale from './PressableScale';
 
 // Component for displaying detailed scan information in a modal
 export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose }) {
@@ -13,31 +15,18 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
   const myContext = useContext(AppContext);
   const [hideScrollToEnd, setHideScrollToEnd] = useState(false);
   const [hideScrollToTop, setHideScrollToTop] = useState(true);
+  const scrollRef = useRef(null);
 
   const insets = useSafeAreaInsets();
 
   // Styles for the modal and its contents
   const styles = StyleSheet.create({
-    centeredView: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginTop: 0,
-    },
+    centeredView: modalBackdrop,
     modalView: {
+      ...modalCard,
       margin: 50,
-      backgroundColor: 'rgba(80,80,80,0.9)',
-      borderRadius: 20,
       padding: 20,
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
     },
     title: {
       color: '#fff',
@@ -59,38 +48,39 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
 
   // Function to scroll to the end of the content
   const scrollToEnd = () => {
-    this.scroll.scrollToEnd();
+    scrollRef.current?.scrollToEnd();
     setHideScrollToEnd(true);
     setHideScrollToTop(false);
   }
-  
+
   // Function to scroll to the top of the content
   const scrollToTop = () => {
-    this.scroll.scrollTo({x: 0, y: 0, animated: true})
+    scrollRef.current?.scrollTo({x: 0, y: 0, animated: true})
     setHideScrollToEnd(false);
     setHideScrollToTop(true);
   }
 
   
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-     <SafeAreaView>
+     <>
     <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
       <View style={styles.centeredView}>
         <View style={styles.modalView} className="flex flex-col justify-center items-center">
           {/* Close button */}
           <View className="absolute top-0 right-0 z-50 mx-4 mt-4">
-            <Pressable onPress={onClose}>
-              <MaterialIcons name="close" color="#fff" size={22} />
-            </Pressable>
+            <PressableScale scaleTo={0.88} onPress={onClose} style={roundButton}>
+              <MaterialIcons name="close" color="#fff" size={18} />
+            </PressableScale>
           </View>
           
           {/* Scroll to top button */}
           <View>
-            {!hideScrollToTop && <Pressable onPress={()=>scrollToTop()}><Ionicons name="arrow-up" size={18} color="white" /></Pressable>}
+            {!hideScrollToTop && <PressableScale scaleTo={0.88} onPress={()=>scrollToTop()} style={roundButton}><Ionicons name="arrow-up" size={16} color="white" /></PressableScale>}
           </View>
           
-          <ScrollView className=""  ref={(scroll) => {this.scroll = scroll;}}>
+          <ScrollView className="" ref={scrollRef}>
             {/* Display scan information */}
             <View className="flex flex-row items-center space-x-2"><Ionicons name="information-circle-outline" size={18} color="white" /><Text className="text-white font-bold">{t('common:typeImage')} : </Text><Text className="text-white text-xs">{currentImage}</Text></View>
             <View className="flex flex-row items-center space-x-2"><Ionicons name="time-outline" size={18} color="white" /><Text className="text-white font-bold">{t('common:acquisitionTime')} : </Text><Text className="text-white text-xs">{scanDate}</Text></View>
@@ -115,10 +105,10 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
           
           {/* Scroll to end button */}
           <View>
-            {!hideScrollToEnd && <Pressable onPress={()=>scrollToEnd()}><Ionicons name="arrow-down" size={18} color="white" /></Pressable>}
+            {!hideScrollToEnd && <PressableScale scaleTo={0.88} onPress={()=>scrollToEnd()} style={roundButton}><Ionicons name="arrow-down" size={16} color="white" /></PressableScale>}
           </View>
         </View>
       </View>
-    </Modal></SafeAreaView>
+    </Modal></>
   );
 }
