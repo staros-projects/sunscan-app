@@ -57,6 +57,8 @@ import FocusAssistant from '../components/FocusAssistant';
 import ScanPreview from '../components/ScanPreview';
 import useScanPreview from '../utils/useScanPreview';
 import useAutoExposure, { exposureModeFor } from '../utils/useAutoExposure';
+import useChannelAdvice, { ADVICE_MODE } from '../utils/useChannelAdvice';
+import ChannelHint from '../components/ChannelHint';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Box of the live image outside cropped mode, the only mode the line
@@ -424,6 +426,18 @@ export default function ScanScreen({navigation}) {
       && !!myContext.cameraIsConnected;
     const ident = useLineIdent({ enabled: identActive, source: colorMode ? 'color' : 'mono', frame });
 
+    // Bayer channel advice : cropped mono mode only, where scans are prepared,
+    // and never while one runs. Sent away with its cross, an advice keeps
+    // quiet until the frame is cropped again.
+    const [dismissedAdvice, setDismissedAdvice] = useState(null);
+    const [isApplyingChannel, setIsApplyingChannel] = useState(false);
+    const channelAdviceActive = crop && !colorMode && !rec && !isRecPending && isFocused
+      && !!myContext.cameraIsConnected;
+    const channelAdvice = useChannelAdvice({ enabled: channelAdviceActive, pixelStats, mode: Number(monoBinMode) });
+    useEffect(() => {
+      setDismissedAdvice(null);
+    }, [crop]);
+
     // The labels are drawn beside the Zoomable, in screen space, from where it
     // left its content : the library only reports that once a gesture is
     // over, so they hide while the spectrum moves and come back where it
@@ -736,6 +750,42 @@ export default function ScanScreen({navigation}) {
     });
   }
 
+  // Switch to the channel the advice bubble offers. Recent firmware sets the
+  // monobin mode in one call ; older ones only know how to step to the next
+  // mode and answer 404 : walk round to the one wanted. Either way the mode is
+  // published once there, so the tiles do not flicker through the others.
+  async function applyChannelAdvice(advice) {
+    const target = ADVICE_MODE[advice];
+    if (target == null || isApplyingChannel) {
+      return;
+    }
+    setIsApplyingChannel(true);
+    let mode = Number(monoBinMode);
+    // Mode the backend says it is in, or null (no camera, unexpected answer)
+    const modeOf = async (response) => {
+      const next = parseInt((await response.json())?.monobin_mode);
+      return Number.isInteger(next) ? next : null;
+    };
+    try {
+      const response = await fetch('http://'+myContext.apiURL+"/camera/set-monobin-mode/"+target);
+      if (response.status !== 404) {
+        mode = (response.ok ? await modeOf(response) : null) ?? mode;
+      } else {
+        for (let step = 0; step < 3 && mode !== target; step += 1) {
+          const next = await modeOf(await fetch('http://'+myContext.apiURL+"/camera/toggle-monobin-mode/"));
+          if (next == null) {
+            break;
+          }
+          mode = next;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    setMonoBinMode(mode);
+    setIsApplyingChannel(false);
+  }
+
   const setTagOnScan = (tag) => {
     console.log('setTagOnScan', tag);
     setModalLineSelectorVisible(false);
@@ -944,6 +994,16 @@ const insets = useSafeAreaInsets();
               <View pointerEvents="none" className="absolute w-full z-10" style={{ left:0, top: displayOptions ? 70 : 10}}>
                 <LineIdentStatus status={ident.status} solution={ident.solution} features={ident.features} />
               </View>}
+            {/* Bayer channel advice, just above the cropped frame */}
+            {channelAdvice != null && channelAdvice !== dismissedAdvice && !displaySpectrum &&
+              <View pointerEvents="box-none" className="absolute w-full z-10" style={{ left:0, bottom:'50%', marginBottom:27}}>
+                <ChannelHint
+                  advice={channelAdvice}
+                  busy={isApplyingChannel}
+                  onApply={() => applyChannelAdvice(channelAdvice)}
+                  onClose={() => setDismissedAdvice(channelAdvice)}
+                />
+              </View>}
                 {/* Snapshot filename display */}
                 <View className="absolute bottom-0 w-full h-14 " style={{ left:0, top:10}}>
                 {snapShotFilename && myContext.cameraIsConnected && <Text className="mx-auto text-white text-xs">./{snapShotFilename}</Text>}
@@ -1083,7 +1143,7 @@ const insets = useSafeAreaInsets();
                         </PressableScale>
                         
                         {/* Record button */}
-                        <PressableScale disabled={displaySpectrum || colorMode || isRecPending} onPress={() => {
+                        <PressableScale disabled={displaySpectrum || colorMode || isRecPending || isApplyingChannel} onPress={() => {
                 // Acquisition only runs in cropped mode : explain it instead of a dead button
                 if(!crop && !rec){
                     setCropHintVisible(true);

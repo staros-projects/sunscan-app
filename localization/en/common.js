@@ -30,6 +30,8 @@ export default {
     "configuration": "Settings",
     "debugMode": "Debug mode",
     "debugDescription": "Enables the display of processing logs and debug functions.",
+    "screenInfo": "Screen size info",
+    "screenInfoDescription": "Shows the measured sizes of the window and views at the top of the screen (bottom band diagnostic).",
     "hotspotMode": "Hotspot mode",
     "hotspotDescription": "Default, connect to the SUNSCAN wifi network.",
     "updateFirmware": "Update firmware",
@@ -300,6 +302,13 @@ export default {
     "identLines": "{{n}} lines",
     "identSolar": "Sun",
     "identTelluric": "Earth's atmosphere",
+    // Bayer channel advice, cropped mode
+    "channelAdviceRedTitle": "Signal mostly in the red",
+    "channelAdviceRedAction": "Tap to switch to the red channel",
+    "channelAdviceRgbTitle": "Signal spread over several colours",
+    "channelAdviceRgbAction": "Tap to switch to all three channels (RGB)",
+    "channelAdviceBlueTitle": "Signal mostly in the blue",
+    "channelAdviceBlueAction": "Tap to switch to the blue channel",
     // home wifi
     "wifiNetwork": "SUNSCAN wifi",
     "wifiModeHotspot": "Hotspot {{ssid}}",
@@ -460,4 +469,12 @@ export default {
     "hubError_upload_failed": "The upload failed on the SUNSCAN",
     "hubError_request_failed": "Cannot reach the SUNSCAN",
     "hubError_generic": "The upload failed",
+    // Linux desktop of the Raspberry Pi
+    "desktop": "Linux desktop",
+    "desktopDescription": "Off by default, to keep all the power of the SUNSCAN for the scans. Turn it on only to work on the Raspberry Pi with a screen.",
+    "desktopStopConfirm": "Turn off the desktop? The applications opened on the SUNSCAN desktop will be closed, unsaved work will be lost.",
+    "desktopAtBoot": "Keep the desktop at startup",
+    "desktopAtBootDescription": "Does not affect the running desktop: applies at the next startup of the SUNSCAN.",
+    "desktopError_recording": "A scan is in progress. Try again once it is finished.",
+    "desktopError_generic": "The desktop could not be changed.",
 }

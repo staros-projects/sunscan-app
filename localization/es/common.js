@@ -30,6 +30,8 @@ export default {
     "configuration": "Configuración",
     "debugMode": "Modo de depuración",
     "debugDescription": "Activa la visualización de registros de procesamiento y funciones de depuración.",
+    "screenInfo": "Información de tamaño de pantalla",
+    "screenInfoDescription": "Muestra en la parte superior de la pantalla los tamaños medidos de la ventana y de las vistas (diagnóstico de la banda inferior).",
     "hotspotMode": "Modo punto de acceso",
     "hotspotDescription": "Por defecto, conéctese a la red wifi SUNSCAN.",
     "updateFirmware": "Actualizar firmware",
@@ -300,6 +302,13 @@ export default {
     "identLines": "{{n}} líneas",
     "identSolar": "Sol",
     "identTelluric": "Atmósfera terrestre",
+    // consejo de canal Bayer, modo recortado
+    "channelAdviceRedTitle": "Señal sobre todo en el rojo",
+    "channelAdviceRedAction": "Toca para pasar al canal rojo",
+    "channelAdviceRgbTitle": "Señal repartida entre varios colores",
+    "channelAdviceRgbAction": "Toca para pasar a los tres canales (RGB)",
+    "channelAdviceBlueTitle": "Señal sobre todo en el azul",
+    "channelAdviceBlueAction": "Toca para pasar al canal azul",
     // home wifi
     "wifiNetwork": "WiFi del SUNSCAN",
     "wifiModeHotspot": "Punto de acceso {{ssid}}",
@@ -460,4 +469,12 @@ export default {
     "hubError_upload_failed": "El envío falló en el SUNSCAN",
     "hubError_request_failed": "No se puede contactar con el SUNSCAN",
     "hubError_generic": "El envío falló",
+    // escritorio Linux de la Raspberry Pi
+    "desktop": "Escritorio Linux",
+    "desktopDescription": "Apagado por defecto, para dejar toda la potencia del SUNSCAN a los escaneos. Enciéndalo solo para trabajar en la Raspberry Pi con una pantalla.",
+    "desktopStopConfirm": "¿Apagar el escritorio? Las aplicaciones abiertas en el escritorio del SUNSCAN se cerrarán y se perderá el trabajo no guardado.",
+    "desktopAtBoot": "Mantener el escritorio al iniciar",
+    "desktopAtBootDescription": "No afecta al escritorio en curso: se aplica en el próximo inicio del SUNSCAN.",
+    "desktopError_recording": "Hay un escaneo en curso. Inténtelo de nuevo cuando haya terminado.",
+    "desktopError_generic": "No se pudo cambiar el escritorio.",
 }

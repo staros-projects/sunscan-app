@@ -22,6 +22,7 @@ import { forgetWifi, getNetworkStatus, switchToHotspot } from '../utils/SunscanN
 import HubLoginForm from '../components/HubLoginForm';
 import FirmwareUpdateModal from '../components/FirmwareUpdateModal';
 import { hubErrorKey, hubLogout } from '../utils/SpectroSolHub';
+import { desktopErrorKey, getDesktopState, setDesktopState } from '../utils/SunscanDesktop';
 
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -368,6 +369,59 @@ export default function SettingsScreen({navigation, isFocused}) {
       default:
         return t('common:wifiModeDisconnected');
     }
+  };
+
+  // --- Linux desktop of the Pi ----------------------------------------------
+
+  // null: nothing to offer (route unknown to the backend, or image without a
+  // desktop). Read on every focus, the desktop may have been turned on from
+  // another phone or by hand.
+  const [desktop, setDesktop] = useState(null);
+  const [desktopBusy, setDesktopBusy] = useState(false);
+  const [desktopError, setDesktopError] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!sunscanIsConnected || !myContext.debug) {
+        return;
+      }
+      let active = true;
+      setDesktopError('');
+      getDesktopState(apiURL)
+        .then((state) => active && setDesktop(state))
+        .catch(() => active && setDesktop(null));
+      return () => { active = false; };
+    }, [sunscanIsConnected, myContext.debug, apiURL]));
+
+  // The switch only moves once the backend has answered: no optimistic update,
+  // a stop can take up to 45 s and can be refused during a scan.
+  const switchDesktop = async (body) => {
+    setDesktopBusy(true);
+    setDesktopError('');
+    try {
+      const answer = await setDesktopState(apiURL, body);
+      if (answer.ok) {
+        setDesktop(answer.desktop);
+      } else {
+        console.log('desktop switch failed', answer.detail);
+        setDesktopError(t(desktopErrorKey(answer.error)));
+      }
+    } catch (e) {
+      setDesktopError(t('common:wifiUnreachable'));
+    } finally {
+      setDesktopBusy(false);
+    }
+  };
+
+  const toggleDesktop = (value) => {
+    if (value) {
+      switchDesktop({ running: true });
+      return;
+    }
+    Alert.alert(t('common:warning'), t('common:desktopStopConfirm'), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: 'OK', style: 'destructive', onPress: () => switchDesktop({ running: false }) },
+    ]);
   };
 
   // Effect to fetch stats when the component gains focus
@@ -778,6 +832,17 @@ export default function SettingsScreen({navigation, isFocused}) {
                 />
               </Row>
 
+              {myContext.debug &&
+                <Row label={t('common:screenInfo')} hint={t('common:screenInfoDescription')}>
+                  <Switch
+                    trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                    thumbColor='#fff'
+                    value={myContext.screenInfo}
+                    onValueChange={myContext.toggleScreenInfo}
+                  />
+                </Row>
+              }
+
               <Row label={t('common:offlineMode')} hint={t('common:offlineDescription')}>
                 <Switch
                   trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
@@ -786,6 +851,40 @@ export default function SettingsScreen({navigation, isFocused}) {
                   onValueChange={myContext.toggleDemo}
                 />
               </Row>
+
+              {/* Linux desktop: only backends that know the route, on an image that has one */}
+              {myContext.debug && desktop &&
+                <Row
+                  label={t('common:desktop')}
+                  hint={
+                    <View>
+                      <Text className={hintClass} style={hintSize}>{t('common:desktopDescription')}</Text>
+                      {!!desktopError && <Text className="text-amber-500 mt-1" style={hintSize}>{desktopError}</Text>}
+                    </View>
+                  }
+                >
+                  {desktopBusy && <ActivityIndicator size="small" color="#fff" style={{marginRight: 8}} />}
+                  <Switch
+                    trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                    thumbColor='#fff'
+                    disabled={desktopBusy}
+                    value={!!desktop.running}
+                    onValueChange={toggleDesktop}
+                  />
+                </Row>
+              }
+
+              {myContext.debug && desktop &&
+                <Row label={t('common:desktopAtBoot')} hint={t('common:desktopAtBootDescription')}>
+                  <Switch
+                    trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                    thumbColor='#fff'
+                    disabled={desktopBusy}
+                    value={!!desktop.at_boot}
+                    onValueChange={(value) => switchDesktop({ at_boot: value })}
+                  />
+                </Row>
+              }
 
             </Section>
 

@@ -195,11 +195,6 @@ export default function ListScreen({navigation}) {
     if (jobIsRunning) {
       return;
     }
-    if(myContext.cameraIsConnected) {
-      Alert.alert(t('common:warning'), t('common:disconnectCameraBeforeStacking'), [
-        { text: 'OK', onPress: async () => {}}]);
-      return;
-    }
     if(selectedItems.length <2) {
       Alert.alert(t('common:warning'), t('common:selectAtLeastOneItem'), [
         { text: 'OK', onPress: async () => {}}]);

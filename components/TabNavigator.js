@@ -33,6 +33,7 @@ import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useDerivedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import SmoothCamera from './SmoothCamera';
+import { FrameProbe } from './RootFrame';
 
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -265,6 +266,8 @@ const cameraRef = React.useRef();
                 );
             })}
             </View>
+            {/* Size of this row in the debug readout, see RootFrame */}
+            <FrameProbe name="nav" />
         </View>
     </NavigationContent>
   );

@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "2.1.3",
+        version: "2.1.4",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -102,9 +102,9 @@ export default ({ config }) => {
           // configure them: its `position: "relative"` calls
           // setDecorFitsSystemWindows(true) from the activity lifecycle, which
           // insets the whole root view by the nav bar while edge-to-edge sets
-          // it back to false. Whichever ran last won, so the app came up every
-          // so often with a dead black band at the bottom of the screen, the
-          // gallery scroll cut short by that much, and it went away on reload.
+          // it back to false, and whichever runs last wins. (The dead band at
+          // the bottom of the screen was first blamed on this : it was not
+          // the cause, see JobProgressModal.)
           [
             "react-native-edge-to-edge"
           ],

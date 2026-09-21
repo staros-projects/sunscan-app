@@ -3,7 +3,6 @@ import { useContext, useEffect, useRef, useState } from 'react';
 // own on Android, outside the app's GestureHandlerRootView, where the
 // gesture-handler one can keep the touches from the buttons it holds.
 import { ActivityIndicator, Linking, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
@@ -469,8 +468,9 @@ export default function HubUploadModal({ scan, upload, isVisible, onClose, onOpe
   else if (isDone) body = renderResult();
   else { body = renderForm(); scrollable = true; }
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-    <SafeAreaView>
+    <>
       <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']} onRequestClose={onClose}>
         <View style={modalBackdrop}>
           <View style={styles.card}>
@@ -490,7 +490,7 @@ export default function HubUploadModal({ scan, upload, isVisible, onClose, onOpe
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }
 

@@ -7,7 +7,6 @@ import react, { useContext } from 'react';
 import ReactNativeSegmentedControlTab from 'react-native-segmented-control-tab';
 import { ScrollView } from 'react-native-gesture-handler';
 import CustomNumericInput from './CustomNumericInput';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import AppContext from './AppContext';
 import PressableScale from './PressableScale';
 import ProcessingSteps from './ProcessingSteps';
@@ -93,8 +92,9 @@ export default function ProcessScan({ processMethod, isStarted, percent = null, 
   const levels = [t('common:Off'), t('common:Low'), t('common:Medium'), t('common:High')];
   const dopplerColorValues = [t('common:orangeblue'), t('common:redblue')];
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-    <SafeAreaView>
+    <>
       <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
         <View style={styles.centeredView}>
           <View style={styles.modalView} className="flex flex-col">
@@ -254,6 +254,6 @@ export default function ProcessScan({ processMethod, isStarted, percent = null, 
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }

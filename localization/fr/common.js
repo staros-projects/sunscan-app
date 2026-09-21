@@ -30,6 +30,8 @@ export default {
     "configuration": "Configuration",
     "debugMode": "Mode debug",
     "debugDescription": "Permet d'afficher les logs de traitements des scans et d'activer des fonctionnalités.",
+    "screenInfo": "Infos de taille d'écran",
+    "screenInfoDescription": "Affiche en haut de l'écran les tailles mesurées de la fenêtre et des vues (diagnostic de la bande noire en bas).",
     "hotspotMode": "Mode hotspot",
     "hotspotDescription": "Mode par défaut, connectez vous au réseau wifi SUNSCAN",
     "updateFirmware": "Mise à jour du firmware",
@@ -285,6 +287,13 @@ export default {
     "identLines": "{{n}} raies",
     "identSolar": "Soleil",
     "identTelluric": "Atmosphère terrestre",
+    // conseil de canal Bayer, mode recadré
+    "channelAdviceRedTitle": "Signal surtout dans le rouge",
+    "channelAdviceRedAction": "Toucher pour passer sur le canal rouge",
+    "channelAdviceRgbTitle": "Signal réparti sur plusieurs couleurs",
+    "channelAdviceRgbAction": "Toucher pour passer sur les trois canaux (RGB)",
+    "channelAdviceBlueTitle": "Signal surtout dans le bleu",
+    "channelAdviceBlueAction": "Toucher pour passer sur le canal bleu",
     // home wifi
     "wifiNetwork": "WiFi du SUNSCAN",
     "wifiModeHotspot": "Hotspot {{ssid}}",
@@ -445,4 +454,12 @@ export default {
     "hubError_upload_failed": "L'envoi a échoué sur le SUNSCAN",
     "hubError_request_failed": "Impossible de joindre le SUNSCAN",
     "hubError_generic": "L'envoi a échoué",
+    // bureau Linux du Raspberry Pi
+    "desktop": "Bureau Linux",
+    "desktopDescription": "Éteint par défaut pour laisser toute la puissance du SUNSCAN aux scans. À allumer seulement pour travailler sur le Raspberry Pi avec un écran.",
+    "desktopStopConfirm": "Éteindre le bureau ? Les applications ouvertes sur le bureau du SUNSCAN seront fermées, le travail non enregistré sera perdu.",
+    "desktopAtBoot": "Garder le bureau au démarrage",
+    "desktopAtBootDescription": "Sans effet sur le bureau en cours : s'applique au prochain démarrage du SUNSCAN.",
+    "desktopError_recording": "Un scan est en cours. Réessayez une fois le scan terminé.",
+    "desktopError_generic": "Le bureau n'a pas pu être modifié.",
 }

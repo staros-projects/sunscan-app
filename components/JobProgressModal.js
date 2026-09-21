@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
@@ -109,59 +108,64 @@ export default function JobProgressModal({ job, onClose }) {
 
   const stepLabel = job ? t(jobStepTranslationKey(job.step), { current: job.current, total: job.total }) : '';
 
+  // No SafeAreaView around the Modal. It does nothing for the pop-in, which is a
+  // window of its own, but it pads itself by the insets and so is as tall as
+  // the status bar plus the bottom inset. This component is always mounted, as
+  // the last child of the app's root column: whenever those insets were not
+  // zero (the status bar is still up for a moment on a cold start, and the
+  // update that follows its hiding does not always land) it took that height
+  // from the navigator, leaving a dead band at the bottom of every screen.
   return (
-    <SafeAreaView>
-      <Modal
-        transparent
-        visible={visible}
-        animationType="fade"
-        statusBarTranslucent
-        supportedOrientations={['landscape']}
-        // Only dismissible once it has failed: the request cannot be cancelled,
-        // and a pop-in the user can close mid-run would just hide a busy box.
-        onRequestClose={() => { if (failed) onClose(); }}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.card}>
-            {failed ? (
-              <>
-                <Ionicons name="warning-outline" size={30} color="#fbbf24" />
-                <Text style={styles.title}>{t(isStack ? 'common:stackingFailed' : 'common:animationFailed')}</Text>
-                <Text style={styles.hint}>{t(jobErrorTranslationKey(job.error))}</Text>
-                <PressableScale
-                  className="bg-zinc-700 rounded-xl mt-4 px-5 h-10 flex flex-row items-center justify-center"
-                  onPress={onClose}
-                >
-                  <Text className="text-white font-bold" style={{ fontSize: 13 }}>
-                    {t('common:cancel')}
-                  </Text>
-                </PressableScale>
-              </>
-            ) : (
-              <>
-                <SunscanLoader size={76} />
-                <Text style={styles.title}>{t(isStack ? 'common:stackingTitle' : 'common:animationTitle')}</Text>
-                {/* `number`, not `count`: `count` would put i18next into plural lookup */}
-                <Text style={styles.subtitle}>{t('common:stackingFrames', { number: job?.count ?? 0 })}</Text>
-                {percent !== null && (
-                  <View style={styles.progress}>
-                    <Text style={styles.step} numberOfLines={2}>{stepLabel}</Text>
-                    <View style={styles.track}>
-                      <Animated.View style={[styles.bar, barStyle]} />
-                    </View>
-                    <Text style={styles.percent}>{Math.max(0, Math.min(100, percent))} %</Text>
-                  </View>
-                )}
-                <Text style={styles.elapsed}>
-                  {t('common:stackingElapsed', { time: formatElapsed(elapsed) })}
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+      supportedOrientations={['landscape']}
+      // Only dismissible once it has failed: the request cannot be cancelled,
+      // and a pop-in the user can close mid-run would just hide a busy box.
+      onRequestClose={() => { if (failed) onClose(); }}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.card}>
+          {failed ? (
+            <>
+              <Ionicons name="warning-outline" size={30} color="#fbbf24" />
+              <Text style={styles.title}>{t(isStack ? 'common:stackingFailed' : 'common:animationFailed')}</Text>
+              <Text style={styles.hint}>{t(jobErrorTranslationKey(job.error))}</Text>
+              <PressableScale
+                className="bg-zinc-700 rounded-xl mt-4 px-5 h-10 flex flex-row items-center justify-center"
+                onPress={onClose}
+              >
+                <Text className="text-white font-bold" style={{ fontSize: 13 }}>
+                  {t('common:cancel')}
                 </Text>
-                <Text style={styles.hint}>{t('common:stackingHint')}</Text>
-              </>
-            )}
-          </View>
+              </PressableScale>
+            </>
+          ) : (
+            <>
+              <SunscanLoader size={76} />
+              <Text style={styles.title}>{t(isStack ? 'common:stackingTitle' : 'common:animationTitle')}</Text>
+              {/* `number`, not `count`: `count` would put i18next into plural lookup */}
+              <Text style={styles.subtitle}>{t('common:stackingFrames', { number: job?.count ?? 0 })}</Text>
+              {percent !== null && (
+                <View style={styles.progress}>
+                  <Text style={styles.step} numberOfLines={2}>{stepLabel}</Text>
+                  <View style={styles.track}>
+                    <Animated.View style={[styles.bar, barStyle]} />
+                  </View>
+                  <Text style={styles.percent}>{Math.max(0, Math.min(100, percent))} %</Text>
+                </View>
+              )}
+              <Text style={styles.elapsed}>
+                {t('common:stackingElapsed', { time: formatElapsed(elapsed) })}
+              </Text>
+              <Text style={styles.hint}>{t('common:stackingHint')}</Text>
+            </>
+          )}
         </View>
-      </Modal>
-    </SafeAreaView>
+      </View>
+    </Modal>
   );
 }
 

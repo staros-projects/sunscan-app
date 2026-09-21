@@ -26,7 +26,7 @@ import AppContext from './components/AppContext';
 import WebSocketProvider  from './utils/WSProvider';
 import { JobProgressProvider } from './utils/useJobProgress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import RootFrame from './components/RootFrame';
+import RootFrame, { FrameReporter } from './components/RootFrame';
 import { StyleSheet } from 'react-native';
 
 import './localization/i18n';
@@ -63,6 +63,7 @@ const STORAGE_KEYS = {
   demo: 'SUNSCAN_APP::DEMO',
   tooltip: 'SUNSCAN_APP::TOOLTIP',
   debug: 'SUNSCAN_APP::DEBUG',
+  screenInfo: 'SUNSCAN_APP::SCREEN_INFO',
   watermark: 'SUNSCAN_APP::WATERMARK',
   autoStop: 'SUNSCAN_APP::AUTO_STOP',
   stackingOptions: 'SUNSCAN_APP::STACKING_OPTIONS',
@@ -95,6 +96,8 @@ export default function App() {
   const [showWatermark, setShowWatermark] = useState(true);
   const [autoStop, setAutoStop] = useState(true);
   const [debugVal, setDebug] = useState(false);
+  // Screen size readout of RootFrame, shown in debug mode only
+  const [screenInfoVal, setScreenInfo] = useState(true);
   const [demoVal, setDemo] = useState(false);
   const [tooltipVal, setTooltip] = useState(false);
   const [camera, setCamera] = useState("");
@@ -123,6 +126,7 @@ export default function App() {
   const toggleDemo = useCallback(() => setDemo(v => !v), []);
   const toggleTooltip = useCallback(() => setTooltip(v => !v), []);
   const toggleDebug = useCallback(() => setDebug(v => !v), []);
+  const toggleScreenInfo = useCallback(() => setScreenInfo(v => !v), []);
 
   // Gestion de l'orientation de l'écran
   useEffect(() => {
@@ -182,6 +186,10 @@ export default function App() {
         if (debug) {
           setDebug(debug == '1');
         }
+        const screenInfo = stored[STORAGE_KEYS.screenInfo];
+        if (screenInfo) {
+          setScreenInfo(screenInfo == '1');
+        }
         const watermark = stored[STORAGE_KEYS.watermark];
         if (watermark) {
           setShowWatermark(watermark == '1');
@@ -229,6 +237,7 @@ export default function App() {
       [STORAGE_KEYS.demo, demoVal?'1':'0'],
       [STORAGE_KEYS.tooltip, tooltipVal?'1':'0'],
       [STORAGE_KEYS.debug, debugVal?'1':'0'],
+      [STORAGE_KEYS.screenInfo, screenInfoVal?'1':'0'],
       [STORAGE_KEYS.watermark, showWatermark?'1':'0'],
       [STORAGE_KEYS.autoStop, autoStop?'1':'0'],
       [STORAGE_KEYS.stackingOptions, JSON.stringify(stackingOptions)],
@@ -243,7 +252,7 @@ export default function App() {
       pairs.push([STORAGE_KEYS.observer, `${observerVal}`]);
     }
     AsyncStorage.multiSet(pairs).catch((e) => console.log('Error saving settings', e));
-  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, autoStop, demoVal, debugVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
+  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, autoStop, demoVal, debugVal, screenInfoVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
 
   // Pop-ins raised at start-up (firmware offer...) wait for the splash to be gone
   const [splashDone, setSplashDone] = useState(false);
@@ -258,6 +267,7 @@ export default function App() {
     setCamera,
     demo:demoVal,
     debug:debugVal,
+    screenInfo:screenInfoVal,
     tooltip:tooltipVal,
     hotSpotMode:hotSpotModeVal,
     setHotSpotMode,
@@ -276,6 +286,7 @@ export default function App() {
     toggleShowWaterMark,
     toggleAutoStop,
     toggleDebug,
+    toggleScreenInfo,
     toggleDemo,
     toggleTooltip,
     apiURL:apiURLVal,
@@ -299,19 +310,20 @@ export default function App() {
     refreshHubAccount,
     splashDone,
   }), [
-    sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, tooltipVal,
+    sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, screenInfoVal, tooltipVal,
     hotSpotModeVal, observerVal, locationData, showWatermark, autoStop, dopplerColor,
     processDoppler, backendApiVersion, apiURLVal, customApiURLVal, sunscanDevice,
     displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
-    screenOrientationVal, toggleShowWaterMark, toggleAutoStop, toggleDebug, toggleDemo, toggleTooltip,
+    screenOrientationVal, toggleShowWaterMark, toggleAutoStop, toggleDebug, toggleScreenInfo, toggleDemo, toggleTooltip,
     hubSupported, hubAccount, refreshHubAccount, splashDone
   ]);
 
   return (
-    <RootFrame debug={debugVal}>
+    <RootFrame debug={debugVal && screenInfoVal}>
     <AppContext.Provider value={userSettings}>
        <WebSocketProvider>
        <SafeAreaProvider>
+       <FrameReporter name="app" />
        <JobProgressProvider>
 
         <OverlayProvider>

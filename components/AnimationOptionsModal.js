@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Platform, // Importer ActivityIndicator pour le loader
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import PressableScale from './PressableScale';
 import { modalBackdrop, modalCard } from './theme';
@@ -52,8 +51,9 @@ const AnimationOptionsModal = ({
       onClose();  // Fermer la modal
   };
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-    <SafeAreaView>
+    <>
     <Modal
       transparent={true}
       visible={visible}
@@ -158,7 +158,7 @@ const AnimationOptionsModal = ({
           </View>
         </View>
       </View>
-    </Modal></SafeAreaView>
+    </Modal></>
   );
 };
 

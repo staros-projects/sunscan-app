@@ -5,7 +5,7 @@ import AppContext from './AppContext';
 import { ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { modalBackdrop, modalCard, roundButton } from './theme';
 import PressableScale from './PressableScale';
 
@@ -62,8 +62,9 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
 
   
 
+  // No SafeAreaView around the Modal : it takes room in the layout, see JobProgressModal
   return (
-     <SafeAreaView>
+     <>
     <Modal animationType="fade" transparent={true} visible={isVisible} supportedOrientations={['landscape']}>
       <View style={styles.centeredView}>
         <View style={styles.modalView} className="flex flex-col justify-center items-center">
@@ -108,6 +109,6 @@ export default function ScanInfo({ isVisible, logs, currentImage, scan, onClose 
           </View>
         </View>
       </View>
-    </Modal></SafeAreaView>
+    </Modal></>
   );
 }

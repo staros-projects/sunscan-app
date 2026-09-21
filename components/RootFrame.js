@@ -1,37 +1,78 @@
-// Root of the app, and a guard against it being laid out shorter than the
-// screen on iOS.
+// Root of the app, and a readout of the sizes it is laid out with, for debug.
 //
-// Seen on iPad (1180x820pt) : every so often the whole tree comes up 795pt
-// tall, sidebar included, leaving a dead 25pt band at the bottom of the screen.
-// Everything from here down is flex:1, so that height is what the native side
-// hands to the React surface, not something a screen asks for. What makes it
-// short is not known yet ; the debug readout below is there to find out, by
-// telling which of the three sizes is the odd one :
-//   root   : what the surface was laid out with
-//   window : bounds of the key UIWindow
-//   screen : bounds of the UIScreen
-//
-// Until then the app is stretched back to the full height when it comes up
-// short. iOS does not clip a view to its parent, so the overflow is drawn (the
-// zoomed camera feed already showed through that band).
+// It was written to track down a dead band at the bottom of every screen, on
+// some cold starts : a SafeAreaView left in the root column, as tall as the
+// insets of the moment, was taking its height from the navigator (see
+// JobProgressModal). The readout is what found it, by telling apart, level by
+// level :
+//   yoga   : the size the layout gave a view (onLayout, measureInWindow)
+//   native : the size of the native view itself, which safe-area-context reads
+//            off the view (its "frame")
+// A level laid out shorter than the one above it has a sibling taking room.
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Past this the gap is not that band (a rotation still in flight, an app
-// window resized by hand...) : the layout is left alone.
-const MAX_MISSING_HEIGHT = 60;
+const MEASURE_EVERY_MS = 2000;
+
+const ProbeContext = createContext({ enabled: false, report: null });
 
 function readDimensions() {
   return { window: Dimensions.get('window'), screen: Dimensions.get('screen') };
 }
 
-const size = ({ width, height }) => `${Math.round(width)}x${Math.round(height)}`;
+const size = (rect) => rect ? `${Math.round(rect.width)}x${Math.round(rect.height)}` : '?';
+
+/**
+ * Reports the native size and the insets of the SafeAreaProvider it sits in.
+ */
+export function FrameReporter({ name, yoga }) {
+  const { enabled, report } = useContext(ProbeContext);
+  const native = useSafeAreaFrame();
+  const insets = useSafeAreaInsets();
+  useEffect(() => {
+    if (enabled) {
+      report(name, { native, insets, yoga });
+    }
+  }, [enabled, report, name, native.width, native.height, insets.top, insets.right, insets.bottom, insets.left, yoga?.width, yoga?.height]);
+  return null;
+}
+
+/**
+ * Fills its parent, sees and catches nothing : reports the size the parent was
+ * laid out with next to the one its native view really has. Only mounted while
+ * the readout is on.
+ */
+export function FrameProbe({ name }) {
+  const { enabled } = useContext(ProbeContext);
+  const [yoga, setYoga] = useState(null);
+  const onLayout = useCallback((event) => {
+    const { width, height } = event.nativeEvent.layout;
+    setYoga({ width, height });
+  }, []);
+  if (!enabled) {
+    return null;
+  }
+  // pointerEvents goes on a plain View : the provider's own view ignores the
+  // prop on Android (its manager is not a ReactViewManager), and laid over the
+  // app it would take every touch.
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" collapsable={false} onLayout={onLayout}>
+      <SafeAreaProvider>
+        <FrameReporter name={name} yoga={yoga} />
+      </SafeAreaProvider>
+    </View>
+  );
+}
 
 export default function RootFrame({ debug, children }) {
+  const rootRef = useRef(null);
   const [layout, setLayout] = useState(null);
+  const [measured, setMeasured] = useState(null);
   const [dims, setDims] = useState(readDimensions);
+  const [probes, setProbes] = useState({});
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window, screen }) => setDims({ window, screen }));
@@ -43,35 +84,50 @@ export default function RootFrame({ debug, children }) {
     setLayout((prev) => (prev && prev.width === width && prev.height === height ? prev : { width, height }));
   }, []);
 
-  // The app is full screen only (requireFullScreen), so the screen is the
-  // reference even if the window itself turns out to be the short one
-  const fullHeight = Math.max(dims.window.height, dims.screen.height);
-  const missing = layout ? fullHeight - layout.height : 0;
-  const stretch = Platform.OS === 'ios'
-    && layout != null
-    // Same width : both sizes describe the same orientation
-    && Math.abs(dims.screen.width - layout.width) < 1
-    && missing > 1
-    && missing < MAX_MISSING_HEIGHT;
+  const report = useCallback((name, value) => {
+    setProbes((prev) => ({ ...prev, [name]: value }));
+  }, []);
+  const probeContext = useMemo(() => ({ enabled: !!debug, report }), [debug, report]);
 
+  // onLayout is an event, and an event can be missed : measureInWindow reads
+  // the layout as it stands
   useEffect(() => {
-    if (stretch) {
-      console.log(`RootFrame: root ${size(layout)} shorter than window ${size(dims.window)} / screen ${size(dims.screen)}, stretched`);
+    if (!debug) {
+      setProbes((prev) => (Object.keys(prev).length ? {} : prev));
+      return;
     }
-  }, [stretch]);
+    const read = () => rootRef.current?.measureInWindow((x, y, width, height) => setMeasured({ width, height }));
+    read();
+    const id = setInterval(read, MEASURE_EVERY_MS);
+    return () => clearInterval(id);
+  }, [debug]);
+
+  // Every probe spans the whole root : one laid out or shown shorter than the
+  // window is the band. A size of another width belongs to another orientation.
+  const heights = [layout, ...Object.values(probes).flatMap((probe) => [probe.native, probe.yoga])]
+    .filter((rect) => rect != null && Math.abs(rect.width - dims.window.width) < 1)
+    .map((rect) => rect.height);
+  const short = heights.some((height) => dims.window.height - height > 1);
 
   return (
-    <View style={styles.fill} onLayout={onLayout}>
-      <GestureHandlerRootView style={stretch ? [styles.stretched, { width: layout.width, height: fullHeight }] : styles.fill}>
-        {children}
-      </GestureHandlerRootView>
-      {debug && layout != null &&
-        <View style={styles.readout} pointerEvents="none">
-          <Text style={[styles.readoutText, missing > 1 && styles.readoutTextShort]}>
-            root {size(layout)} · window {size(dims.window)} · screen {size(dims.screen)}{stretch ? ' · stretched' : ''}
-          </Text>
-        </View>}
-    </View>
+    <ProbeContext.Provider value={probeContext}>
+      <View ref={rootRef} style={styles.fill} onLayout={onLayout} collapsable={false}>
+        <GestureHandlerRootView style={styles.fill}>
+          {children}
+        </GestureHandlerRootView>
+        {debug && layout != null &&
+          <View style={styles.readout} pointerEvents="none">
+            <Text style={[styles.readoutText, short && styles.readoutTextShort]}>
+              root {size(layout)} measured {size(measured)}
+              {Object.entries(probes).map(([name, probe]) =>
+                ` · ${name} yoga ${size(probe.yoga)} native ${size(probe.native)}`
+                + ` insets ${['top', 'right', 'bottom', 'left'].map((edge) => Math.round(probe.insets[edge])).join('/')}`
+              ).join('')}
+              {' · '}window {size(dims.window)} · screen {size(dims.screen)}
+            </Text>
+          </View>}
+      </View>
+    </ProbeContext.Provider>
   );
 }
 
@@ -80,22 +136,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  stretched: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    backgroundColor: '#000',
-  },
   readout: {
     position: 'absolute',
     top: 0,
     left: 72,
+    right: 8,
     paddingHorizontal: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   readoutText: {
+    alignSelf: 'flex-start',
     color: '#a3e635',
     fontSize: 9,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   readoutTextShort: {
     color: '#f87171',
