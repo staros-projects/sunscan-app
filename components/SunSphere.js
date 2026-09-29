@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, us
 import { Canvas, useFrame } from '@react-three/fiber/native';
 import { Gyroscope } from 'expo-sensors';
 import { Asset } from 'expo-asset';
-import { TextureLoader } from 'three';
+// Namespace import rather than the global expo-three installs as a side effect
+import * as THREE from 'three';
 import { loadAsync } from 'expo-three';
 import AppContext from './AppContext';
 
@@ -15,9 +16,17 @@ const SunSphere = forwardRef((props, ref) => {
 
   const myContext = useContext(AppContext);
 
-  // Load texture
+  // Load texture.
+  //
+  // The texture is ours, not react-three-fiber's : it is built here and handed
+  // to the material as a prop. r3f disposes the geometry and the material it
+  // created from the JSX, and three's Material.dispose() does not touch its
+  // maps — so without the cleanup below a full-resolution Sun (tens of MB once
+  // uploaded with its mipmaps) would sit on the GPU until the process dies,
+  // once per image opened in 3D.
   useEffect(() => {
     let mounted = true;
+    let loaded = null;
     (async () => {
       try {
         const base =  `http://${myContext.apiURL}`;
@@ -25,17 +34,31 @@ const SunSphere = forwardRef((props, ref) => {
         const asset = Asset.fromURI(url);
         await asset.downloadAsync();
         const tex = await loadAsync(asset);
-        tex.magFilter = THREE.NearestMipmapNearestFilter;
-        tex.minFilter = THREE.NearestMipmapNearestFilter; 
+        // Magnification only takes Nearest/Linear : the mipmap filters are
+        // minification-only, and three warns and falls back on the others.
+        tex.magFilter = THREE.NearestFilter;
+        tex.minFilter = THREE.NearestMipmapNearestFilter;
 
         tex.generateMipmaps = true;
         tex.needsUpdate = true;
+        // Nobody is going to show it : let it go rather than strand it
+        if (!mounted) {
+          tex.dispose();
+          return;
+        }
+        loaded = tex;
         setTexture(tex);
       } catch (e) {
         console.warn('Texture load failed :', e);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      // Cleared first : the mesh must stop pointing at it before it goes, or
+      // three re-uploads the texture it was just told to drop.
+      setTexture(null);
+      loaded?.dispose();
+    };
   }, [props.textureUri]);
 
   // Gyroscope

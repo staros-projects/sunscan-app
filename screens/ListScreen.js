@@ -1,4 +1,4 @@
-import  {  useContext,  useState, useCallback, useEffect, useRef } from 'react';
+import  {  useContext,  useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { View,FlatList, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { NativeWindStyleSheet } from "nativewind";
 import Animated, { FadeInDown, FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -40,26 +40,40 @@ const cardEntering = (index) =>
 
 const itemStyle = (size) => ({width: size + 14, padding: 4});
 
+// Cards are memoised : without it, any state change on the screen — a
+// selection, the loading flag, the mass-edit toggle — re-renders every cell the
+// FlatList is holding, and each scan card carries two websocket subscriptions
+// (see useScanProcess) plus a thumbnail.
+//
+// `onSelect` is the stable handler and the cell closes over its own path. It
+// cannot be handed to the cards as-is : Card calls `onLongPress(scan.ser)`
+// where the stacked and animated ones call `onLongPress(scan.path)`, and the
+// selection is keyed on the path. The wrapper drops the argument, which is what
+// the inline arrow used to do.
+
 // Component to render individual scan items
-const ItemScan = (props) => {
+const ItemScan = memo((props) => {
   const size = getCardSize();
-  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><Card squareSize={size} scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></Animated.View>);
-}
+  const onLongPress = useCallback(() => props.onSelect(props.scan.path), [props.onSelect, props.scan.path]);
+  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><Card squareSize={size} scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={onLongPress} /></Animated.View>);
+});
 
-const ItemStacked = (props) => {
+const ItemStacked = memo((props) => {
   const size = getCardSize();
-  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><StackedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></Animated.View>);
-}
+  const onLongPress = useCallback(() => props.onSelect(props.scan.path), [props.onSelect, props.scan.path]);
+  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><StackedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={onLongPress} /></Animated.View>);
+});
 
-const ItemAnimation = (props) => {
+const ItemAnimation = memo((props) => {
   const size = getCardSize();
-  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><AnimatedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={props.onLongPress} /></Animated.View>);
-}
+  const onLongPress = useCallback(() => props.onSelect(props.scan.path), [props.onSelect, props.scan.path]);
+  return (<Animated.View entering={cardEntering(props.index)} style={itemStyle(size)}><AnimatedCard squareSize={size}  scan={props.scan} selected={props.selected} multiSelectMode={props.multiSelectMode} onLongPress={onLongPress} /></Animated.View>);
+});
 
-const ItemSnapshot = (props) => {
+const ItemSnapshot = memo((props) => {
   const size = getCardSize();
   return (<View style={itemStyle(size)}></View>);
-}
+});
 
 export default function ListScreen({navigation}) {
   // State variables
@@ -156,8 +170,9 @@ export default function ListScreen({navigation}) {
   );
 
 
-  // Function to handle long press on items (for selection)
-  const handleLongPress = (id) => {
+  // Function to handle long press on items (for selection). Stable, so that
+  // memoised cells are not invalidated on every render of the screen.
+  const handleLongPress = useCallback((id) => {
     setSelectedItems((prevSelectedItems) => {
       if (prevSelectedItems.includes(id)) {
         return prevSelectedItems.filter((itemId) => itemId !== id);
@@ -165,7 +180,26 @@ export default function ListScreen({navigation}) {
         return [...prevSelectedItems, id];
       }
     });
-  };
+  }, []);
+
+  // Membership of the selection is read once per rendered cell, so the array
+  // scan was quadratic over the gallery — select-all made it the whole list.
+  const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
+
+  const renderItem = useCallback(({item, index}) => {
+    const common = {
+      index,
+      scan: item,
+      selected: selectedSet.has(item.path),
+      multiSelectMode: massEditMode,
+      onSelect: handleLongPress,
+    };
+    if (currentView == "scans") return <ItemScan {...common} />;
+    if (currentView == "stacked") return <ItemStacked {...common} />;
+    if (currentView == "animated") return <ItemAnimation {...common} />;
+    if (currentView == "snapshots") return <ItemSnapshot {...common} />;
+    return null;
+  }, [currentView, selectedSet, massEditMode, handleLongPress]);
 
   // Initialize translation hook
   const { t, i18n } = useTranslation();
@@ -412,22 +446,7 @@ useEffect(() => {
           {scans.length ? <FlatList
             data={scans}
             numColumns={3}
-            renderItem={({item, index}) =>
-            {
-              if(currentView == "scans"){
-                return <ItemScan index={index} selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
-              }
-              else if(currentView == "stacked"){
-                return <ItemStacked index={index} selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
-              }
-              else if(currentView == "animated"){
-                return <ItemAnimation index={index} selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
-              }
-              else if(currentView == "snapshots"){
-                return <ItemSnapshot index={index} selected={selectedItems.includes(item.path)} scan={item} multiSelectMode={massEditMode} onLongPress={() => handleLongPress(item.path)} />
-              }
-            }
-            }
+            renderItem={renderItem}
             // Room under the last row for the selection bar, which floats over the list
             contentContainerStyle={{flexGrow: 1, justifyContent: 'center', paddingBottom: massEditMode ? 72 : 16}}
             keyExtractor={(item, index) => item.path.toString()}
@@ -436,8 +455,22 @@ useEffect(() => {
             refreshing={isLoading}
             onRefresh={()=>{ getScans(1, true) }}
             onEndReached={loadMoreFiles}
-            initialNumToRender={1}
-            onEndReachedThreshold={2}
+            // Four rows. It used to render a single cell, which left the content
+            // shorter than the viewport and therefore permanently "near the
+            // end" : onEndReached fired at once and chain-loaded page after
+            // page, pulling the whole gallery into memory on mount. Paired with
+            // a threshold of half a screen instead of two.
+            initialNumToRender={12}
+            onEndReachedThreshold={0.5}
+            // Cells are expensive (a thumbnail and two websocket subscriptions
+            // each), so hold fewer of them : ~5 viewports instead of the
+            // default 21.
+            windowSize={5}
+            maxToRenderPerBatch={6}
+            // removeClippedSubviews is left at its platform default (true on
+            // Android, false on iOS) : forcing it on would only change iOS, and
+            // detaching cells that carry a Reanimated entering animation is the
+            // area a native crash already points at.
           />:
           /* Empty state, rather than a blank screen, once loading has settled */
           (!isLoading && <Animated.View entering={FadeIn.duration(400)} className="flex flex-col items-center justify-center w-full" style={{paddingTop:80}}>

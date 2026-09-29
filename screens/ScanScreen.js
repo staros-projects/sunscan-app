@@ -915,8 +915,15 @@ const insets = useSafeAreaInsets();
                   <View style={{width:crop?470:FULL_FRAME_WIDTH, height:crop ? 30:FULL_FRAME_HEIGHT}}>
                 <Image
                 style={{width:crop?470:FULL_FRAME_WIDTH, height:crop ? 30:FULL_FRAME_HEIGHT}}
-                source={{ uri: frame }} 
+                source={{ uri: frame }}
                 contentFit='contain'
+                /* The feed is a new base64 frame several times a second. Caching
+                   it is pointless and costly : the default 'disk' policy hashes
+                   and writes every single frame. ScanPreview does the same. */
+                cachePolicy="none"
+                /* Constant : the view is reused from frame to frame instead of
+                   being reset to blank, which would strobe the feed. */
+                recyclingKey="camera-feed"
                 className="border border-white mx-auto"
                 />
                   </View>

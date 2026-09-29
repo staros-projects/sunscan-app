@@ -14,6 +14,19 @@ import WebSocketContext from './WSContext';
 // Columns reserved before the scan duration is known
 const DEFAULT_CAPACITY = 240;
 
+// Rebuilding the preview means re-encoding the whole image : a BMP of
+// width x height bytes, then a base64 string a third larger again. The backend
+// pushes scanlines several times a second, and doing that work on every one of
+// them is the single heaviest thing the app does while recording. Twice a
+// second is plenty to watch a disk drift across in minutes. Raise it for a
+// smoother preview, at a cost paid during the one operation that must not
+// stutter.
+const RENDER_INTERVAL_MS = 500;
+
+// Runaway guard, not a normal limit : a usual scan is a few hundred columns.
+// Past this the preview stops taking new ones rather than grow without end.
+const MAX_COLUMNS = 4000;
+
 /**
  * Builds an 8-bit grayscale BMP (bottom-up, 256-entry palette).
  * `pixels` is row-major, top row first.
@@ -88,6 +101,9 @@ export default function useScanPreview({ recording, scanDurationS }) {
   const floorRef = useRef(Infinity);
   const durationRef = useRef(scanDurationS);
   useEffect(() => { durationRef.current = scanDurationS; }, [scanDurationS]);
+  // Throttling of the rebuild, see scheduleRender
+  const lastRenderRef = useRef(0);
+  const pendingRef = useRef(null);
 
   const render = useCallback(() => {
     const columns = columnsRef.current;
@@ -118,25 +134,53 @@ export default function useScanPreview({ recording, scanDurationS }) {
     setUri(`data:image/bmp;base64,${toBase64(encodeGrayBmp(pixels, width, height))}`);
   }, []);
 
+  // Renders at most every RENDER_INTERVAL_MS, and always renders the last
+  // scanline : a trailing timer, so the preview ends on the whole image rather
+  // than on whatever the last tick happened to catch.
+  const scheduleRender = useCallback(() => {
+    const now = Date.now();
+    const due = lastRenderRef.current + RENDER_INTERVAL_MS;
+    if (now >= due) {
+      lastRenderRef.current = now;
+      render();
+      return;
+    }
+    if (pendingRef.current == null) {
+      pendingRef.current = setTimeout(() => {
+        pendingRef.current = null;
+        lastRenderRef.current = Date.now();
+        render();
+      }, due - now);
+    }
+  }, [render]);
+
   const onScanline = useCallback((message) => {
-    const values = message[1].split(',').map(Number);
-    if (!values.length || values.some((v) => !Number.isFinite(v))) return;
+    // Parsed straight into a Float32Array : one pass instead of three, and the
+    // column is 4 bytes a bin rather than a JS array of boxed doubles, which is
+    // what an entire scan of them is kept in.
+    const parts = message[1].split(',');
+    if (!parts.length) return;
+    const values = new Float32Array(parts.length);
+    let max = 0;
+    let min = Infinity;
+    for (let i = 0; i < parts.length; i += 1) {
+      const v = Number(parts[i]);
+      if (!Number.isFinite(v)) return; // a bad sample discards the column
+      values[i] = v;
+      if (v > max) max = v;
+      if (v < min) min = v;
+    }
 
     const columns = columnsRef.current;
     if (columns.length && columns[0].length !== values.length) return;
+    if (columns.length >= MAX_COLUMNS) return;
     columns.push(values);
 
-    let max = 0;
-    let min = Infinity;
-    for (let i = 0; i < values.length; i += 1) {
-      if (values[i] > max) max = values[i];
-      if (values[i] < min) min = values[i];
-    }
     peakRef.current = Math.max(peakRef.current, max);
     floorRef.current = Math.min(floorRef.current, min);
 
-    render();
-  }, [render]);
+    scheduleRender();
+  }, [scheduleRender]);
 
   useEffect(() => {
     if (!recording) return undefined;
@@ -145,11 +189,22 @@ export default function useScanPreview({ recording, scanDurationS }) {
     startedAtRef.current = Date.now();
     peakRef.current = 0;
     floorRef.current = Infinity;
+    lastRenderRef.current = 0; // the first scanline draws straight away
     setUri(null);
 
     subscribe('scanline', onScanline);
-    return () => unsubscribe('scanline', onScanline);
-  }, [recording, subscribe, unsubscribe, onScanline]);
+    return () => {
+      unsubscribe('scanline', onScanline);
+      // A rebuild was owed when the scan stopped : run it now rather than on a
+      // timer, so the preview is left showing every column that arrived, and
+      // nothing fires afterwards.
+      if (pendingRef.current != null) {
+        clearTimeout(pendingRef.current);
+        pendingRef.current = null;
+        render();
+      }
+    };
+  }, [recording, subscribe, unsubscribe, onScanline, render]);
 
   return { uri };
 }
