@@ -288,6 +288,7 @@ export default {
     "scanPreview": "vista previa del disco",
     "autoStopIn": "Parada automática en {{seconds}} s",
     "autoStopCancel": "toca para cancelar",
+    "navLockedDuringScan": "Navegación bloqueada durante la adquisición. Pulsación larga para forzar.",
     // identificacion de las lineas espectrales
     "ident": "Ident.",
     "identStarting": "Iniciando…",

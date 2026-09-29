@@ -1,6 +1,6 @@
 import * as React from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Dimensions, Pressable, View, StyleSheet, Button, Text, PanResponder } from 'react-native';
+import { BackHandler, Dimensions, Pressable, View, StyleSheet, Button, Text, PanResponder } from 'react-native';
 import { OrthographicCamera } from '@react-three/drei/native';
 import {
     createNavigatorFactory,
@@ -85,13 +85,37 @@ const tabStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Locked out while a scan records : dimmed so the tab reads as unavailable
+  // rather than broken.
+  lockedItem: {
+    opacity: 0.28,
+  },
+  lockNotice: {
+    position: 'absolute',
+    top: 12,
+    alignSelf: 'center',
+    maxWidth: 420,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(9,9,11,0.92)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.14)',
+    zIndex: 60,
+    elevation: 60,
+  },
+  lockNoticeText: {
+    color: '#fafafa',
+    fontSize: 12,
+    textAlign: 'center',
+  },
 });
 
 // One sidebar tab. The active/inactive change is driven by a single 0->1
 // progress value so the highlight, the indicator bar and the icon colour all
 // move together; the icon "colour change" is really a cross-fade between a grey
 // and a white copy, since an SVG fill cannot be animated on the UI thread.
-function TabItem({Icon, active, onPress}) {
+function TabItem({Icon, active, locked, onPress, onBlockedPress}) {
   const progress = useDerivedValue(
     () => withTiming(active ? 1 : 0, {duration: 200}),
     [active]
@@ -115,10 +139,14 @@ function TabItem({Icon, active, onPress}) {
 
   return (
     <AnimatedPressable
-      onPress={onPress}
+      onPress={locked ? onBlockedPress : onPress}
+      // The way out. A scan whose end is never reported would otherwise strand
+      // the user here, Settings included — where the connection gets fixed.
+      onLongPress={locked ? onPress : undefined}
+      delayLongPress={800}
       onPressIn={() => { scale.value = withSpring(0.88, {damping: 20, stiffness: 400, mass: 0.5}); }}
       onPressOut={() => { scale.value = withSpring(1, {damping: 20, stiffness: 400, mass: 0.5}); }}
-      style={[tabStyles.item, itemStyle]}
+      style={[tabStyles.item, locked && tabStyles.lockedItem, itemStyle]}
     >
       {/* Active indicator: rounded accent bar instead of a square border */}
       <View style={tabStyles.indicatorSlot}>
@@ -158,6 +186,42 @@ export default function TabNavigator({
   // Get the current screen name
   const screenName = state.routes[state.index].name;
   const myContext = React.useContext(AppContext);
+
+  // Navigation is locked while the SUNSCAN records : every screen queries the
+  // box on focus, and an acquisition has nothing to spare for that. A long
+  // press on a tab goes through anyway, see TabItem.
+  const navigationLocked = !!myContext.scanIsRecording;
+  const [lockNoticeShown, setLockNoticeShown] = React.useState(false);
+  const lockNoticeTimer = React.useRef(null);
+
+  const showLockNotice = React.useCallback(() => {
+    setLockNoticeShown(true);
+    if (lockNoticeTimer.current) clearTimeout(lockNoticeTimer.current);
+    lockNoticeTimer.current = setTimeout(() => {
+      lockNoticeTimer.current = null;
+      setLockNoticeShown(false);
+    }, 2600);
+  }, []);
+
+  React.useEffect(() => () => {
+    if (lockNoticeTimer.current) clearTimeout(lockNoticeTimer.current);
+  }, []);
+
+  // The scan ended while the notice was up : it no longer says anything true
+  React.useEffect(() => {
+    if (!navigationLocked) setLockNoticeShown(false);
+  }, [navigationLocked]);
+
+  // Back would otherwise walk straight past the locked sidebar : TabRouter
+  // sends it to the first route, and leaving the app mid-scan is no better.
+  React.useEffect(() => {
+    if (!navigationLocked) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      showLockNotice();
+      return true;
+    });
+    return () => sub.remove();
+  }, [navigationLocked, showLockNotice]);
 
   // Styles for the component
   const styles = StyleSheet.create({
@@ -245,7 +309,9 @@ const cameraRef = React.useRef();
                     key={name}
                     Icon={Icon}
                     active={screenName === name}
+                    locked={navigationLocked && screenName !== name}
                     onPress={() => navigation.navigate(name)}
+                    onBlockedPress={showLockNotice}
                   />
                 ))}
                 </View>
@@ -265,6 +331,13 @@ const cameraRef = React.useRef();
                 </View>
                 );
             })}
+            {/* Why the sidebar did not answer. pointerEvents none : it floats
+                over the running scan and must not take a touch from it. */}
+            {lockNoticeShown && (
+              <View style={tabStyles.lockNotice} pointerEvents="none">
+                <Text style={tabStyles.lockNoticeText}>{t('common:navLockedDuringScan')}</Text>
+              </View>
+            )}
             </View>
             {/* Size of this row in the debug readout, see RootFrame */}
             <FrameProbe name="nav" />

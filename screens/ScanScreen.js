@@ -691,6 +691,17 @@ export default function ScanScreen({navigation}) {
       if (!rec) setAutoStopCancelled(false);
     }, [rec]);
 
+    // Mirrored out for the sidebar, which locks itself while this is true :
+    // leaving for another screen fires its focus effect and queries the box,
+    // which has nothing to spare mid-acquisition. See TabNavigator.
+    const setScanIsRecording = myContext.setScanIsRecording;
+    useEffect(() => {
+      setScanIsRecording(rec);
+      // Released whatever happens, so a screen torn down mid-scan cannot leave
+      // the navigation locked for good.
+      return () => setScanIsRecording(false);
+    }, [rec, setScanIsRecording]);
+
     useEffect(() => {
       // A stop already on its way must not be fired a second time
       if (!myContext.autoStop || !scanLooksDone || autoStopCancelled || isRecPending) {

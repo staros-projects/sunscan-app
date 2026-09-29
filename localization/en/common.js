@@ -288,6 +288,7 @@ export default {
     "scanPreview": "disk preview",
     "autoStopIn": "Auto stop in {{seconds}} s",
     "autoStopCancel": "tap to cancel",
+    "navLockedDuringScan": "Navigation is locked while recording. Long press to override.",
     // spectral line identification
     "ident": "Ident.",
     "identStarting": "Starting…",

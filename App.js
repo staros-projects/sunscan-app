@@ -257,6 +257,12 @@ export default function App() {
   // Pop-ins raised at start-up (firmware offer...) wait for the splash to be gone
   const [splashDone, setSplashDone] = useState(false);
 
+  // True from the moment the SUNSCAN starts recording until it stops. Mirrored
+  // out of ScanScreen because the sidebar has to lock itself : arriving on
+  // another screen fires its focus effect, which queries the backend, and the
+  // box has nothing to spare for that in the middle of an acquisition.
+  const [scanIsRecording, setScanIsRecording] = useState(false);
+
   // Memoized so consumers only re-render when a value actually changes
   const userSettings = useMemo(() => ({
     sunscanIsConnected,
@@ -309,13 +315,15 @@ export default function App() {
     setHubAccount,
     refreshHubAccount,
     splashDone,
+    scanIsRecording,
+    setScanIsRecording,
   }), [
     sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, screenInfoVal, tooltipVal,
     hotSpotModeVal, observerVal, locationData, showWatermark, autoStop, dopplerColor,
     processDoppler, backendApiVersion, apiURLVal, customApiURLVal, sunscanDevice,
     displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
     screenOrientationVal, toggleShowWaterMark, toggleAutoStop, toggleDebug, toggleScreenInfo, toggleDemo, toggleTooltip,
-    hubSupported, hubAccount, refreshHubAccount, splashDone
+    hubSupported, hubAccount, refreshHubAccount, splashDone, scanIsRecording
   ]);
 
   return (

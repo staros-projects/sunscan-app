@@ -273,6 +273,7 @@ export default {
     "scanPreview": "aperçu du disque",
     "autoStopIn": "Arrêt auto dans {{seconds}} s",
     "autoStopCancel": "toucher pour annuler",
+    "navLockedDuringScan": "Navigation bloquée pendant l'acquisition. Appui long pour forcer.",
     // identification des raies spectrales
     "ident": "Ident.",
     "identStarting": "Démarrage…",
