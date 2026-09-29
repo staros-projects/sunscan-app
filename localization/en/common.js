@@ -317,7 +317,7 @@ export default {
     "wifiModeDisconnected": "Disconnected",
     "wifiConnectHome": "Connect to my wifi",
     "wifiBackToHotspot": "Back to hotspot",
-    "wifiBackToHotspotConfirm": "The SUNSCAN will switch back to its hotspot {{hotspot}} and the connection will be lost. Saved networks are kept: at next startup, it will join your wifi again if it is in range.",
+    "wifiBackToHotspotConfirm": "The SUNSCAN will switch back to its hotspot {{hotspot}} and the connection will be lost. It stays on the hotspot until the next startup. Saved networks are kept: at next startup, it will join your wifi again if it is in range.",
     "wifiRejoinHotspot": "Connect your phone to the {{hotspot}} wifi network.",
     "wifiSavedNetworks": "Saved networks",
     "wifiSavedNetworksHint": "Joined automatically at startup when in range.",

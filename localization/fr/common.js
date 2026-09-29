@@ -302,7 +302,7 @@ export default {
     "wifiModeDisconnected": "Déconnecté",
     "wifiConnectHome": "Connecter à mon WiFi",
     "wifiBackToHotspot": "Revenir au hotspot",
-    "wifiBackToHotspotConfirm": "Le SUNSCAN va repasser sur son hotspot {{hotspot}} et la connexion va être coupée. Les réseaux enregistrés sont conservés : au prochain démarrage, il rejoindra votre WiFi s'il est à portée.",
+    "wifiBackToHotspotConfirm": "Le SUNSCAN va repasser sur son hotspot {{hotspot}} et la connexion va être coupée. Il y restera jusqu'au prochain démarrage. Les réseaux enregistrés sont conservés : au redémarrage, il rejoindra votre WiFi s'il est à portée.",
     "wifiRejoinHotspot": "Connectez votre téléphone au réseau WiFi {{hotspot}}.",
     "wifiSavedNetworks": "Réseaux enregistrés",
     "wifiSavedNetworksHint": "Rejoints automatiquement au démarrage s'ils sont à portée.",
