@@ -93,7 +93,68 @@ export default ({ config }) => {
                 // Google Play requires targeting Android 16 (API 36) for updates
                 compileSdkVersion: 36,
                 targetSdkVersion: 36,
-                buildToolsVersion: "36.0.0"
+                buildToolsVersion: "36.0.0",
+                // R8. Off until 2.1.6, which Play rated at 1% obfuscation —
+                // below the 25% floor its technical-quality requirement starts
+                // enforcing in February 2027 for anything over 10 MB of
+                // uncompressed DEX (this app: 28.7 MB). Everything that is not
+                // explicitly kept below gets renamed, which takes the figure
+                // from 1% to the high eighties.
+                //
+                // Resource shrinking is deliberately NOT turned on with it:
+                // it does not touch the DEX, so it buys nothing against this
+                // warning, and it is a second way for a release build to break.
+                //
+                // R8 never fails the build over what it strips — the damage
+                // shows up at runtime, on whichever screen touched the missing
+                // class. Read the note above every rule before removing one.
+                enableProguardInReleaseBuilds: true,
+                extraProguardRules: [
+                  // Widens the stock JNI rule. proguard-android.txt already
+                  // carries `-keepclasseswithmembernames class * { native
+                  // <methods>; }` ; what it misses is includedescriptorclasses,
+                  // which also pins the types in those signatures. fbjni
+                  // resolves both the class and the method descriptor from
+                  // strings baked into the C++ (findClassStatic /
+                  // makeNativeMethod), so a renamed HybridData, RuntimeExecutor
+                  // or SkiaManager parameter breaks the hybrid at registration
+                  // time. Covers Skia, Reanimated, expo-gl and the dnssd copy
+                  // inside react-native-zeroconf in one line. Names only : this
+                  // form still lets R8 shrink what nothing reaches.
+                  "-keepclasseswithmembernames,includedescriptorclasses class * {",
+                  "    native <methods>;",
+                  "}",
+                  "",
+                  // @shopify/react-native-skia ships no consumer rules at all
+                  // (2.2.2). Its C++ resolves PlatformContext, SkiaManager, the
+                  // view classes and ViewScreenshotService by name and calls
+                  // into them through GetMethodID, and only four of the
+                  // fourteen classes carry @DoNotStrip. Keeping the package
+                  // whole is a rounding error on 28.7 MB.
+                  "-keep class com.shopify.reactnative.skia.** { *; }",
+                  "",
+                  // react-native-zeroconf. SunscanNetwork only ever asks for
+                  // the NSD implementation (plain Java, safe), but
+                  // ZeroConfImplFactory references DnssdImpl from the same
+                  // switch, so the bundled rx2dnssd copy is reachable and its
+                  // listener classes are called back from native code by name.
+                  "-keep class com.github.druk.dnssd.** { *; }",
+                  "",
+                  // Keeps Play Console crash reports readable: the AAB carries
+                  // mapping.txt in its metadata, so Play de-obfuscates the
+                  // traces by itself once the line tables are still there.
+                  "-keepattributes SourceFile,LineNumberTable",
+                  "-renamesourcefileattribute SourceFile",
+                  "",
+                  // AGP 8 turns unresolved references into a build failure.
+                  // These are okhttp's optional TLS providers and build-time
+                  // annotations, absent at runtime by design.
+                  "-dontwarn org.conscrypt.**",
+                  "-dontwarn org.bouncycastle.**",
+                  "-dontwarn org.openjsse.**",
+                  "-dontwarn com.google.errorprone.annotations.**",
+                  "-dontwarn javax.annotation.**"
+                ].join("\n")
               }
             }
           ],
