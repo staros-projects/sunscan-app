@@ -1,5 +1,22 @@
 import * as React from "react";
-import { Animated, Easing } from "react-native";
+// Reanimated rather than React Native's own Animated, deliberately : with
+// useNativeDriver false, core Animated drives Fabric through setNativeProps on
+// the JS thread, which replaces ShadowNodeFamily::nativeProps_DEPRECATED — a
+// field React Native 0.79 leaves unguarded while the UI thread copies it in
+// ShadowNode::clone during layout. That race aborts in folly::dynamic's copy
+// constructor. Reanimated's useAnimatedProps goes through UpdatePropsManager on
+// the UI thread instead and never touches that field.
+import Animated, {
+  Easing,
+  Extrapolation,
+  cancelAnimation,
+  interpolate,
+  useAnimatedProps,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
+import { useIsFocused } from "@react-navigation/native";
 import Svg, {
   Circle,
   Defs,
@@ -60,17 +77,20 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
+// Where the sun sits before the course is played : sunrise. Used as the static
+// value under the animated one, so the first frame is not a sun at the origin.
+const SUN_START = pointAt(0);
+
 const toMinutes = (d) => d.getHours() * 60 + d.getMinutes();
 const clamp = (v, min, max) => Math.max(min, Math.min(v, max));
 
 function SunGraph({ sunTimes, now }) {
-  const progress = React.useRef(new Animated.Value(0)).current;
-  const fadeIn = React.useRef(new Animated.Value(0)).current;
-  const halo = React.useRef(new Animated.Value(1)).current;
+  const progress = useSharedValue(0);
+  const fadeIn = useSharedValue(0);
+  const halo = useSharedValue(1);
   // The course is only played once the launch splash is gone, not behind it
   const { splashDone } = React.useContext(AppContext);
 
-  const [sunT, setSunT] = React.useState(0);
   const [isDay, setIsDay] = React.useState(true);
 
   // Target position on the curve, recomputed whenever the ephemeris changes.
@@ -92,62 +112,73 @@ function SunGraph({ sunTimes, now }) {
 
   React.useEffect(() => {
     setIsDay(target.day);
-    progress.setValue(0);
-    fadeIn.setValue(0);
+    progress.value = 0;
+    fadeIn.value = 0;
     if (!splashDone) return;
-    Animated.parallel([
-      Animated.timing(progress, {
-        toValue: target.t,
-        // Paced by the distance covered : a sun still close to sunrise takes
-        // less time than one that has to climb the whole arc.
-        duration: 1200 + 2600 * Math.min(Math.abs(target.t), 1),
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(fadeIn, {
-        toValue: 1,
-        duration: 600,
-        easing: Easing.linear,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    // Paced by the distance covered : a sun still close to sunrise takes less
+    // time than one that has to climb the whole arc.
+    progress.value = withTiming(target.t, {
+      duration: 1200 + 2600 * Math.min(Math.abs(target.t), 1),
+      easing: Easing.inOut(Easing.cubic),
+    });
+    fadeIn.value = withTiming(1, { duration: 600, easing: Easing.linear });
   }, [target, splashDone]);
 
+  // Slow breathing halo, running only while the home screen is the one on
+  // screen. Unmounting is not the thing to key on : TabNavigator keeps every
+  // screen mounted and hides the inactive ones with display:'none', so a
+  // cleanup tied to unmount would never run and this would animate for the
+  // whole session, including while a scan is recording.
+  const isFocused = useIsFocused();
   React.useEffect(() => {
-    const id = progress.addListener(({ value }) => setSunT(value));
-    return () => progress.removeListener(id);
-  }, []);
-
-  // Slow breathing halo
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(halo, {
-          toValue: 1.35,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(halo, {
-          toValue: 1,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-  }, []);
-
-  const sun = pointAt(sunT);
-  // Travelled part of the arc, revealed by pulling the dash offset back.
-  const dashOffset = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [DAY_LEN, 0],
-    extrapolate: "clamp",
-  });
+    if (!isFocused) return undefined;
+    // -1 repeats for ever, true plays it back down : the 1 -> 1.35 -> 1 the
+    // sequence used to spell out.
+    halo.value = withRepeat(
+      withTiming(1.35, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    return () => {
+      cancelAnimation(halo);
+      halo.value = 1;
+    };
+  }, [isFocused]);
 
   // A dimmer, tighter halo below the horizon, so it never spills out of the frame
   const haloR = isDay ? 17 : 12;
+
+  // Travelled part of the arc, revealed by pulling the dash offset back.
+  const arcProps = useAnimatedProps(() => ({
+    strokeDashoffset: interpolate(
+      progress.value,
+      [0, 1],
+      [DAY_LEN, 0],
+      Extrapolation.CLAMP
+    ),
+  }));
+
+  const sunFadeProps = useAnimatedProps(() => ({ opacity: fadeIn.value }));
+
+  // The sun used to follow a React state fed by a listener on the animated
+  // value, which re-rendered the whole SVG on every frame. Its position is now
+  // derived on the UI thread, from the same curve as pointAt().
+  const sunBodyProps = useAnimatedProps(() => {
+    const t = progress.value;
+    return {
+      cx: X0 + t * SPAN,
+      cy: HORIZON_Y - AMP * Math.sin(Math.PI * t),
+    };
+  });
+
+  const sunHaloProps = useAnimatedProps(() => {
+    const t = progress.value;
+    return {
+      cx: X0 + t * SPAN,
+      cy: HORIZON_Y - AMP * Math.sin(Math.PI * t),
+      r: haloR * halo.value,
+    };
+  }, [haloR]);
   const sunCore = isDay ? "url(#sunCore)" : "#94a3b8";
   const sunGlow = isDay ? "url(#sunGlow)" : "url(#moonGlow)";
 
@@ -234,7 +265,7 @@ function SunGraph({ sunTimes, now }) {
         strokeOpacity={isDay ? 0.18 : 0.08}
         strokeLinecap="round"
         strokeDasharray={`${DAY_LEN}`}
-        strokeDashoffset={dashOffset}
+        animatedProps={arcProps}
       />
       <AnimatedPath
         d={DAY_D}
@@ -244,26 +275,36 @@ function SunGraph({ sunTimes, now }) {
         strokeOpacity={isDay ? 1 : 0.35}
         strokeLinecap="round"
         strokeDasharray={`${DAY_LEN}`}
-        strokeDashoffset={dashOffset}
+        animatedProps={arcProps}
       />
 
       {/* Sun */}
-      <AnimatedG opacity={fadeIn}>
+      {/* The static cx/cy are the first frame, before the course is played ;
+          the animated props take over from there. */}
+      <AnimatedG animatedProps={sunFadeProps}>
         <AnimatedCircle
-          cx={sun.x}
-          cy={sun.y}
-          r={Animated.multiply(haloR, halo)}
+          cx={SUN_START.x}
+          cy={SUN_START.y}
+          r={haloR}
           fill={sunGlow}
+          animatedProps={sunHaloProps}
         />
-        <Circle cx={sun.x} cy={sun.y} r="6.5" fill={sunCore} />
-        <Circle
-          cx={sun.x}
-          cy={sun.y}
+        <AnimatedCircle
+          cx={SUN_START.x}
+          cy={SUN_START.y}
+          r="6.5"
+          fill={sunCore}
+          animatedProps={sunBodyProps}
+        />
+        <AnimatedCircle
+          cx={SUN_START.x}
+          cy={SUN_START.y}
           r="6.5"
           fill="none"
           stroke="#fffbeb"
           strokeOpacity={isDay ? 0.7 : 0.25}
           strokeWidth="1"
+          animatedProps={sunBodyProps}
         />
       </AnimatedG>
     </Svg>
