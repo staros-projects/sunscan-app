@@ -36,6 +36,7 @@ import StackedPictureScreen from './screens/StackedPictureScreen';
 import AnimatedPictureScreen from './screens/AnimatedPictureScreen';
 import { HOTSPOT_API_URL } from './utils/SunscanNetwork';
 import { useHubAccountState } from './utils/SpectroSolHub';
+import useSunscanLink from './utils/useSunscanLink';
 import AnimatedSplash from './components/AnimatedSplash';
 
 // Keep the native splash up until AnimatedSplash is on screen to take over
@@ -87,8 +88,13 @@ Animated.addWhitelistedNativeProps({ text: true });
 export default function App() {
   const [sunscanIsConnected, setSunscanIsConnected] = useState(false);
   const [cameraIsConnected, setCameraIsConnected] = useState(false);
-  const [hotSpotModeVal, setHotSpotMode] = useState(true);
-  const [customApiURLVal, setCustomApiURL] = useState("");
+  // How the phone reaches the SUNSCAN: its hotspot at the fixed address, or
+  // the home network at lanApiURL. Found out by probing (useSunscanLink), and
+  // stored so the next start tries the right one first.
+  const [viaHotspot, setViaHotspot] = useState(true);
+  const [lanApiURL, setLanApiURL] = useState("");
+  // Last /network/status read from the SUNSCAN (mode, ssid, ip...), null until read
+  const [sunscanNetwork, setSunscanNetwork] = useState(null);
   // Identity of the SUNSCAN, read from /network/status: {id, lastIp}. The id
   // finds it again by mDNS once it has joined the home wifi, lastIp is the
   // address it last had there (fallback when mDNS finds nothing).
@@ -113,9 +119,8 @@ export default function App() {
   const [screenOrientationVal, setScreenOrientation] = useState('AUTO'); // Par défaut: Auto
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // Effective API URL: hotspot mode uses the default SUNSCAN wifi address,
-  // otherwise the user-defined IP (same network as the phone)
-  const apiURLVal = hotSpotModeVal ? DEFAULT_HOTSPOT_API_URL : (customApiURLVal || DEV_API_URL || DEFAULT_HOTSPOT_API_URL);
+  // Effective API URL: the hotspot address, or the address on the home network
+  const apiURLVal = viaHotspot ? DEFAULT_HOTSPOT_API_URL : (lanApiURL || DEV_API_URL || DEFAULT_HOTSPOT_API_URL);
 
   // SpectroSolHub account of the SUNSCAN, probed on every connection. The
   // feature stays hidden against a backend without the hub routes.
@@ -125,7 +130,16 @@ export default function App() {
   const toggleAutoStop = useCallback(() => setAutoStop(v => !v), []);
   const toggleDemo = useCallback(() => setDemo(v => !v), []);
   const toggleTooltip = useCallback(() => setTooltip(v => !v), []);
-  const toggleDebug = useCallback(() => setDebug(v => !v), []);
+  // Offline mode is offered in the debug section only, but it acts everywhere
+  // (camera controls without a SUNSCAN, forced storage warning): leaving debug
+  // with it on would strand the app there, its switch out of reach.
+  const toggleDebug = useCallback(() => {
+    const next = !debugVal;
+    setDebug(next);
+    if (!next) {
+      setDemo(false);
+    }
+  }, [debugVal]);
   const toggleScreenInfo = useCallback(() => setScreenInfo(v => !v), []);
 
   // Gestion de l'orientation de l'écran
@@ -206,13 +220,14 @@ export default function App() {
         if (orientation) {
           setScreenOrientation(orientation);
         }
+        // Same keys as the former "hotspot mode" switch and address field
         const hotSpot = stored[STORAGE_KEYS.hotSpotMode];
         if (hotSpot) {
-          setHotSpotMode(hotSpot == '1');
+          setViaHotspot(hotSpot == '1');
         }
         const customApiURL = stored[STORAGE_KEYS.customApiURL];
         if (customApiURL) {
-          setCustomApiURL(customApiURL);
+          setLanApiURL(customApiURL);
         }
         const device = stored[STORAGE_KEYS.sunscanDevice];
         if (device) {
@@ -244,15 +259,15 @@ export default function App() {
       [STORAGE_KEYS.dopplerColor, `${dopplerColor}`],
       [STORAGE_KEYS.processDoppler, processDoppler?'1':'0'],
       [STORAGE_KEYS.screenOrientation, screenOrientationVal],
-      [STORAGE_KEYS.hotSpotMode, hotSpotModeVal?'1':'0'],
-      [STORAGE_KEYS.customApiURL, customApiURLVal],
+      [STORAGE_KEYS.hotSpotMode, viaHotspot?'1':'0'],
+      [STORAGE_KEYS.customApiURL, lanApiURL],
       [STORAGE_KEYS.sunscanDevice, JSON.stringify(sunscanDevice)],
     ];
     if (observerVal !== "") {
       pairs.push([STORAGE_KEYS.observer, `${observerVal}`]);
     }
     AsyncStorage.multiSet(pairs).catch((e) => console.log('Error saving settings', e));
-  }, [settingsLoaded, observerVal, hotSpotModeVal, customApiURLVal, sunscanDevice, showWatermark, autoStop, demoVal, debugVal, screenInfoVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
+  }, [settingsLoaded, observerVal, viaHotspot, lanApiURL, sunscanDevice, showWatermark, autoStop, demoVal, debugVal, screenInfoVal, tooltipVal, locationData, dopplerColor, processDoppler, screenOrientationVal, stackingOptions]);
 
   // Pop-ins raised at start-up (firmware offer...) wait for the splash to be gone
   const [splashDone, setSplashDone] = useState(false);
@@ -262,6 +277,16 @@ export default function App() {
   // another screen fires its focus effect, which queries the backend, and the
   // box has nothing to spare for that in the middle of an acquisition.
   const [scanIsRecording, setScanIsRecording] = useState(false);
+
+  // Finds out where the SUNSCAN is (hotspot or home network) and keeps the
+  // address above pointing at it
+  const { search: linkSearch, discover: discoverLink, cancel: cancelLinkSearch } = useSunscanLink({
+    ready: settingsLoaded,
+    connected: sunscanIsConnected,
+    recording: scanIsRecording,
+    viaHotspot, setViaHotspot, lanApiURL, setLanApiURL,
+    device: sunscanDevice, setDevice: setSunscanDevice,
+  });
 
   // Memoized so consumers only re-render when a value actually changes
   const userSettings = useMemo(() => ({
@@ -275,8 +300,13 @@ export default function App() {
     debug:debugVal,
     screenInfo:screenInfoVal,
     tooltip:tooltipVal,
-    hotSpotMode:hotSpotModeVal,
-    setHotSpotMode,
+    viaHotspot,
+    setViaHotspot,
+    sunscanNetwork,
+    setSunscanNetwork,
+    linkSearch,
+    discoverLink,
+    cancelLinkSearch,
     observer:observerVal,
     locationData,
     setLocationData,
@@ -296,8 +326,8 @@ export default function App() {
     toggleDemo,
     toggleTooltip,
     apiURL:apiURLVal,
-    customApiURL:customApiURLVal,
-    setCustomApiURL,
+    lanApiURL,
+    setLanApiURL,
     sunscanDevice,
     setSunscanDevice,
     displayFullScreenImage,
@@ -319,8 +349,9 @@ export default function App() {
     setScanIsRecording,
   }), [
     sunscanIsConnected, cameraIsConnected, camera, demoVal, debugVal, screenInfoVal, tooltipVal,
-    hotSpotModeVal, observerVal, locationData, showWatermark, autoStop, dopplerColor,
-    processDoppler, backendApiVersion, apiURLVal, customApiURLVal, sunscanDevice,
+    viaHotspot, observerVal, locationData, showWatermark, autoStop, dopplerColor,
+    processDoppler, backendApiVersion, apiURLVal, lanApiURL, sunscanDevice, sunscanNetwork,
+    linkSearch, discoverLink, cancelLinkSearch,
     displayFullScreenImage, displayFullScreen3d, freeStorage, stackingOptions,
     screenOrientationVal, toggleShowWaterMark, toggleAutoStop, toggleDebug, toggleScreenInfo, toggleDemo, toggleTooltip,
     hubSupported, hubAccount, refreshHubAccount, splashDone, scanIsRecording

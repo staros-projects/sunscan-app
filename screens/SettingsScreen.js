@@ -15,8 +15,8 @@ import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import firmareIsUpToDate from '../utils/Helpers';
 import { backend_current_version } from '../utils/Helpers';
-import { discoverSunscan, normalizeApiURL } from '../utils/Discovery';
 import PressableScale from '../components/PressableScale';
+import ConnectionCard from '../components/ConnectionCard';
 import WifiSetupModal from '../components/WifiSetupModal';
 import { forgetWifi, getNetworkStatus, switchToHotspot } from '../utils/SunscanNetwork';
 import HubLoginForm from '../components/HubLoginForm';
@@ -104,17 +104,14 @@ export default function SettingsScreen({navigation, isFocused}) {
 
   // Get the global variables & functions via context
   const myContext = useContext(AppContext);
-  const [apiInput, setAPIInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [cacheIsCleared, setCacheIsCleared] = useState(false);
   const [sunscanIsShutdown, setSunscanIsShutdown] = useState(false);
   const [sunscanIsReboot, setSunscanIsReboot] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchProgress, setSearchProgress] = useState(null);
-  // /network/status of the connected SUNSCAN (null until read / when unreachable)
-  const [netStatus, setNetStatus] = useState(null);
   const [wifiModalVisible, setWifiModalVisible] = useState(false);
   const [wifiBusy, setWifiBusy] = useState(false);
+  // Manual address field of the connection card, folded unless asked for
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
 
   const [firmwareModalVisible, setFirmwareModalVisible] = useState(false);
@@ -124,85 +121,22 @@ export default function SettingsScreen({navigation, isFocused}) {
   const [lang, changeLang] = useState('en');
   const selectedLanguageCode = i18n.language;
 
-  // Update apiInput when the stored custom IP changes
-  useEffect(()=>{
-    setAPIInput(myContext.customApiURL || myContext.apiURL);
-  }, [myContext.customApiURL, myContext.apiURL]);
+  // --- Connection -----------------------------------------------------------
+  // The link itself (hotspot or home network) is found by useSunscanLink in
+  // App.js; here we only show it and offer the moves.
 
-  const saveCustomApiURL = () => {
-    const url = normalizeApiURL(apiInput);
-    if (!url) {
-      return;
-    }
-    setAPIInput(url);
-    myContext.setCustomApiURL(url);
+  const {
+    apiURL, sunscanIsConnected, sunscanDevice, setSunscanDevice,
+    viaHotspot, setViaHotspot, lanApiURL, setLanApiURL,
+    sunscanNetwork: netStatus, setSunscanNetwork: setNetStatus,
+    linkSearch, discoverLink, cancelLinkSearch,
+  } = myContext;
+
+  // Typed by hand under "advanced": a box without the network API, or on Ethernet
+  const saveLanAddress = (url) => {
+    setLanApiURL(url);
+    setViaHotspot(false);
   };
-
-  // Scan the local network for a SUNSCAN and store the address it is found at.
-  // Each run owns its own cancel flag: a cancelled scan keeps running until the
-  // end of its current batch, so it must never be able to report over a newer
-  // one (or be resurrected by it).
-  const searchRunRef = useRef(null);
-
-  const searchSunscan = async () => {
-    const run = { cancelled: false };
-    searchRunRef.current = run;
-    setIsSearching(true);
-    setSearchProgress(null);
-    try {
-      const found = await discoverSunscan({
-        deviceId: myContext.sunscanDevice?.id,
-        lastIp: myContext.sunscanDevice?.lastIp,
-        onProgress: (progress) => {
-          if (searchRunRef.current === run) {
-            setSearchProgress(progress);
-          }
-        },
-        isCancelled: () => run.cancelled,
-      });
-      if (searchRunRef.current !== run) {
-        return;
-      }
-      if (found) {
-        setAPIInput(found.url);
-        myContext.setCustomApiURL(found.url);
-        Alert.alert(t('common:success'), t('common:sunscanFound', { url: found.url }));
-      } else {
-        Alert.alert(t('common:searchSunscan'), t('common:sunscanNotFound'));
-      }
-    } catch (e) {
-      if (searchRunRef.current === run) {
-        Alert.alert(t('common:searchSunscan'), `${e.message}`);
-      }
-    } finally {
-      if (searchRunRef.current === run) {
-        searchRunRef.current = null;
-        setIsSearching(false);
-        setSearchProgress(null);
-      }
-    }
-  };
-
-  const cancelSearch = () => {
-    if (searchRunRef.current) {
-      searchRunRef.current.cancelled = true;
-      searchRunRef.current = null;
-    }
-    setIsSearching(false);
-    setSearchProgress(null);
-  };
-
-  // Stop a scan still in flight when leaving the screen
-  useEffect(() => () => {
-    if (searchRunRef.current) {
-      searchRunRef.current.cancelled = true;
-      searchRunRef.current = null;
-    }
-  }, []);
-
-  // --- Home wifi ------------------------------------------------------------
-
-  const { apiURL, sunscanIsConnected, setSunscanDevice, setCustomApiURL, setHotSpotMode } = myContext;
 
   const refreshNetworkStatus = useCallback(async () => {
     if (!sunscanIsConnected) {
@@ -212,19 +146,21 @@ export default function SettingsScreen({navigation, isFocused}) {
       const status = await getNetworkStatus(apiURL);
       setNetStatus(status);
       if (status?.device_id) {
-        // Keep the identity of the SUNSCAN and its home address: they are what
-        // finds it again once it has left the hotspot.
+        // Keep the identity of the SUNSCAN, the name of its hotspot and its
+        // home address: they find it again once it has changed network, and
+        // the card can name the hotspot while the box is out of reach.
         const lastIp = status.mode === 'client' ? status.ip : status.last_client?.ip;
+        const hotspot = status.hotspot?.ssid;
         setSunscanDevice((prev) => (
-          prev?.id === status.device_id && (!lastIp || prev?.lastIp === lastIp)
+          prev?.id === status.device_id && (!lastIp || prev?.lastIp === lastIp) && (!hotspot || prev?.hotspot === hotspot)
             ? prev
-            : { ...prev, id: status.device_id, lastIp: lastIp || prev?.lastIp }
+            : { ...prev, id: status.device_id, lastIp: lastIp || prev?.lastIp, hotspot: hotspot || prev?.hotspot }
         ));
       }
     } catch (e) {
       console.log('network status unavailable', e?.message);
     }
-  }, [apiURL, sunscanIsConnected, setSunscanDevice]);
+  }, [apiURL, sunscanIsConnected, setSunscanDevice, setNetStatus]);
 
   useFocusEffect(
     useCallback(() => {
@@ -233,14 +169,15 @@ export default function SettingsScreen({navigation, isFocused}) {
 
   // The SUNSCAN has been found on the home wifi: point the app at it
   const onWifiConnected = useCallback((url) => {
-    setCustomApiURL(url);
-    setHotSpotMode(false);
+    setLanApiURL(url);
+    setViaHotspot(false);
     setSunscanDevice((prev) => ({ ...prev, lastIp: url.split(':')[0] }));
-  }, [setCustomApiURL, setHotSpotMode, setSunscanDevice]);
+  }, [setLanApiURL, setViaHotspot, setSunscanDevice]);
 
+  // The user gave up waiting for the box and wants to type its address
   const onWifiManualIp = () => {
     setWifiModalVisible(false);
-    setHotSpotMode(false);
+    setAdvancedOpen(true);
   };
 
   const closeWifiModal = () => {
@@ -248,7 +185,9 @@ export default function SettingsScreen({navigation, isFocused}) {
     refreshNetworkStatus();
   };
 
-  const hotspotName = netStatus?.hotspot?.ssid || 'sunscan';
+  // Named even while the box is out of reach, from what was read last time
+  const hotspotName = netStatus?.hotspot?.ssid || sunscanDevice?.hotspot
+    || (sunscanDevice?.id ? `sunscan-${sunscanDevice.id}` : 'sunscan-…');
 
   // --- SpectroSolHub ---------------------------------------------------------
 
@@ -307,7 +246,7 @@ export default function SettingsScreen({navigation, isFocused}) {
   // Both actions below drop the SUNSCAN back to its hotspot: the app follows,
   // and the user has to put the phone back on it.
   const followToHotspot = () => {
-    setHotSpotMode(true);
+    setViaHotspot(true);
     setNetStatus(null);
     Alert.alert(t('common:wifiNetwork'), t('common:wifiRejoinHotspot', { hotspot: hotspotName }));
   };
@@ -356,19 +295,6 @@ export default function SettingsScreen({navigation, isFocused}) {
           setWifiBusy(false);
         }
       }}]);
-  };
-
-  const wifiModeLabel = () => {
-    switch (netStatus?.mode) {
-      case 'hotspot':
-        return t('common:wifiModeHotspot', { ssid: netStatus.ssid });
-      case 'client':
-        return t('common:wifiModeClient', { ssid: netStatus.ssid, ip: netStatus.ip });
-      case 'connecting':
-        return t('common:wifiModeConnecting');
-      default:
-        return t('common:wifiModeDisconnected');
-    }
   };
 
   // --- Linux desktop of the Pi ----------------------------------------------
@@ -629,80 +555,25 @@ export default function SettingsScreen({navigation, isFocused}) {
             {/* ---- Connection ---- */}
             <Section title={t('common:connectionSection')}>
 
-              <Row label={t('common:hotspotMode')} hint={t('common:hotspotDescription')}>
-                <Switch
-                  trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
-                  thumbColor='#fff'
-                  value={myContext.hotSpotMode}
-                  onValueChange={(value) => myContext.setHotSpotMode(value)}
-                />
-              </Row>
-
-              {!myContext.hotSpotMode &&
-                <Row label={t('common:sunscanIP')} hint={t('common:sunscanIPDescription')}>
-                  <View className="flex-1 flex flex-col items-end space-y-2">
-                    <View className="flex flex-row items-center w-full">
-                      <TextInput
-                        className="bg-zinc-800 border border-zinc-600 grow text-white rounded-xl px-3"
-                        style={{paddingVertical: 7}}
-                        key="customApiURL"
-                        value={apiInput}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        keyboardType="url"
-                        placeholder="192.168.1.50:8000"
-                        placeholderTextColor="#71717a"
-                        editable={!isSearching}
-                        returnKeyLabel='OK'
-                        returnKeyType='done'
-                        onChangeText={setAPIInput}
-                        onEndEditing={saveCustomApiURL}
-                      />
-                      <PressableScale className="bg-emerald-600 p-2 rounded-xl ml-2" onPress={saveCustomApiURL}>
-                        <Ionicons name="checkmark" size={20} color="white" />
-                      </PressableScale>
-                    </View>
-
-                    {/* Automatic discovery on the local network */}
-                    {!isSearching ?
-                      <PressableScale className="bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-2 flex flex-row items-center" onPress={searchSunscan}>
-                        <Ionicons name="search" size={16} color="white" />
-                        <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:searchSunscan')}</Text>
-                      </PressableScale>
-                      :
-                      <View className="flex flex-row items-center">
-                        <ActivityIndicator size="small" color="#fff" />
-                        <Text className="text-zinc-400 ml-2" style={{fontSize:12}}>
-                          {searchProgress?.phase === 'scan' && searchProgress?.total
-                            ? `${t('common:searching')} ${searchProgress.scanned}/${searchProgress.total}`
-                            : t('common:searching')}
-                        </Text>
-                        <PressableScale className="ml-3 bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-1" onPress={cancelSearch}>
-                          <Text className="text-white" style={{fontSize:12}}>{t('common:cancel')}</Text>
-                        </PressableScale>
-                      </View>
-                    }
-                  </View>
-                </Row>
-              }
-
-              {/* Home wifi: only backends with NetworkManager support it */}
-              {myContext.sunscanIsConnected && netStatus?.supported &&
-                <Row label={t('common:wifiNetwork')} hint={wifiModeLabel()}>
-                  <View className="flex flex-row flex-wrap justify-end" style={{gap: 8}}>
-                    {netStatus.mode === 'client' &&
-                      <PressableScale className="bg-zinc-700 border border-zinc-600 rounded-xl px-3 py-2 flex flex-row items-center" disabled={wifiBusy} onPress={backToHotspot}>
-                        <Ionicons name="radio-outline" size={16} color="white" />
-                        <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:wifiBackToHotspot')}</Text>
-                      </PressableScale>
-                    }
-                    <PressableScale className="bg-emerald-600 rounded-xl px-3 py-2 flex flex-row items-center" disabled={wifiBusy} onPress={() => setWifiModalVisible(true)}>
-                      <Ionicons name="wifi" size={16} color="white" />
-                      <Text className="text-white ml-2" style={{fontSize:12}}>{t('common:wifiConnectHome')}</Text>
-                    </PressableScale>
-                  </View>
-                </Row>
-              }
+              {/* Where the SUNSCAN is and how the phone reaches it, found out by
+                  the app itself (useSunscanLink); the wifi moves live here too */}
+              <ConnectionCard
+                connected={sunscanIsConnected}
+                network={netStatus}
+                apiURL={apiURL}
+                viaHotspot={viaHotspot}
+                hotspotName={hotspotName}
+                search={linkSearch}
+                onSearch={() => discoverLink({ deep: true })}
+                onCancelSearch={cancelLinkSearch}
+                onConnectWifi={() => setWifiModalVisible(true)}
+                onBackToHotspot={backToHotspot}
+                busy={wifiBusy}
+                lanApiURL={lanApiURL}
+                onSaveAddress={saveLanAddress}
+                advancedOpen={advancedOpen}
+                onToggleAdvanced={() => setAdvancedOpen((v) => !v)}
+              />
 
               {myContext.sunscanIsConnected && netStatus?.supported && netStatus.saved_networks?.length > 0 &&
                 <Row label={t('common:wifiSavedNetworks')} hint={t('common:wifiSavedNetworksHint')}>
@@ -843,14 +714,18 @@ export default function SettingsScreen({navigation, isFocused}) {
                 </Row>
               }
 
-              <Row label={t('common:offlineMode')} hint={t('common:offlineDescription')}>
-                <Switch
-                  trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
-                  thumbColor='#fff'
-                  value={myContext.demo}
-                  onValueChange={myContext.toggleDemo}
-                />
-              </Row>
+              {/* Offline mode shows the camera controls with no SUNSCAN behind
+                  them: a diagnosis tool, out of the way of everyday use */}
+              {myContext.debug &&
+                <Row label={t('common:offlineMode')} hint={t('common:offlineDescription')}>
+                  <Switch
+                    trackColor={{false: '#767577', true: 'rgb(5 150 105)'}}
+                    thumbColor='#fff'
+                    value={myContext.demo}
+                    onValueChange={myContext.toggleDemo}
+                  />
+                </Row>
+              }
 
               {/* Linux desktop: only backends that know the route, on an image that has one */}
               {myContext.debug && desktop &&

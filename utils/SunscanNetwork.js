@@ -179,6 +179,40 @@ export async function probeDevice(hostWithPort, deviceId, timeoutMs = 2000) {
   }
 }
 
+/**
+ * Identifies the SUNSCAN answering at `hostWithPort`, whatever its backend.
+ * Resolves to {supported, deviceId, mode, ssid, ip, hotspot}, or null when
+ * nothing there is a SUNSCAN. `supported` false is a backend without the
+ * network API, recognised on /sunscan/stats only: the other fields are empty.
+ */
+export async function probeAnySunscan(hostWithPort, timeoutMs = 2500) {
+  let status;
+  try {
+    status = await getNetworkStatus(hostWithPort, timeoutMs);
+  } catch {
+    return null;
+  }
+  if (status && status.supported !== false) {
+    return {
+      supported: true,
+      deviceId: status.device_id || '',
+      mode: status.mode || '',
+      ssid: status.ssid || '',
+      ip: status.ip || '',
+      hotspot: status.hotspot?.ssid || '',
+    };
+  }
+  try {
+    const stats = await request(hostWithPort, '/sunscan/stats', { timeoutMs });
+    if (stats.status === 200 && stats.json?.backend_api_version) {
+      return { supported: false, deviceId: '', mode: '', ssid: '', ip: '', hotspot: '' };
+    }
+  } catch {
+    // not a SUNSCAN
+  }
+  return null;
+}
+
 // --- mDNS ------------------------------------------------------------------
 
 // react-native-zeroconf is native: missing in Expo Go and on the web, where

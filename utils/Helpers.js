@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 
 
-export const backend_current_version = '2.1.4';
+export const backend_current_version = '2.1.6';
 
 export default function  firmareIsUpToDate(myContext) {
     // Check if the firmware version is up to date

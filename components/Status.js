@@ -16,6 +16,7 @@ import Fontisto from '@expo/vector-icons/Fontisto'
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import firmareIsUpToDate, { setSunScanTime } from '../utils/Helpers';
+import { getNetworkStatus } from '../utils/SunscanNetwork';
 import PressableScale from './PressableScale';
 import FirmwareUpdateModal from './FirmwareUpdateModal';
 import { colors, panelStyle, roundButton, warningChip, PANEL_WIDTH } from './theme';
@@ -132,6 +133,13 @@ export default function Status({isFocused})  {
     updateCamera("disconnect")
   }
 
+  // Which network the SUNSCAN is on, for the icon and the line under the storage
+  function refreshNetwork() {
+    getNetworkStatus(myContext.apiURL)
+      .then((status) => myContext.setSunscanNetwork(status))
+      .catch(() => {});
+  }
+
   // Function to fetch and update stats
   async function getStats() {
     setRefresh(true);
@@ -144,6 +152,7 @@ export default function Status({isFocused})  {
           myContext.setCamera(json.camera);
           myContext.setSunscanIsConnected(true);
           myContext.setBackendApiVersion(json.backend_api_version);
+          refreshNetwork();
           getCameraStatus();
           checkFirmware(json.backend_api_version);
         }
@@ -211,7 +220,7 @@ export default function Status({isFocused})  {
               </View>}
               {/* Explicit gap: the pulse halo expands to ~1.9x the dot, so a tighter
                   spacing was eaten by it and the dot looked glued to the wifi icon. */}
-              { myContext.sunscanIsConnected ? (<View className="flex flex-row items-center" style={{gap:14}}><Ionicons name="wifi" size={18} color="white"  /><PulseDot color="#10b981" pulsing /></View>):
+              { myContext.sunscanIsConnected ? (<View className="flex flex-row items-center" style={{gap:14}}><Ionicons name={myContext.sunscanNetwork?.mode === 'hotspot' ? 'radio-outline' : 'wifi'} size={18} color="white"  /><PulseDot color="#10b981" pulsing /></View>):
                 (<View className="flex flex-row items-center space-x-2"><PulseDot color="#ef4444" /></View>)}
                
             </View>
@@ -227,6 +236,11 @@ export default function Status({isFocused})  {
               <Text className="text-slate-400 text-xs">{t('common:storage')} : {stats?.free} {t('common:freeStorage')}</Text>
             ))}
 
+            {/* Which network the box is on : the hotspot (no internet) or the home wifi */}
+            {myContext.sunscanIsConnected && myContext.sunscanNetwork?.mode === 'hotspot' &&
+              <Text className="text-slate-400 text-xs">{t('common:wifiModeHotspot', { ssid: myContext.sunscanNetwork.ssid })}</Text>}
+            {myContext.sunscanIsConnected && myContext.sunscanNetwork?.mode === 'client' &&
+              <Text className="text-slate-400 text-xs">{t('common:linkViaWifi', { ssid: myContext.sunscanNetwork.ssid })}</Text>}
             {myContext.debug && <Text className="text-slate-400 text-xs mt-1">{t('common:ipAddress')} : {myContext?.apiURL}</Text>}
             {myContext.debug && <Text className="text-slate-400 text-xs">{t('common:backendApiVersion')} : v{stats?.backend_api_version}</Text>}
           </View>
