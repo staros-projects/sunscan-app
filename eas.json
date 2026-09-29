@@ -11,11 +11,15 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "ANDROID_HOME": "/Users/guillaumebertrand/Library/Android/sdk"
+        "ANDROID_HOME": "/Users/guillaumebertrand/Library/Android/sdk",
+        "SUNSCAN_EXCLUDE_DEV_CLIENT": "1"
     }
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "SUNSCAN_EXCLUDE_DEV_CLIENT": "1"
+      },
       "ios": {
         "image": "macos-sequoia-15.6-xcode-26.2"
       }

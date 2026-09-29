@@ -6,7 +6,7 @@ export default ({ config }) => {
       expo: {
         name: "SUNSCAN",
         slug: "sunscan",
-        version: "2.1.4",
+        version: "2.1.5",
         orientation: "landscape",
         icon: "./assets/icon.png",
         userInterfaceStyle: "dark",
@@ -108,6 +108,12 @@ export default ({ config }) => {
           [
             "react-native-edge-to-edge"
           ],
+          // Android 16 ignores the landscape lock on screens >= 600dp (tablets,
+          // foldables) : opts out, until API 37 drops the flag. See the plugin.
+          "./plugins/withLandscapeOnLargeScreens",
+          // Drops the dev client from the builds that ship (see the plugin) :
+          // active only when eas.json sets SUNSCAN_EXCLUDE_DEV_CLIENT.
+          "./plugins/withoutDevClientInRelease",
           ...(isIOS
             ? [
                 [
