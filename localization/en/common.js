@@ -252,10 +252,13 @@ export default {
     "jobStepGeneric": "Processing",
     "jobErrorBusy": "A stacking is already running on the SUNSCAN. Wait for it to finish.",
     "jobErrorMissingImages": "Some scans lack the processed image needed (scan not processed, or reprocessed for helium). Nothing was created.",
+    "jobErrorDiskNotFound": "The solar disk was not found on scan #{{number}} of the selection. Process the scans again with autocrop, or leave that one out.",
+    "jobErrorDiskNotFoundUnknown": "The solar disk was not found on one of the scans. Process the scans again with autocrop, or leave that one out.",
     "jobErrorStackingFailed": "Stacking crashed on the SUNSCAN.",
     "jobErrorAnimationFailed": "Creating a GIF crashed on the SUNSCAN.",
     "jobErrorRequestFailed": "Check the connection to the SUNSCAN, then try again.",
     "jobErrorGeneric": "Something went wrong on the SUNSCAN. Try again.",
+    "jobErrorDetails": "Details",
     // scan alignment assistant
     "assistant": "Assist",
     "shearAngle": "tilt",

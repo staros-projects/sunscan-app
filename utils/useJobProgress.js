@@ -42,8 +42,10 @@ const toInt = (value) => {
  *
  * `job` is null when idle, otherwise
  * { id, kind, status: 'processing' | 'failed', percent, step, current, total,
- *   count, startedAt, error }. A completed job goes straight back to null and
- * calls onCompleted.
+ *   count, startedAt, error, detail }. `error` is the backend's key, which the
+ * pop-in turns into a message; `detail` its technical English line, worth a
+ * bug report rather than a read. A completed job goes straight back to null
+ * and calls onCompleted.
  *
  * The running job id is kept in AsyncStorage: the stacking goes on on the box
  * if the app is closed, and its state is fetched again on the next launch.
@@ -63,7 +65,7 @@ function useJobProgress({ onCompleted } = {}) {
   // The job being followed: { id, kind, channel, callback, finished }
   const active = useRef(null);
 
-  const finish = useCallback((id, status, path, error, resumed = false) => {
+  const finish = useCallback((id, status, path, error, detail, resumed = false) => {
     const current = active.current;
     if (!current || current.id !== id || current.finished) {
       return;
@@ -76,7 +78,7 @@ function useJobProgress({ onCompleted } = {}) {
       setJob(null);
       handlers.current.onCompleted?.(current.kind, path || null, { resumed });
     } else {
-      setJob((prev) => prev && { ...prev, status: 'failed', error: error || '' });
+      setJob((prev) => prev && { ...prev, status: 'failed', error: error || '', detail: detail || '' });
     }
   }, [unsubscribe]);
 
@@ -103,7 +105,7 @@ function useJobProgress({ onCompleted } = {}) {
         console.warn('job failed', kind, error, detail);
       }
       if (status === 'completed' || status === 'failed') {
-        finish(id, status, path, error);
+        finish(id, status, path, error, detail);
       }
     };
     active.current = { id, kind, channel, callback, finished: false };
@@ -121,7 +123,7 @@ function useJobProgress({ onCompleted } = {}) {
     }
     const id = newJobId();
     const startedAt = Date.now();
-    setJob({ id, kind, status: 'processing', percent: null, step: 'starting', current: 0, total: count, count, startedAt, error: null });
+    setJob({ id, kind, status: 'processing', percent: null, step: 'starting', current: 0, total: count, count, startedAt, error: null, detail: null });
     // 1. subscribe before the POST: its response only comes at the end
     listen(id, kind);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ id, kind, count, startedAt })).catch(() => {});
@@ -141,17 +143,17 @@ function useJobProgress({ onCompleted } = {}) {
         json = undefined;
       }
       if (json && (json.status === 'completed' || json.status === 'failed')) {
-        finish(id, json.status, json.path, json.error);
+        finish(id, json.status, json.path, json.error, json.detail);
       } else if (response.ok) {
         // Older backend: null for a stack, {message, gifs} for an animation
         finish(id, 'completed', null);
       } else {
         console.warn('job request failed', kind, response.status, json);
-        finish(id, 'failed', null, '');
+        finish(id, 'failed', null, '', json?.detail || 'HTTP ' + response.status);
       }
     } catch (error) {
       console.error('job request failed:', kind, error);
-      finish(id, 'failed', null, 'request_failed');
+      finish(id, 'failed', null, 'request_failed', String(error?.message || error));
     }
     return true;
   }, [myContext.apiURL, listen, finish]);
@@ -196,10 +198,11 @@ function useJobProgress({ onCompleted } = {}) {
             count: saved.count,
             startedAt: saved.startedAt,
             error: null,
+            detail: null,
           });
           listen(saved.id, saved.kind);
           if (json.status !== 'processing') {
-            finish(saved.id, json.status, json.path, json.error, true);
+            finish(saved.id, json.status, json.path, json.error, json.detail, true);
           }
         } else {
           // 'unknown' (forgotten after 30 min, or the box restarted), or a

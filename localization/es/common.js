@@ -252,10 +252,13 @@ export default {
     "jobStepGeneric": "Procesando",
     "jobErrorBusy": "Ya hay un apilado en curso en el SUNSCAN. Espere a que termine.",
     "jobErrorMissingImages": "Algunos escaneos no tienen la imagen procesada necesaria (escaneo no procesado, o reprocesado en helio). No se ha creado nada.",
+    "jobErrorDiskNotFound": "No se ha encontrado el disco solar en el escaneo n.º {{number}} de la selección. Vuelva a procesar los escaneos con el recorte automático, o quítelo de la selección.",
+    "jobErrorDiskNotFoundUnknown": "No se ha encontrado el disco solar en uno de los escaneos. Vuelva a procesar los escaneos con el recorte automático, o quítelo de la selección.",
     "jobErrorStackingFailed": "El apilado ha fallado en el SUNSCAN.",
     "jobErrorAnimationFailed": "La creación de un GIF ha fallado en el SUNSCAN.",
     "jobErrorRequestFailed": "Compruebe la conexión con el SUNSCAN e inténtelo de nuevo.",
     "jobErrorGeneric": "Se ha producido un error en el SUNSCAN. Inténtelo de nuevo.",
+    "jobErrorDetails": "Detalles",
     // asistente de alineacion del barrido
     "assistant": "Asist.",
     "shearAngle": "incl.",

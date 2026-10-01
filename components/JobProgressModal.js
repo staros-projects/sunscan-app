@@ -33,6 +33,7 @@ const STEP_LABELS = {
 const ERROR_LABELS = {
   busy: 'jobErrorBusy',
   missing_images: 'jobErrorMissingImages',
+  disk_not_found: 'jobErrorDiskNotFound',
   stacking_failed: 'jobErrorStackingFailed',
   animation_failed: 'jobErrorAnimationFailed',
   request_failed: 'jobErrorRequestFailed',
@@ -41,8 +42,24 @@ const ERROR_LABELS = {
 const jobStepTranslationKey = (step) =>
   'common:' + (STEP_LABELS[step] || 'jobStepGeneric');
 
-const jobErrorTranslationKey = (error) =>
-  'common:' + (ERROR_LABELS[error] || 'jobErrorGeneric');
+// `disk_not_found` names the scan it could not crop in its detail, as
+//   Scan #2 (storage/scans/sunscan_2026_09_27-18_30_00) : solar disk not found
+// The number is the rank in the selection that was sent, counted from 1. Should
+// the wording ever change, the message is shown without it.
+const scanNumber = (detail) => {
+  const match = /scan\s*#(\d+)/i.exec(detail || '');
+  return match ? match[1] : null;
+};
+
+const jobErrorMessage = (t, job) => {
+  if (job.error === 'disk_not_found') {
+    const number = scanNumber(job.detail);
+    return number
+      ? t('common:jobErrorDiskNotFound', { number })
+      : t('common:jobErrorDiskNotFoundUnknown');
+  }
+  return t('common:' + (ERROR_LABELS[job.error] || 'jobErrorGeneric'));
+};
 
 const formatElapsed = (seconds) => {
   const m = Math.floor(seconds / 60);
@@ -69,6 +86,7 @@ const nextStep = ({ kind, step, percent, current, total }) => {
 export default function JobProgressModal({ job, onClose }) {
   const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
+  const [detailShown, setDetailShown] = useState(false);
 
   const visible = !!job;
   const failed = job?.status === 'failed';
@@ -85,6 +103,10 @@ export default function JobProgressModal({ job, onClose }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [visible, failed, job?.id]);
+
+  useEffect(() => {
+    setDetailShown(false);
+  }, [job?.id]);
 
   const progress = useSharedValue(0);
   useEffect(() => {
@@ -132,7 +154,26 @@ export default function JobProgressModal({ job, onClose }) {
             <>
               <Ionicons name="warning-outline" size={30} color="#fbbf24" />
               <Text style={styles.title}>{t(isStack ? 'common:stackingFailed' : 'common:animationFailed')}</Text>
-              <Text style={styles.hint}>{t(jobErrorTranslationKey(job.error))}</Text>
+              <Text style={styles.message}>{jobErrorMessage(t, job)}</Text>
+              {/* The detail is the backend's own English line, an exception at
+                  times: folded away, and only worth reading in a bug report. */}
+              {!!job.detail && (
+                <>
+                  <PressableScale
+                    className="flex flex-row items-center mt-3 px-2 py-1"
+                    onPress={() => setDetailShown((shown) => !shown)}
+                  >
+                    <Text style={styles.detailToggle}>{t('common:jobErrorDetails')}</Text>
+                    <Ionicons
+                      name={detailShown ? 'chevron-up' : 'chevron-down'}
+                      size={12}
+                      color="#71717a"
+                      style={{ marginLeft: 3 }}
+                    />
+                  </PressableScale>
+                  {detailShown && <Text style={styles.detail} selectable>{job.detail}</Text>}
+                </>
+              )}
               <PressableScale
                 className="bg-zinc-700 rounded-xl mt-4 px-5 h-10 flex flex-row items-center justify-center"
                 onPress={onClose}
@@ -226,6 +267,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 10,
     fontVariant: ['tabular-nums'],
+  },
+  message: {
+    color: '#d4d4d8',
+    fontSize: 12,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  detailToggle: {
+    color: '#71717a',
+    fontSize: 11,
+  },
+  detail: {
+    width: '100%',
+    color: '#71717a',
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 6,
   },
   hint: {
     color: '#71717a',

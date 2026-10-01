@@ -238,10 +238,13 @@ export default {
     "jobStepGeneric": "Traitement en cours",
     "jobErrorBusy": "Un stacking est déjà en cours sur le SUNSCAN. Attendez qu'il se termine.",
     "jobErrorMissingImages": "Certains scans n'ont pas l'image traitée nécessaire (scan non traité, ou retraité en hélium). Rien n'a été créé.",
+    "jobErrorDiskNotFound": "Le disque solaire n'a pas été trouvé sur le scan n°{{number}} de la sélection. Retraitez les scans avec le recadrage automatique, ou retirez ce scan.",
+    "jobErrorDiskNotFoundUnknown": "Le disque solaire n'a pas été trouvé sur l'un des scans. Retraitez les scans avec le recadrage automatique, ou retirez ce scan.",
     "jobErrorStackingFailed": "Le calcul du stack a échoué sur le SUNSCAN.",
     "jobErrorAnimationFailed": "La création d'un GIF a échoué sur le SUNSCAN.",
     "jobErrorRequestFailed": "Vérifiez la connexion au SUNSCAN, puis réessayez.",
     "jobErrorGeneric": "Une erreur est survenue sur le SUNSCAN. Réessayez.",
+    "jobErrorDetails": "Détails",
     // assistant d'alignement du scan
     "assistant": "Assist.",
     "shearAngle": "incl.",
